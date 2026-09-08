@@ -1,0 +1,24 @@
+.dashboard-card {
+  background-color: var(--bs-body-bg);
+  border-color: var(--bs-border-color);
+  color: var(--bs-body-color);
+  transition: border-color .15s ease, transform .15s ease;
+}
+
+.dashboard-card:hover {
+  border-color: var(--bs-primary);
+  color: var(--bs-body-color);
+  transform: translateY(-2px);
+}
+
+.dashboard-icon {
+  align-items: center;
+  background: rgba(var(--bs-primary-rgb), .15);
+  border-radius: .5rem;
+  color: var(--bs-primary);
+  display: inline-flex;
+  font-size: 1.5rem;
+  height: 3.25rem;
+  justify-content: center;
+  width: 3.25rem;
+}
