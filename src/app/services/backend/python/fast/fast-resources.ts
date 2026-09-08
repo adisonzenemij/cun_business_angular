@@ -101,6 +101,9 @@ export class FtE5520e1e extends Resource<Anonymous> {
       fd_reservation_key,
     });
   }
+  reserve(payload: Omit<Anonymous, 'id_universal'>): Observable<Anonymous> {
+    return this.api.http.post<Anonymous>(`${FAST_API_URL}/public/anonymous`, payload);
+  }
 }
 @Injectable({ providedIn: 'root' })
 export class FtA6aedeb5 extends Resource<Scope> {
@@ -121,7 +124,12 @@ export class FtD5fb87de extends Resource<Survey> {
   }
 
   listAvailable(): Observable<Survey[]> {
-    return this.api.list<Survey>('surveys/available');
+    return this.api.http.get<Survey[]>(`${FAST_API_URL}/public/surveys/available`);
+  }
+  details(surveyId: string): Observable<{ questions: Question[]; values: Value[] }> {
+    return this.api.http.get<{ questions: Question[]; values: Value[] }>(
+      `${FAST_API_URL}/public/surveys/${surveyId}/details`,
+    );
   }
 }
 @Injectable({ providedIn: 'root' })
@@ -140,5 +148,8 @@ export class FtD76a0e67 extends Resource<Value> {
 export class FtA5acf579 extends Resource<Answer> {
   constructor() {
     super('answers');
+  }
+  createPublic(payload: Omit<Answer, 'id_universal'>): Observable<Answer> {
+    return this.api.http.post<Answer>(`${FAST_API_URL}/public/answers`, payload);
   }
 }

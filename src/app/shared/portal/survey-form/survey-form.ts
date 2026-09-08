@@ -72,7 +72,7 @@ export class SurveyForm implements OnDestroy {
     this.loadingDetails.set(true);
     const fd_reservation_key = this.reservationKey(survey.id_universal);
     this.anonymousApi
-      .create({
+      .reserve({
         fd_random: '',
         pm_4d802b91: survey.id_universal,
         fd_reservation_key,
@@ -94,7 +94,7 @@ export class SurveyForm implements OnDestroy {
   }
 
   private loadSurveyDetails(survey: Survey): void {
-    forkJoin({ questions: this.questionsApi.list(), values: this.valuesApi.list() }).subscribe({
+    this.surveysApi.details(survey.id_universal).subscribe({
       next: ({ questions, values }) => {
         const surveyQuestions = questions
           .filter((question) => question.pm_4d802b91 === survey.id_universal)
@@ -185,7 +185,7 @@ export class SurveyForm implements OnDestroy {
     forkJoin(
       selectedValues.map((valueId) => {
         const value = this.values().find((item) => item.id_universal === valueId);
-        return this.answersApi.create({
+        return this.answersApi.createPublic({
           fd_repply: value?.fd_option ?? '',
           pm_9a582ff6: valueId,
           pm_1a4a8cd7: reservation.id_universal,
