@@ -44,6 +44,7 @@ export interface CrudConfig {
 export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   readonly config = input.required<CrudConfig>();
   readonly rows = signal<Record<string, unknown>[]>([]);
+  readonly tableVersion = signal(0);
   readonly relationOptions = signal<Record<string, Record<string, unknown>[]>>({});
   readonly selectedRecord = signal<Record<string, unknown> | null>(null);
   readonly loading = signal(false);
@@ -58,6 +59,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   });
   @ViewChild('dataTable') private readonly table?: ElementRef<HTMLTableElement>;
   private dataTable?: { destroy(remove?: boolean): unknown };
+  private requestVersion = 0;
   constructor(
     private readonly api: FastApi,
     private readonly changeDetectorRef: ChangeDetectorRef,
@@ -74,6 +76,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     if (!this.config().operations.select) this.initializeDataTable();
   }
   load(): void {
+    const requestVersion = ++this.requestVersion;
     this.loading.set(true);
     this.destroyDataTable();
     this.rows.set([]);
@@ -82,11 +85,12 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       next: (rows) => {
         this.rows.set(Array.isArray(rows) ? rows : []);
         this.selectedRecord.set(null);
-        this.loadTableRelations();
+        this.loadTableRelations(requestVersion);
       },
       error: () => {
+        if (requestVersion !== this.requestVersion) return;
         this.message.set('No fue posible consultar los registros.');
-        this.loading.set(false);
+        this.finishTableLoad(requestVersion);
       },
     });
   }
@@ -215,10 +219,10 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       });
     }
   }
-  private loadTableRelations(): void {
+  private loadTableRelations(requestVersion: number): void {
     const relationFields = this.config().fields.filter((field) => field.relation);
     if (!relationFields.length) {
-      this.finishTableLoad();
+      this.finishTableLoad(requestVersion);
       return;
     }
     forkJoin(
@@ -233,15 +237,19 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
           ...current,
           ...Object.fromEntries(relations.map(({ field, options }) => [field, options])),
         }));
-        this.finishTableLoad();
+        this.finishTableLoad(requestVersion);
       },
-      error: () => this.finishTableLoad(),
+      error: () => this.finishTableLoad(requestVersion),
     });
   }
-  private finishTableLoad(): void {
+  private finishTableLoad(requestVersion: number): void {
+    if (requestVersion !== this.requestVersion) return;
     this.loading.set(false);
+    this.tableVersion.update((version) => version + 1);
     if (this.table) this.changeDetectorRef.detectChanges();
-    setTimeout(() => this.initializeDataTable());
+    setTimeout(() => {
+      if (requestVersion === this.requestVersion) this.initializeDataTable();
+    });
   }
   private destroyDataTable(): void {
     this.dataTable?.destroy();
