@@ -1,0 +1,11 @@
+.report-link {
+  align-self: stretch;
+  border-bottom: 3px solid transparent;
+  display: flex;
+  align-items: center;
+}
+
+.report-link.active {
+  border-bottom-color: var(--bs-white);
+  font-weight: 600;
+}

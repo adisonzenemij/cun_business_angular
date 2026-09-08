@@ -4,6 +4,7 @@ import { PtHome } from './web/portal/pt-home/pt-home';
 import { Portal } from './web/portal/portal';
 import { Working } from './web/working/working';
 import { WgDashboard } from './web/working/wg-dashboard/wg-dashboard';
+import { WgSociety } from './web/working/wg-society/wg-society';
 import { MdE144c860 } from './web/working/md-e144c860/md-e144c860';
 import { MdA7b95fe8 } from './web/working/md-a7b95fe8/md-a7b95fe8';
 import { MdD35a393b } from './web/working/md-d35a393b/md-d35a393b';
@@ -39,6 +40,7 @@ export const routes: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       { path: 'dashboard', component: WgDashboard },
+      { path: 'society', component: WgSociety },
       {
         path: 'report',
         loadComponent: () => import('./web/working/wg-report/wg-report').then((module) => module.WgReport),
