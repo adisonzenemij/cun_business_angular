@@ -14,7 +14,7 @@ export class WgDashboard {
   private readonly api = inject(FastApi);
   readonly loading = signal(true);
   readonly modules = signal<DashboardModule[]>([
-    { title: 'Orígenes CORS', resource: 'cors-origins', path: '/working/e144c860', icon: 'bi-globe', count: null },
+    { title: 'Orígenes', resource: 'cors-origins', path: '/working/e144c860', icon: 'bi-globe', count: null },
     { title: 'Usuarios', resource: 'users', path: '/working/b64883b6', icon: 'bi-people', count: null },
     { title: 'Alcances', resource: 'scopes', path: '/working/a6aedeb5', icon: 'bi-shield-check', count: null },
     { title: 'Tipos', resource: 'types', path: '/working/a3b378b4', icon: 'bi-ui-checks', count: null },

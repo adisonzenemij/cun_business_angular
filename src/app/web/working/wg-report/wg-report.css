@@ -27,7 +27,7 @@
   box-shadow: 0 0 0 .2rem rgba(var(--bs-primary-rgb), .25) !important;
 }
 .report-survey-item.active .text-body-secondary { color: inherit !important; }
-.report-survey-item:hover { border-color: var(--bs-primary) !important; transform: translateY(-1px); }
+.report-survey-item:hover { border-color: var(--bs-primary) !important; }
 [data-bs-theme='dark'] .report-survey-item:not(.active) {
   background-color: #252a2f;
   border-color: #4b5560 !important;

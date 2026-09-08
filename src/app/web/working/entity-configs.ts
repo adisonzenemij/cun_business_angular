@@ -3,7 +3,7 @@ const full = { select: true, insert: true, update: true, delete: true };
 const write = { select: true, insert: true, update: true, delete: true };
 export const ENTITY_CONFIGS: Record<string, CrudConfig> = {
   e144c860: {
-    title: 'Orígenes CORS',
+    title: 'Orígenes',
     resource: 'cors-origins',
     operations: full,
     fields: [{ name: 'fd_service', label: 'Servicio', required: true }],
