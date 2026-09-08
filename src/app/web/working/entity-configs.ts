@@ -22,6 +22,7 @@ export const ENTITY_CONFIGS: Record<string, CrudConfig> = {
     resource: 'resources',
     operations: full,
     fields: [
+      { name: 'fd_name', label: 'Nombre', required: true },
       { name: 'fd_path', label: 'Ruta', required: true },
       {
         name: 'sd_3a731d00',

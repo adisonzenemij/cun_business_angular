@@ -8,6 +8,7 @@ import { MdE144c860 } from './web/working/md-e144c860/md-e144c860';
 import { MdA7b95fe8 } from './web/working/md-a7b95fe8/md-a7b95fe8';
 import { MdD35a393b } from './web/working/md-d35a393b/md-d35a393b';
 import { Md8ebaa791 } from './web/working/md-8ebaa791/md-8ebaa791';
+import { MdA1cc27fb } from './web/working/md-a1cc27fb/md-a1cc27fb';
 import { MdB64883b6 } from './web/working/md-b64883b6/md-b64883b6';
 import { MdE5520e1e } from './web/working/md-e5520e1e/md-e5520e1e';
 import { MdA6aedeb5 } from './web/working/md-a6aedeb5/md-a6aedeb5';
@@ -46,6 +47,7 @@ export const routes: Routes = [
       { path: 'a7b95fe8', component: MdA7b95fe8 },
       { path: 'd35a393b', component: MdD35a393b },
       { path: '8ebaa791', component: Md8ebaa791 },
+      { path: 'a1cc27fb', component: MdA1cc27fb },
       { path: 'b64883b6', component: MdB64883b6 },
       { path: 'e5520e1e', component: MdE5520e1e },
       { path: 'a6aedeb5', component: MdA6aedeb5 },
