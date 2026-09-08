@@ -42,3 +42,44 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+
+
+
+
+
+
+
+
+
+# Artificial
+.agents
+.antigravity
+.claude
+.cursor
+.gemini
+.openai
+.opencode
+
+# Ingenieria
+.scripts
+
+# Modelos
+.models/
+
+# Navegador
+.browser/
+
+# Proyecto
+logs/
+temp/
+.env
+
+# SonarQube
+.scannerwork
+sonar-project.properties
+
+# VS Code
+.vscode/
+vs.code-workspace
+workspace.bat
