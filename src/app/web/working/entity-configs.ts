@@ -55,6 +55,7 @@ export const ENTITY_CONFIGS: Record<string, CrudConfig> = {
     title: 'Encuestas',
     resource: 'surveys',
     operations: write,
+    valuesManager: true,
     fields: [
       { name: 'fd_count', label: 'Permitido', type: 'number', required: true },
       { name: 'fd_name', label: 'Nombre', required: true },
@@ -73,6 +74,7 @@ export const ENTITY_CONFIGS: Record<string, CrudConfig> = {
     title: 'Preguntas',
     resource: 'questions',
     operations: write,
+    valuesManager: true,
     fields: [
       { name: 'fd_ask', label: 'Pregunta', required: true },
       { name: 'fd_order', label: 'Orden', type: 'number', required: true },

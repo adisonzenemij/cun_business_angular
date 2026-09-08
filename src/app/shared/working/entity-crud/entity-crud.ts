@@ -34,6 +34,7 @@ export interface CrudConfig {
   fields: CrudField[];
   operations: { select?: boolean; insert?: boolean; update?: boolean; delete?: boolean };
   passwordChange?: boolean;
+  valuesManager?: boolean;
 }
 
 @Component({
@@ -53,13 +54,24 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   readonly editing = signal(false);
   readonly showFormModal = signal(false);
   readonly showPasswordModal = signal(false);
+  readonly showValuesModal = signal(false);
+  readonly surveyQuestions = signal<Record<string, unknown>[]>([]);
+  readonly surveyValues = signal<Record<string, unknown>[]>([]);
+  readonly valuesTableVersion = signal(0);
+  readonly valueForm: UntypedFormGroup = new UntypedFormBuilder().group({
+    fd_option: ['', Validators.required],
+    fd_order: ['', Validators.required],
+    pm_0acc84ae: ['', Validators.required],
+  });
   readonly form: UntypedFormGroup = new UntypedFormBuilder().group({ id_universal: [''] });
   readonly passwordForm: UntypedFormGroup = new UntypedFormBuilder().group({
     fd_passd: ['', Validators.required],
     confirmation: ['', Validators.required],
   });
   @ViewChild('dataTable') private readonly table?: ElementRef<HTMLTableElement>;
+  @ViewChild('valuesTable') private readonly valuesTable?: ElementRef<HTMLTableElement>;
   private dataTable?: { destroy(remove?: boolean): unknown };
+  private valuesDataTable?: { destroy(remove?: boolean): unknown };
   private requestVersion = 0;
   constructor(
     private readonly api: FastApi,
@@ -114,6 +126,55 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     if (!this.selectedRecord()) return;
     this.passwordForm.reset();
     this.showPasswordModal.set(true);
+  }
+  openValues(): void {
+    const selected = this.selectedRecord();
+    const surveyId = (this.config().resource === 'surveys'
+      ? selected?.['id_universal']
+      : selected?.['pm_4d802b91']) as string | undefined;
+    if (!surveyId) return;
+    this.showValuesModal.set(true);
+    this.loadSurveyValues(surveyId, this.config().resource === 'questions' ? String(selected?.['id_universal']) : undefined);
+  }
+  closeValuesModal(): void {
+    this.destroyValuesDataTable();
+    this.showValuesModal.set(false);
+  }
+  moveValue(value: Record<string, unknown>, direction: -1 | 1): void {
+    const questionId = value['pm_0acc84ae'];
+    const ordered = this.surveyValues()
+      .filter((item) => item['pm_0acc84ae'] === questionId)
+      .sort((first, second) => Number(first['fd_order']) - Number(second['fd_order']));
+    const currentIndex = ordered.findIndex((item) => item['id_universal'] === value['id_universal']);
+    const target = ordered[currentIndex + direction];
+    if (!target) return;
+    const currentOrder = value['fd_order'];
+    this.loading.set(true);
+    forkJoin([
+      this.api.update('values', String(value['id_universal']), { fd_order: target['fd_order'] }),
+      this.api.update('values', String(target['id_universal']), { fd_order: currentOrder }),
+    ]).subscribe({
+      next: () => {
+        const surveyId = this.selectedRecord()?.['id_universal'] as string;
+        this.loadSurveyValues(surveyId);
+        this.completed('Orden de valores actualizado.');
+      },
+      error: () => this.failed(),
+    });
+  }
+  createValue(): void {
+    if (this.valueForm.invalid) { this.valueForm.markAllAsTouched(); return; }
+    this.loading.set(true);
+    this.api.create('values', this.valueForm.getRawValue()).subscribe({
+      next: () => {
+        const selected = this.selectedRecord();
+        const surveyId = (this.config().resource === 'surveys' ? selected?.['id_universal'] : selected?.['pm_4d802b91']) as string;
+        this.valueForm.patchValue({ fd_option: '', fd_order: this.nextValueOrder(), pm_0acc84ae: this.config().resource === 'questions' ? selected?.['id_universal'] : '' });
+        this.loadSurveyValues(surveyId, this.config().resource === 'questions' ? String(selected?.['id_universal']) : undefined);
+        this.completed('Valor creado.');
+      },
+      error: () => this.failed(),
+    });
   }
   closePasswordModal(): void {
     this.showPasswordModal.set(false);
@@ -198,6 +259,12 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   tableFields(): CrudField[] {
     return this.config().fields.filter((field) => field.showInTable !== false);
   }
+  questionLabel(questionId: unknown): string {
+    const question = this.surveyQuestions().find(
+      (item) => item['id_universal'] === questionId,
+    );
+    return question ? `${question['fd_order']}. ${question['fd_ask']}` : String(questionId ?? '');
+  }
   relationOptionLabel(field: CrudField, option: Record<string, unknown>): string {
     const displayValue = String(option[field.relation?.displayField ?? ''] ?? '');
     const orderBy = field.relation?.orderBy;
@@ -205,6 +272,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   }
   ngOnDestroy(): void {
     this.destroyDataTable();
+    this.destroyValuesDataTable();
   }
   private initializeDataTable(): void {
     if (!this.table || this.dataTable) return;
@@ -217,6 +285,48 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
         paginate: { next: 'Siguiente', previous: 'Anterior' },
       },
     });
+  }
+  private loadSurveyValues(surveyId: string, questionId?: string): void {
+    this.destroyValuesDataTable();
+    forkJoin({
+      questions: this.api.list<Record<string, unknown>>('questions'),
+      values: this.api.list<Record<string, unknown>>('values'),
+    }).subscribe({
+      next: ({ questions, values }) => {
+        const surveyQuestions = questions
+          .filter((question) => question['pm_4d802b91'] === surveyId)
+          .sort((first, second) => Number(first['fd_order']) - Number(second['fd_order']));
+        const questionIds = new Set((questionId ? surveyQuestions.filter((question) => question['id_universal'] === questionId) : surveyQuestions).map((question) => question['id_universal']));
+        this.surveyQuestions.set(surveyQuestions);
+        this.surveyValues.set(
+          values
+            .filter((value) => questionIds.has(value['pm_0acc84ae']))
+            .sort((first, second) => Number(first['fd_order']) - Number(second['fd_order'])),
+        );
+        this.valuesTableVersion.update((version) => version + 1);
+        this.changeDetectorRef.detectChanges();
+        this.initializeValuesDataTable();
+        this.valueForm.patchValue({ fd_option: '', pm_0acc84ae: questionId ?? '' });
+        this.valueForm.patchValue({ fd_order: this.nextValueOrder() });
+      },
+      error: () => this.message.set('No fue posible consultar los valores de la encuesta.'),
+    });
+  }
+  private initializeValuesDataTable(): void {
+    if (!this.valuesTable || this.valuesDataTable) return;
+    this.valuesDataTable = new DataTable(this.valuesTable.nativeElement, {
+      language: { emptyTable: 'No hay valores', search: 'Buscar:', lengthMenu: 'Mostrar _MENU_ registros', info: 'Mostrando _START_ a _END_ de _TOTAL_', paginate: { next: 'Siguiente', previous: 'Anterior' } },
+    });
+  }
+  private destroyValuesDataTable(): void {
+    this.valuesDataTable?.destroy();
+    this.valuesDataTable = undefined;
+  }
+  nextValueOrder(): number {
+    const questionId = this.valueForm.get('pm_0acc84ae')?.value;
+    return this.surveyValues().filter((value) => value['pm_0acc84ae'] === questionId).reduce(
+      (highest, value) => Math.max(highest, Number(value['fd_order']) || 0), 0,
+    ) + 1;
   }
   private loadRelationOptions(): void {
     for (const field of this.config().fields) {
