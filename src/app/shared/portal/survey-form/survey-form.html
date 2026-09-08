@@ -1,14 +1,97 @@
-@if (surveys().length) {
-  <section class="surveys">
-    <h2>Disponibles</h2>
-    @for (survey of surveys(); track survey.id_universal) {
-      <article>
-        <h3>{{ survey.fd_name }}</h3>
-        <p>{{ survey.fd_query }} preguntas</p>
-        <button type="button">Responder</button>
-      </article>
-    }
-  </section>
-} @else {
-  <p class="message">{{ message() }}</p>
-}
+<div class="row g-4 survey-layout">
+  <div class="col-12 col-lg-3">
+    <aside class="survey-list">
+      <div class="card survey-card shadow-sm border mb-3">
+        <header class="card-header bg-primary text-white">
+          <h2 class="h6 mb-0"><i class="bi bi-card-checklist me-2"></i>Encuestas</h2>
+        </header>
+      </div>
+      @if (surveys().length) {
+        @for (survey of surveys(); track survey.id_universal) {
+          <button
+            class="card survey-card survey-item shadow-sm border w-100 mb-3"
+            type="button"
+            (click)="selectSurvey(survey)"
+            [class.active]="selectedSurvey()?.id_universal === survey.id_universal"
+          >
+            <span class="card-body p-3">
+              <span class="fw-semibold d-block">{{ survey.fd_name }}</span>
+              <small class="text-body-secondary">
+                <i class="bi bi-question-circle me-1"></i>{{ survey.fd_query }} preguntas
+              </small>
+            </span>
+          </button>
+        }
+      } @else {
+        <div class="card survey-card shadow-sm border">
+          <p class="text-body-secondary text-center mb-0 p-3">{{ message() }}</p>
+        </div>
+      }
+    </aside>
+  </div>
+
+  <div class="col-12 col-lg-9 d-flex">
+    <section class="card survey-card survey-detail w-100 shadow-sm border">
+      <header class="card-header bg-primary text-white">
+        <h2 class="h5 mb-0"><i class="bi bi-ui-checks-grid me-2"></i>Completar encuesta</h2>
+      </header>
+      <div class="card-body">
+        @if (selectedSurvey(); as survey) {
+          <h3 class="h4">{{ survey.fd_name }}</h3>
+          <p class="text-body-secondary">Responde todas las preguntas para enviar la encuesta.</p>
+          @if (loadingDetails()) {
+            <div class="text-center py-5"><span class="spinner-border text-primary"></span></div>
+          } @else if (questions().length) {
+            <form [formGroup]="answerForm" (ngSubmit)="submit()">
+              @for (question of questions(); track question.id_universal; let index = $index) {
+                <fieldset class="question-block mb-4">
+                  <legend class="fs-6 fw-semibold mb-3">
+                    {{ index + 1 }}. {{ question.fd_ask }}
+                  </legend>
+                  @for (value of valuesFor(question); track value.id_universal) {
+                    <div class="form-check mb-2">
+                      <input
+                        class="form-check-input"
+                        type="radio"
+                        [id]="question.id_universal + '-' + value.id_universal"
+                        [name]="question.id_universal"
+                        [value]="value.id_universal"
+                        [formControlName]="question.id_universal"
+                      />
+                      <label
+                        class="form-check-label"
+                        [for]="question.id_universal + '-' + value.id_universal"
+                      >
+                        {{ value.fd_option }}
+                      </label>
+                    </div>
+                  }
+                </fieldset>
+              }
+              <div class="border-top pt-3 d-flex justify-content-end">
+                <button class="btn btn-outline-primary" type="submit" [disabled]="submitting()">
+                  <i class="bi bi-send me-1"></i
+                  >{{ submitting() ? 'Enviando...' : 'Enviar respuestas' }}
+                </button>
+              </div>
+            </form>
+          } @else {
+            <p class="text-body-secondary mb-0">
+              Esta encuesta aún no tiene preguntas disponibles.
+            </p>
+          }
+        } @else {
+          <div class="empty-survey text-center text-body-secondary py-5">
+            <i class="bi bi-arrow-left-circle fs-1 d-block mb-3"></i>
+            <p class="mb-0">Selecciona una encuesta de la lista para visualizarla y responderla.</p>
+          </div>
+        }
+        @if (message() && selectedSurvey()) {
+          <div class="alert alert-info mt-3 mb-0">
+            <i class="bi bi-info-circle me-2"></i>{{ message() }}
+          </div>
+        }
+      </div>
+    </section>
+  </div>
+</div>

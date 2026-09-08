@@ -16,6 +16,7 @@ import {
 } from '@angular/forms';
 import { FastApi } from '../../../services/backend/python/fast/fast-api';
 import DataTable from 'datatables.net-bs5';
+import Swal from 'sweetalert2';
 
 export interface CrudField {
   name: string;
@@ -145,7 +146,8 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
         ? this.api.create(this.config().resource, payload)
         : this.api.update(this.config().resource, id_universal, payload);
     request.subscribe({
-      next: () => this.completed('Operación realizada.'),
+      next: () =>
+        this.completed(operation === 'insert' ? 'Registro creado' : 'Registro actualizado'),
       error: () => this.failed(),
     });
   }
@@ -163,7 +165,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     this.loading.set(true);
     this.api
       .delete(this.config().resource, id)
-      .subscribe({ next: () => this.completed('Registro eliminado.'), error: () => this.failed() });
+      .subscribe({ next: () => this.completed('Registro eliminado'), error: () => this.failed() });
   }
   toggleSelection(row: Record<string, unknown>): void {
     if (this.selectedRecord()?.['id_universal'] === row['id_universal']) {
@@ -207,8 +209,14 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     this.closeFormModal();
     this.closePasswordModal();
     this.selectedRecord.set(null);
-    this.message.set(message);
+    this.message.set('');
     this.loading.set(false);
+    void Swal.fire({
+      icon: 'success',
+      title: message,
+      text: 'La operación se completó correctamente.',
+      confirmButtonText: 'Aceptar',
+    });
     if (this.config().operations.select) this.load();
   }
   private failed(): void {

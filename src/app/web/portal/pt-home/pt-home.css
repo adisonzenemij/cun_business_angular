@@ -1,0 +1,10 @@
+:host {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+}
+
+.portal-home {
+  min-height: 0;
+}
