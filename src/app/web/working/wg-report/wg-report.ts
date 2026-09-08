@@ -136,6 +136,8 @@ export class WgReport implements OnDestroy {
 
   private renderCharts(reports: QuestionReport[]): void {
     this.destroyCharts();
+    const textColor = getComputedStyle(document.body).color || '#212529';
+    const normalText: Highcharts.CSSObject = { color: textColor, fontWeight: '400' };
     for (const report of reports) {
       const categories = report.values.map((value) => value.fd_option);
       const colors = ['#0d6efd', '#20c997', '#ffc107', '#dc3545', '#6f42c1', '#0dcaf0', '#fd7e14'];
@@ -144,6 +146,7 @@ export class WgReport implements OnDestroy {
         colors,
         credits: { enabled: false },
         title: { text: undefined },
+        legend: { itemStyle: normalText, itemHoverStyle: normalText },
         accessibility: { enabled: false },
       };
 
@@ -151,8 +154,13 @@ export class WgReport implements OnDestroy {
         Highcharts.chart(`report-bar-${report.question.id_universal}`, {
           ...common,
           chart: { ...common.chart, type: 'column' },
-          xAxis: { categories, crosshair: true },
-          yAxis: { allowDecimals: false, min: 0, title: { text: 'Respuestas' } },
+          xAxis: { categories, crosshair: true, labels: { style: normalText } },
+          yAxis: {
+            allowDecimals: false,
+            min: 0,
+            labels: { style: normalText },
+            title: { text: 'Respuestas', style: normalText },
+          },
           tooltip: { pointFormat: '<b>{point.y}</b> respuestas' },
           series: [{ type: 'column', name: 'Respuestas', data: report.counts }],
         }),
@@ -163,7 +171,11 @@ export class WgReport implements OnDestroy {
           chart: { ...common.chart, type: 'pie' },
           tooltip: { pointFormat: '<b>{point.y}</b> respuestas ({point.percentage:.1f}%)' },
           plotOptions: {
-            pie: { allowPointSelect: true, cursor: 'pointer', dataLabels: { enabled: true, format: '{point.name}: {point.y}' } },
+            pie: {
+              allowPointSelect: true,
+              cursor: 'pointer',
+              dataLabels: { enabled: true, format: '{point.name}: {point.y}', style: { ...normalText, textOutline: 'none' } },
+            },
           },
           series: [
             {

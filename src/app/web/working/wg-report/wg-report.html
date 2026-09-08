@@ -38,10 +38,14 @@
     </aside>
 
     <div class="col-12 col-lg-9 d-flex min-h-0">
-      <div class="report-results w-100">
-        @if (selectedSurvey()) {
-        <h2 class="h4 report-survey-title">{{ selectedSurvey()?.fd_name }}</h2>
-        }
+        <div class="report-results w-100">
+          @if (selectedSurvey()) {
+          <div class="card report-survey-title mb-3">
+            <header class="card-header bg-primary text-white">
+              <h2 class="h6 mb-0"><i class="bi bi-clipboard-data me-2"></i>{{ selectedSurvey()?.fd_name }}</h2>
+            </header>
+          </div>
+          }
         <div class="report-results-scroll">
           @if (error()) {
           <div class="alert alert-danger">{{ error() }}</div>
