@@ -43,7 +43,7 @@ export class CeLogin {
           void Swal.fire({
             icon: 'error',
             title: 'Credenciales Invalidas',
-            text: 'Verifica el usuario y la contrasena.',
+            text: 'Verifica el usuario y la contraseña.',
             confirmButtonText: 'Aceptar',
           });
         },

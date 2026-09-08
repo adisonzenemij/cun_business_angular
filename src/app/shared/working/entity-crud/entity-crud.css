@@ -52,3 +52,35 @@ td {
 tbody tr {
   cursor: pointer;
 }
+
+/* Aumenta la separación visual de cada módulo en el tema oscuro. */
+[data-bs-theme='dark'] .crud-card {
+  background-color: #252a2f;
+  border-color: #4b5560 !important;
+  box-shadow: 0 0.75rem 1.75rem rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-bs-theme='dark'] .crud-card .card-body {
+  background-color: #252a2f;
+}
+
+[data-bs-theme='dark'] .crud-card .table {
+  --bs-table-bg: #252a2f;
+  --bs-table-striped-bg: #2d343b;
+  --bs-table-hover-bg: #363f48;
+  --bs-table-color: #f8f9fa;
+  --bs-table-border-color: #4b5560;
+}
+
+[data-bs-theme='dark'] .crud-card .table thead th {
+  background-color: #343b43;
+  border-bottom-color: #5a6570;
+  color: #ffffff;
+}
+
+[data-bs-theme='dark'] .crud-card .dt-container .dt-input,
+[data-bs-theme='dark'] .crud-card .dt-container select {
+  background-color: #1f2429;
+  border-color: #4b5560;
+  color: #f8f9fa;
+}

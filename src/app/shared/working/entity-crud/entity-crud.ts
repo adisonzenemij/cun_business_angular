@@ -1,4 +1,13 @@
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild, input, signal } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  input,
+  signal,
+} from '@angular/core';
 import {
   ReactiveFormsModule,
   UntypedFormBuilder,
@@ -27,11 +36,14 @@ export interface CrudConfig {
   templateUrl: './entity-crud.html',
   styleUrl: './entity-crud.css',
 })
-export class EntityCrud implements OnInit, OnDestroy {
+export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   readonly config = input.required<CrudConfig>();
   readonly rows = signal<Record<string, unknown>[]>([]);
+  readonly selectedRecord = signal<Record<string, unknown> | null>(null);
   readonly loading = signal(false);
   readonly message = signal('');
+  readonly editing = signal(false);
+  readonly showFormModal = signal(false);
   readonly form: UntypedFormGroup = new UntypedFormBuilder().group({ id_universal: [''] });
   @ViewChild('dataTable') private readonly table?: ElementRef<HTMLTableElement>;
   private dataTable?: { destroy(remove?: boolean): unknown };
@@ -44,12 +56,16 @@ export class EntityCrud implements OnInit, OnDestroy {
       );
     if (this.config().operations.select) this.load();
   }
+  ngAfterViewInit(): void {
+    if (!this.config().operations.select) this.initializeDataTable();
+  }
   load(): void {
     this.loading.set(true);
     this.destroyDataTable();
     this.api.list<Record<string, unknown>>(this.config().resource).subscribe({
       next: (rows) => {
         this.rows.set(rows);
+        this.selectedRecord.set(null);
         this.loading.set(false);
         setTimeout(() => this.initializeDataTable());
       },
@@ -58,6 +74,19 @@ export class EntityCrud implements OnInit, OnDestroy {
         this.loading.set(false);
       },
     });
+  }
+  openCreate(): void {
+    this.editing.set(false);
+    this.form.reset({ id_universal: '' });
+    this.showFormModal.set(true);
+  }
+  openEdit(): void {
+    if (!this.selectedRecord()) return;
+    this.editing.set(true);
+    this.showFormModal.set(true);
+  }
+  closeFormModal(): void {
+    this.showFormModal.set(false);
   }
   submit(operation: 'insert' | 'update'): void {
     if (this.form.invalid) {
@@ -81,6 +110,10 @@ export class EntityCrud implements OnInit, OnDestroy {
     });
   }
   remove(): void {
+    if (!this.selectedRecord()) {
+      this.message.set('Selecciona un registro para eliminar.');
+      return;
+    }
     const id = this.form.controls['id_universal'].value;
     if (!id) {
       this.message.set('Indica el ID universal para eliminar.');
@@ -94,6 +127,7 @@ export class EntityCrud implements OnInit, OnDestroy {
   }
   select(row: Record<string, unknown>): void {
     this.form.patchValue(row);
+    this.selectedRecord.set(row);
   }
   ngOnDestroy(): void {
     this.destroyDataTable();
@@ -115,6 +149,8 @@ export class EntityCrud implements OnInit, OnDestroy {
     this.dataTable = undefined;
   }
   private completed(message: string): void {
+    this.closeFormModal();
+    this.selectedRecord.set(null);
     this.message.set(message);
     this.loading.set(false);
     if (this.config().operations.select) this.load();
