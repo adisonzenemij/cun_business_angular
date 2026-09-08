@@ -20,7 +20,7 @@ import DataTable from 'datatables.net-bs5';
 export interface CrudField {
   name: string;
   label: string;
-  type?: 'text' | 'number' | 'password';
+  type?: 'text' | 'number' | 'password' | 'date';
   required?: boolean;
 }
 export interface CrudConfig {
