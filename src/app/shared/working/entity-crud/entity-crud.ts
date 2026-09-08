@@ -22,6 +22,7 @@ export interface CrudField {
   label: string;
   type?: 'text' | 'number' | 'password' | 'date';
   required?: boolean;
+  relation?: { resource: string; displayField: string };
 }
 export interface CrudConfig {
   title: string;
@@ -40,6 +41,7 @@ export interface CrudConfig {
 export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   readonly config = input.required<CrudConfig>();
   readonly rows = signal<Record<string, unknown>[]>([]);
+  readonly relationOptions = signal<Record<string, Record<string, unknown>[]>>({});
   readonly selectedRecord = signal<Record<string, unknown> | null>(null);
   readonly loading = signal(false);
   readonly message = signal('');
@@ -84,11 +86,13 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   openCreate(): void {
     this.editing.set(false);
     this.form.reset({ id_universal: '' });
+    this.loadRelationOptions();
     this.showFormModal.set(true);
   }
   openEdit(): void {
     if (!this.selectedRecord()) return;
     this.editing.set(true);
+    this.loadRelationOptions();
     this.showFormModal.set(true);
   }
   closeFormModal(): void {
@@ -184,6 +188,16 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
         paginate: { next: 'Siguiente', previous: 'Anterior' },
       },
     });
+  }
+  private loadRelationOptions(): void {
+    for (const field of this.config().fields) {
+      if (!field.relation || this.relationOptions()[field.name]) continue;
+      this.api.list<Record<string, unknown>>(field.relation.resource).subscribe({
+        next: (options) =>
+          this.relationOptions.update((current) => ({ ...current, [field.name]: options })),
+        error: () => this.message.set(`No fue posible cargar las opciones de ${field.label}.`),
+      });
+    }
   }
   private destroyDataTable(): void {
     this.dataTable?.destroy();

@@ -46,7 +46,12 @@ export const ENTITY_CONFIGS: Record<string, CrudConfig> = {
       { name: 'fd_query', label: 'Preguntas', type: 'number', required: true },
       { name: 'fd_since', label: 'Apertura', type: 'date', required: true },
       { name: 'fd_until', label: 'Cierre', type: 'date', required: true },
-      { name: 'pm_8e417bb2', label: 'ID alcance', required: true },
+      {
+        name: 'pm_8e417bb2',
+        label: 'Alcance',
+        required: true,
+        relation: { resource: 'scopes', displayField: 'fd_setting' },
+      },
     ],
   },
   d2e6ded6: {
@@ -56,8 +61,18 @@ export const ENTITY_CONFIGS: Record<string, CrudConfig> = {
     fields: [
       { name: 'fd_ask', label: 'Pregunta', required: true },
       { name: 'fd_order', label: 'Orden', type: 'number', required: true },
-      { name: 'pm_0d3dc00e', label: 'ID tipo', required: true },
-      { name: 'pm_4d802b91', label: 'ID encuesta', required: true },
+      {
+        name: 'pm_0d3dc00e',
+        label: 'Tipo',
+        required: true,
+        relation: { resource: 'types', displayField: 'fd_format' },
+      },
+      {
+        name: 'pm_4d802b91',
+        label: 'Encuesta',
+        required: true,
+        relation: { resource: 'surveys', displayField: 'fd_name' },
+      },
     ],
   },
   d76a0e67: {
@@ -66,7 +81,12 @@ export const ENTITY_CONFIGS: Record<string, CrudConfig> = {
     operations: write,
     fields: [
       { name: 'fd_option', label: 'Opción', required: true },
-      { name: 'pm_0acc84ae', label: 'ID pregunta', required: true },
+      {
+        name: 'pm_0acc84ae',
+        label: 'Pregunta',
+        required: true,
+        relation: { resource: 'questions', displayField: 'fd_ask' },
+      },
     ],
   },
   a5acf579: {
@@ -75,8 +95,18 @@ export const ENTITY_CONFIGS: Record<string, CrudConfig> = {
     operations: write,
     fields: [
       { name: 'fd_repply', label: 'Respuesta', required: true },
-      { name: 'pm_9a582ff6', label: 'ID valor', required: true },
-      { name: 'pm_1a4a8cd7', label: 'ID anónimo', required: true },
+      {
+        name: 'pm_9a582ff6',
+        label: 'Valor',
+        required: true,
+        relation: { resource: 'values', displayField: 'fd_option' },
+      },
+      {
+        name: 'pm_1a4a8cd7',
+        label: 'Anónimo',
+        required: true,
+        relation: { resource: 'anonymous', displayField: 'fd_random' },
+      },
     ],
   },
 };
