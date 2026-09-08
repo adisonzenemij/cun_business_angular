@@ -85,7 +85,7 @@ export const ENTITY_CONFIGS: Record<string, CrudConfig> = {
         name: 'pm_0acc84ae',
         label: 'Pregunta',
         required: true,
-        relation: { resource: 'questions', displayField: 'fd_ask' },
+        relation: { resource: 'questions', displayField: 'fd_ask', orderBy: 'fd_order' },
       },
     ],
   },

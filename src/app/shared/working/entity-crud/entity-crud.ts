@@ -25,7 +25,7 @@ export interface CrudField {
   label: string;
   type?: 'text' | 'number' | 'password' | 'date';
   required?: boolean;
-  relation?: { resource: string; displayField: string };
+  relation?: { resource: string; displayField: string; orderBy?: string };
 }
 export interface CrudConfig {
   title: string;
@@ -194,6 +194,11 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     );
     return related?.[field.relation.displayField] ?? value;
   }
+  relationOptionLabel(field: CrudField, option: Record<string, unknown>): string {
+    const displayValue = String(option[field.relation?.displayField ?? ''] ?? '');
+    const orderBy = field.relation?.orderBy;
+    return orderBy ? `${option[orderBy]}. ${displayValue}` : displayValue;
+  }
   ngOnDestroy(): void {
     this.destroyDataTable();
   }
@@ -214,7 +219,10 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       if (!field.relation || this.relationOptions()[field.name]) continue;
       this.api.list<Record<string, unknown>>(field.relation.resource).subscribe({
         next: (options) =>
-          this.relationOptions.update((current) => ({ ...current, [field.name]: options })),
+          this.relationOptions.update((current) => ({
+            ...current,
+            [field.name]: this.sortRelationOptions(field, options),
+          })),
         error: () => this.message.set(`No fue posible cargar las opciones de ${field.label}.`),
       });
     }
@@ -235,7 +243,15 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       next: (relations) => {
         this.relationOptions.update((current) => ({
           ...current,
-          ...Object.fromEntries(relations.map(({ field, options }) => [field, options])),
+          ...Object.fromEntries(
+            relations.map(({ field, options }) => [
+              field,
+              this.sortRelationOptions(
+                relationFields.find((relationField) => relationField.name === field)!,
+                options,
+              ),
+            ]),
+          ),
         }));
         this.finishTableLoad(requestVersion);
       },
@@ -250,6 +266,14 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     setTimeout(() => {
       if (requestVersion === this.requestVersion) this.initializeDataTable();
     });
+  }
+  private sortRelationOptions(
+    field: CrudField,
+    options: Record<string, unknown>[],
+  ): Record<string, unknown>[] {
+    const orderBy = field.relation?.orderBy;
+    if (!orderBy) return options;
+    return [...options].sort((first, second) => Number(first[orderBy]) - Number(second[orderBy]));
   }
   private destroyDataTable(): void {
     this.dataTable?.destroy();

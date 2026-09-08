@@ -159,7 +159,7 @@
           <div class="row">
             @for (field of config().fields; track field.name) {
               @if (!editing() || field.name !== 'fd_passd' || !config().passwordChange) {
-                <div class="col-12 col-md-6 mb-3">
+                <div class="col-12 mb-3">
                   <label class="form-label" [for]="field.name">{{ field.label }}</label>
                   @if (field.relation) {
                     <select class="form-select" [id]="field.name" [formControlName]="field.name">
@@ -169,7 +169,7 @@
                         track option['id_universal']
                       ) {
                         <option [value]="option['id_universal']">
-                          {{ option[field.relation.displayField] }}
+                          {{ relationOptionLabel(field, option) }}
                         </option>
                       }
                     </select>
