@@ -13,7 +13,7 @@
         <i class="bi bi-sun-fill me-2"></i>Claro</button
       ><button type="button" (click)="setTheme('dark')">
         <i class="bi bi-moon-stars-fill me-2"></i>Oscuro</button
-      ><button type="button" [class.active]="theme() === 'auto'" (click)="setTheme('auto')">
+      ><button type="button" [class.active]="theme.mode() === 'auto'" (click)="setTheme('auto')">
         <i class="bi bi-circle-half me-2"></i>Auto
       </button>
     </div>
