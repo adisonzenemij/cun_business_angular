@@ -10,9 +10,9 @@
 
 .report-header, .report-survey-title { flex: 0 0 auto; }
 .report-header { margin-bottom: 1.5rem; }
-.report-content { flex: 1 1 auto; min-height: 0; }
-.report-content > [class*='col-'] { min-height: 0; }
-.report-surveys, .report-results { display: flex; flex-direction: column; min-height: 0; }
+.report-content { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.report-content > [class*='col-'] { min-height: 0; height: 100%; }
+.report-surveys, .report-results { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; height: 100%; }
 .report-surveys-list, .report-results-scroll { overflow-y: auto; min-height: 0; }
 .report-surveys-list { flex: 1 1 auto; }
 .report-results-scroll { flex: 1 1 auto; padding-right: .25rem; }
