@@ -265,6 +265,13 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     );
     return question ? `${question['fd_order']}. ${question['fd_ask']}` : String(questionId ?? '');
   }
+  managingQuestionValues(): boolean {
+    return this.config().resource === 'questions';
+  }
+  selectedQuestionDescription(): string {
+    const selected = this.selectedRecord();
+    return selected ? `${selected['fd_order']}. ${selected['fd_ask']}` : '';
+  }
   relationOptionLabel(field: CrudField, option: Record<string, unknown>): string {
     const displayValue = String(option[field.relation?.displayField ?? ''] ?? '');
     const orderBy = field.relation?.orderBy;
