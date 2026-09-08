@@ -25,6 +25,7 @@ export interface CrudField {
   label: string;
   type?: 'text' | 'number' | 'password' | 'date';
   required?: boolean;
+  showInTable?: boolean;
   relation?: { resource: string; displayField: string; orderBy?: string };
 }
 export interface CrudConfig {
@@ -193,6 +194,9 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       (option) => option['id_universal'] === value,
     );
     return related?.[field.relation.displayField] ?? value;
+  }
+  tableFields(): CrudField[] {
+    return this.config().fields.filter((field) => field.showInTable !== false);
   }
   relationOptionLabel(field: CrudField, option: Record<string, unknown>): string {
     const displayValue = String(option[field.relation?.displayField ?? ''] ?? '');

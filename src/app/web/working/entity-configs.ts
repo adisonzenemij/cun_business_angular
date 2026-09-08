@@ -15,7 +15,13 @@ export const ENTITY_CONFIGS: Record<string, CrudConfig> = {
     passwordChange: true,
     fields: [
       { name: 'fd_login', label: 'Usuario', required: true },
-      { name: 'fd_passd', label: 'Contraseña', type: 'password', required: true },
+      {
+        name: 'fd_passd',
+        label: 'Contraseña',
+        type: 'password',
+        required: true,
+        showInTable: false,
+      },
     ],
   },
   e5520e1e: {

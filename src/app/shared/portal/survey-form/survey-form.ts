@@ -158,6 +158,16 @@ export class SurveyForm implements OnDestroy {
     });
   }
 
+  private closeSurvey(): void {
+    this.answerForm.reset();
+    for (const controlName of Object.keys(this.answerForm.controls)) {
+      this.answerForm.removeControl(controlName);
+    }
+    this.questions.set([]);
+    this.values.set([]);
+    this.selectedSurvey.set(null);
+  }
+
   valuesFor(question: Question): Value[] {
     return this.values().filter((value) => value.pm_0acc84ae === question.id_universal);
   }
@@ -184,12 +194,12 @@ export class SurveyForm implements OnDestroy {
     )
       .subscribe({
         next: () => {
-          this.answerForm.reset();
           this.stopReservationRenewal();
           this.reservation.set(null);
           sessionStorage.removeItem(
             `survey-reservation-${this.selectedSurvey()!.id_universal}`,
           );
+          this.closeSurvey();
           this.message.set('Tus respuestas fueron enviadas correctamente.');
           this.submitting.set(false);
           this.loadAvailableSurveys();
