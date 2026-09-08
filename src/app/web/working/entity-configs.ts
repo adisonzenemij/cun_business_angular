@@ -81,6 +81,7 @@ export const ENTITY_CONFIGS: Record<string, CrudConfig> = {
     operations: write,
     fields: [
       { name: 'fd_option', label: 'Opción', required: true },
+      { name: 'fd_order', label: 'Orden', type: 'number', required: true },
       {
         name: 'pm_0acc84ae',
         label: 'Pregunta',
