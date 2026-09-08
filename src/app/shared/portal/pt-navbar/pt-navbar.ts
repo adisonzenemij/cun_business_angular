@@ -2,9 +2,10 @@ import { Component, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import Swal from 'sweetalert2';
 import { AuthSession } from '../../../services/core/auth-session';
+import { ThemeToggle } from '../../theme-toggle/theme-toggle';
 
 @Component({
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, ThemeToggle],
   selector: 'app-pt-navbar',
   styleUrl: './pt-navbar.css',
   templateUrl: './pt-navbar.html',

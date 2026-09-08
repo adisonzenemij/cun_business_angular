@@ -1,0 +1,21 @@
+<div class="theme-toggle">
+  <button
+    class="btn btn-light dropdown-toggle"
+    type="button"
+    (click)="open.set(!open())"
+    aria-label="Cambiar tema"
+  >
+    <i class="bi" [class]="icon()"></i>
+  </button>
+  @if (open()) {
+    <div class="theme-menu shadow">
+      <button type="button" (click)="setTheme('light')">
+        <i class="bi bi-sun-fill me-2"></i>Claro</button
+      ><button type="button" (click)="setTheme('dark')">
+        <i class="bi bi-moon-stars-fill me-2"></i>Oscuro</button
+      ><button type="button" [class.active]="theme() === 'auto'" (click)="setTheme('auto')">
+        <i class="bi bi-circle-half me-2"></i>Auto
+      </button>
+    </div>
+  }
+</div>

@@ -3,9 +3,10 @@ import { Router, RouterLink } from '@angular/router';
 import Swal from 'sweetalert2';
 import { AuthSession } from '../../../services/core/auth-session';
 import { SidebarState } from '../../../services/core/sidebar-state';
+import { ThemeToggle } from '../../theme-toggle/theme-toggle';
 
 @Component({
-  imports: [RouterLink],
+  imports: [RouterLink, ThemeToggle],
   selector: 'app-wg-navbar',
   styleUrl: './wg-navbar.css',
   templateUrl: './wg-navbar.html',
