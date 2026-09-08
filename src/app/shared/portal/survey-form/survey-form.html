@@ -51,6 +51,23 @@
                       <span class="text-danger" aria-label="Obligatoria">*</span>
                     }
                   </legend>
+                  @if (isScale(question)) {
+                    <div class="scale-options">
+                      @for (value of valuesFor(question); track value.id_universal) {
+                        <label class="scale-option" [for]="question.id_universal + '-' + value.id_universal">
+                          <span>{{ value.fd_option }}</span>
+                          <input
+                            class="form-check-input m-0"
+                            type="radio"
+                            [id]="question.id_universal + '-' + value.id_universal"
+                            [name]="question.id_universal"
+                            [value]="value.id_universal"
+                            [formControlName]="question.id_universal"
+                          />
+                        </label>
+                      }
+                    </div>
+                  } @else {
                   @for (value of valuesFor(question); track value.id_universal) {
                     <div class="form-check mb-2">
                       <input
@@ -68,6 +85,7 @@
                         {{ value.fd_option }}
                       </label>
                     </div>
+                  }
                   }
                 </fieldset>
               }

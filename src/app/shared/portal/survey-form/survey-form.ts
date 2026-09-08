@@ -172,6 +172,10 @@ export class SurveyForm implements OnDestroy {
     return this.values().filter((value) => value.pm_0acc84ae === question.id_universal);
   }
 
+  isScale(question: Question): boolean {
+    return question.fd_format === 'Escala';
+  }
+
   submit(): void {
     const reservation = this.reservation();
     if (!this.selectedSurvey() || !reservation || this.answerForm.invalid) {
