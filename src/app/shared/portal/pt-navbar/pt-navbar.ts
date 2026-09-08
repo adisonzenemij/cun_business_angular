@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import Swal from 'sweetalert2';
 import { AuthSession } from '../../../services/core/auth-session';
+import { SessionTimer } from '../../../services/core/session-timer';
 import { ThemeToggle } from '../../theme-toggle/theme-toggle';
 
 @Component({
@@ -12,6 +13,7 @@ import { ThemeToggle } from '../../theme-toggle/theme-toggle';
 })
 export class PtNavbar {
   readonly session = inject(AuthSession);
+  readonly sessionTimer = inject(SessionTimer);
   private readonly router = inject(Router);
   async logout(): Promise<void> {
     const result = await Swal.fire({

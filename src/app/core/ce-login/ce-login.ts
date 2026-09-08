@@ -5,6 +5,7 @@ import { finalize } from 'rxjs';
 import Swal from 'sweetalert2';
 import { FastAuth } from '../../services/backend/python/fast/fast-auth';
 import { AuthSession } from '../../services/core/auth-session';
+import { SessionTimer } from '../../services/core/session-timer';
 import { PtNavbar } from '../../shared/portal/pt-navbar/pt-navbar';
 import { PtFooter } from '../../shared/portal/pt-footer/pt-footer';
 
@@ -18,6 +19,7 @@ export class CeLogin {
   private readonly builder = inject(FormBuilder);
   private readonly auth = inject(FastAuth);
   private readonly session = inject(AuthSession);
+  private readonly sessionTimer = inject(SessionTimer);
   private readonly router = inject(Router);
   readonly loading = signal(false);
   readonly form = this.builder.nonNullable.group({
@@ -37,6 +39,7 @@ export class CeLogin {
       .subscribe({
         next: ({ access_token }) => {
           this.session.save(access_token);
+          this.sessionTimer.start();
           void this.router.navigate(['/working/dashboard']);
         },
         error: () => {

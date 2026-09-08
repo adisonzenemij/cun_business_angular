@@ -4,8 +4,13 @@
       <i class="bi bi-list fs-4"></i></button
     ><a class="navbar-brand" routerLink="/working/dashboard">Gestión</a>
     <div class="ms-auto d-flex gap-2 align-items-center">
-      <span class="navbar-text border border-light rounded px-2">{{ session.userName() }}</span
-      ><app-theme-toggle></app-theme-toggle
+      <span class="navbar-text border border-light rounded px-2">{{ session.userName() }}</span>
+      @if (sessionTimer.remainingTime(); as remainingTime) {
+        <span class="navbar-text border border-light rounded px-2">
+          <i class="bi bi-clock me-1"></i>{{ remainingTime }}
+        </span>
+      }
+      <app-theme-toggle></app-theme-toggle
       ><a class="btn btn-outline-light" routerLink="/portal/home">Portal</a
       ><button class="btn btn-outline-light" type="button" (click)="logout()">Cerrar sesión</button>
     </div>

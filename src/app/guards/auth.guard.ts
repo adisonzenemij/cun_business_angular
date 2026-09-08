@@ -3,4 +3,4 @@ import { CanActivateFn, Router } from '@angular/router';
 import { AuthSession } from '../services/core/auth-session';
 
 export const authGuard: CanActivateFn = () =>
-  inject(AuthSession).isAuthenticated() ? true : inject(Router).createUrlTree(['/login']);
+  inject(AuthSession).isAuthenticated() ? true : inject(Router).createUrlTree(['/portal/home']);

@@ -17,8 +17,13 @@
         @if (session.isAuthenticated()) {
           <span class="navbar-text text-white border border-light rounded px-2">{{
             session.userName()
-          }}</span
-          ><a class="btn btn-outline-light" routerLink="/working/dashboard">Gestión</a
+          }}</span>
+          @if (sessionTimer.remainingTime(); as remainingTime) {
+            <span class="navbar-text text-white border border-light rounded px-2">
+              <i class="bi bi-clock me-1"></i>{{ remainingTime }}
+            </span>
+          }
+          <a class="btn btn-outline-light" routerLink="/working/dashboard">Gestión</a
           ><button class="btn btn-outline-light" type="button" (click)="logout()">
             Cerrar sesión
           </button>
