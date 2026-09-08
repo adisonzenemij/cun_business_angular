@@ -1,4 +1,4 @@
-import { Component, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnDestroy, effect, inject, signal } from '@angular/core';
 import Highcharts from 'highcharts';
 import { forkJoin } from 'rxjs';
 import {
@@ -11,6 +11,7 @@ import {
   Survey,
   Value,
 } from '../../../services/backend/python/fast/fast-resources';
+import { Theme } from '../../../services/core/theme';
 
 interface QuestionReport {
   question: Question;
@@ -30,6 +31,7 @@ export class WgReport implements OnDestroy {
   private readonly questionsApi = inject(FtD2e6ded6);
   private readonly valuesApi = inject(FtD76a0e67);
   private readonly answersApi = inject(FtA5acf579);
+  private readonly theme = inject(Theme);
   private charts: Highcharts.Chart[] = [];
   private chartRenderTimer?: ReturnType<typeof setTimeout>;
   private chartRenderVersion = 0;
@@ -43,6 +45,10 @@ export class WgReport implements OnDestroy {
   readonly selectedSurvey = signal<Survey | null>(null);
 
   constructor() {
+    effect(() => {
+      this.theme.mode();
+      if (this.selectedSurvey()) this.scheduleCharts();
+    });
     this.load();
   }
 
@@ -136,7 +142,8 @@ export class WgReport implements OnDestroy {
 
   private renderCharts(reports: QuestionReport[]): void {
     this.destroyCharts();
-    const textColor = getComputedStyle(document.body).color || '#212529';
+    const isDarkTheme = document.documentElement.dataset['bsTheme'] === 'dark';
+    const textColor = isDarkTheme ? '#f8f9fa' : '#212529';
     const normalText: Highcharts.CSSObject = { color: textColor, fontWeight: '400' };
     for (const report of reports) {
       const categories = report.values.map((value) => value.fd_option);
