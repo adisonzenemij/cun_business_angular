@@ -4,9 +4,11 @@ import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { FastAuth } from '../../services/backend/python/fast/fast-auth';
 import { AuthSession } from '../../services/core/auth-session';
+import { PtNavbar } from '../../shared/portal/pt-navbar/pt-navbar';
+import { PtFooter } from '../../shared/portal/pt-footer/pt-footer';
 
 @Component({
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, PtNavbar, PtFooter],
   selector: 'app-ce-login',
   styleUrl: './ce-login.css',
   templateUrl: './ce-login.html',

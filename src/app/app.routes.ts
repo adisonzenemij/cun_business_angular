@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { CeLogin } from './core/ce-login/ce-login';
 import { PtHome } from './web/portal/pt-home/pt-home';
+import { Portal } from './web/portal/portal';
 import { Working } from './web/working/working';
 import { WgDashboard } from './web/working/wg-dashboard/wg-dashboard';
 import { MdE144c860 } from './web/working/md-e144c860/md-e144c860';
@@ -15,8 +16,8 @@ import { MdA5acf579 } from './web/working/md-a5acf579/md-a5acf579';
 import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'home' },
-  { path: 'home', component: PtHome },
+  { path: '', pathMatch: 'full', redirectTo: 'portal/home' },
+  { path: 'portal', component: Portal, children: [{ path: '', pathMatch: 'full', redirectTo: 'home' }, { path: 'home', component: PtHome }] },
   { path: 'login', component: CeLogin },
   { path: 'working', component: Working, canActivate: [authGuard], canActivateChild: [authGuard], children: [
     { path: '', pathMatch: 'full', redirectTo: 'dashboard' }, { path: 'dashboard', component: WgDashboard },
@@ -26,5 +27,5 @@ export const routes: Routes = [
     { path: 'd2e6ded6', component: MdD2e6ded6 }, { path: 'd76a0e67', component: MdD76a0e67 },
     { path: 'a5acf579', component: MdA5acf579 },
   ] },
-  { path: '**', redirectTo: 'home' },
+  { path: '**', redirectTo: 'portal/home' },
 ];

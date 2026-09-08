@@ -1,2 +1,1 @@
-<header class="working-header"><a routerLink="/home">Encuestas</a><a routerLink="/working/dashboard">Panel</a></header>
-<main class="working-main"><router-outlet /></main>
+<app-wg-navbar></app-wg-navbar><app-wg-sidebar></app-wg-sidebar><div class="working-content" [class.sidebar-visible]="sidebar.visible()"><main><router-outlet /></main><app-wg-footer></app-wg-footer></div>

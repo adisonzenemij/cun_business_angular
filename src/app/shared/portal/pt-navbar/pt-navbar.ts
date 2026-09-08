@@ -1,9 +1,15 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import Swal from 'sweetalert2';
+import { AuthSession } from '../../../services/core/auth-session';
 
 @Component({
-  imports: [],
+  imports: [RouterLink, RouterLinkActive],
   selector: 'app-pt-navbar',
   styleUrl: './pt-navbar.css',
   templateUrl: './pt-navbar.html',
 })
-export class PtNavbar {}
+export class PtNavbar {
+  readonly session = inject(AuthSession); private readonly router = inject(Router);
+  async logout(): Promise<void> { const result = await Swal.fire({ icon: 'warning', title: '¿Desea cerrar sesión?', showCancelButton: true, confirmButtonText: 'Continuar', cancelButtonText: 'Cancelar' }); if (result.isConfirmed) { this.session.clear(); void this.router.navigate(['/portal/home']); } }
+}
