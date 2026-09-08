@@ -111,7 +111,7 @@
               >
                 <td>{{ row['id_universal'] }}</td>
                 @for (field of config().fields; track field.name) {
-                  <td>{{ row[field.name] }}</td>
+                  <td>{{ displayValue(row, field) }}</td>
                 }
               </tr>
             }

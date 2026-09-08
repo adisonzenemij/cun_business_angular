@@ -1,5 +1,6 @@
 import {
   AfterViewInit,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   OnDestroy,
@@ -17,6 +18,7 @@ import {
 import { FastApi } from '../../../services/backend/python/fast/fast-api';
 import DataTable from 'datatables.net-bs5';
 import Swal from 'sweetalert2';
+import { forkJoin, map } from 'rxjs';
 
 export interface CrudField {
   name: string;
@@ -56,14 +58,17 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   });
   @ViewChild('dataTable') private readonly table?: ElementRef<HTMLTableElement>;
   private dataTable?: { destroy(remove?: boolean): unknown };
-  constructor(private readonly api: FastApi) {}
+  constructor(
+    private readonly api: FastApi,
+    private readonly changeDetectorRef: ChangeDetectorRef,
+  ) {}
   ngOnInit(): void {
     for (const field of this.config().fields)
       this.form.addControl(
         field.name,
         new UntypedFormBuilder().control('', field.required ? Validators.required : []),
       );
-    if (this.config().operations.select) this.load();
+    this.load();
   }
   ngAfterViewInit(): void {
     if (!this.config().operations.select) this.initializeDataTable();
@@ -71,12 +76,13 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   load(): void {
     this.loading.set(true);
     this.destroyDataTable();
+    this.rows.set([]);
+    if (this.table) this.changeDetectorRef.detectChanges();
     this.api.list<Record<string, unknown>>(this.config().resource).subscribe({
       next: (rows) => {
-        this.rows.set(rows);
+        this.rows.set(Array.isArray(rows) ? rows : []);
         this.selectedRecord.set(null);
-        this.loading.set(false);
-        setTimeout(() => this.initializeDataTable());
+        this.loadTableRelations();
       },
       error: () => {
         this.message.set('No fue posible consultar los registros.');
@@ -176,6 +182,14 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     this.form.patchValue(row);
     this.selectedRecord.set(row);
   }
+  displayValue(row: Record<string, unknown>, field: CrudField): unknown {
+    const value = row[field.name];
+    if (!field.relation) return value;
+    const related = this.relationOptions()[field.name]?.find(
+      (option) => option['id_universal'] === value,
+    );
+    return related?.[field.relation.displayField] ?? value;
+  }
   ngOnDestroy(): void {
     this.destroyDataTable();
   }
@@ -201,6 +215,34 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       });
     }
   }
+  private loadTableRelations(): void {
+    const relationFields = this.config().fields.filter((field) => field.relation);
+    if (!relationFields.length) {
+      this.finishTableLoad();
+      return;
+    }
+    forkJoin(
+      relationFields.map((field) =>
+        this.api
+          .list<Record<string, unknown>>(field.relation!.resource)
+          .pipe(map((options) => ({ field: field.name, options }))),
+      ),
+    ).subscribe({
+      next: (relations) => {
+        this.relationOptions.update((current) => ({
+          ...current,
+          ...Object.fromEntries(relations.map(({ field, options }) => [field, options])),
+        }));
+        this.finishTableLoad();
+      },
+      error: () => this.finishTableLoad(),
+    });
+  }
+  private finishTableLoad(): void {
+    this.loading.set(false);
+    if (this.table) this.changeDetectorRef.detectChanges();
+    setTimeout(() => this.initializeDataTable());
+  }
   private destroyDataTable(): void {
     this.dataTable?.destroy();
     this.dataTable = undefined;
@@ -217,7 +259,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       text: 'La operación se completó correctamente.',
       confirmButtonText: 'Aceptar',
     });
-    if (this.config().operations.select) this.load();
+    this.load();
   }
   private failed(): void {
     this.message.set('La operación no pudo completarse. Revisa los datos y permisos.');

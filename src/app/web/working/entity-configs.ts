@@ -1,6 +1,6 @@
 import { CrudConfig } from '../../shared/working/entity-crud/entity-crud';
 const full = { select: true, insert: true, update: true, delete: true };
-const write = { insert: true, update: true, delete: true };
+const write = { select: true, insert: true, update: true, delete: true };
 export const ENTITY_CONFIGS: Record<string, CrudConfig> = {
   e144c860: {
     title: 'Orígenes CORS',
@@ -21,7 +21,7 @@ export const ENTITY_CONFIGS: Record<string, CrudConfig> = {
   e5520e1e: {
     title: 'Anónimos',
     resource: 'anonymous',
-    operations: { select: true, update: true, delete: true },
+    operations: full,
     fields: [{ name: 'fd_random', label: 'Aleatorio', required: true }],
   },
   a6aedeb5: {
