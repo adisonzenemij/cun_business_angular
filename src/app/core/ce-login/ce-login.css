@@ -19,6 +19,6 @@
   flex: 0 0 auto;
 }
 .error {
-  color: #ffb4ab;
+  color: var(--bs-danger);
   margin: 0.75rem 0 0;
 }

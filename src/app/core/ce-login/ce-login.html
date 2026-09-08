@@ -1,10 +1,10 @@
 <app-pt-navbar></app-pt-navbar>
-<main class="auth-page bg-dark text-light">
+<main class="auth-page bg-body text-body">
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-12 col-sm-10 col-md-8 col-lg-5">
         <form
-          class="login-card card bg-dark border-secondary shadow"
+          class="login-card card bg-body border shadow"
           [formGroup]="form"
           (ngSubmit)="submit()"
         >
@@ -17,7 +17,7 @@
               <span class="input-group-text bg-body-tertiary"><i class="bi bi-person"></i></span
               ><input
                 id="fd_login"
-                class="form-control bg-dark text-light"
+                class="form-control bg-body text-body"
                 formControlName="fd_login"
                 autocomplete="username"
                 [readOnly]="loading()"
@@ -31,7 +31,7 @@
               <span class="input-group-text bg-body-tertiary"><i class="bi bi-lock"></i></span
               ><input
                 id="fd_passd"
-                class="form-control bg-dark text-light"
+                class="form-control bg-body text-body"
                 type="password"
                 formControlName="fd_passd"
                 autocomplete="current-password"
