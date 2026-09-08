@@ -1,8 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { environment } from '../../../../../environments/environment';
 
-export const FAST_API_URL = 'http://127.0.0.1:8000/api/v1';
+export const FAST_API_URL = `${environment.apiUrl}/api/v1`;
 export interface Page<T> { offset: number; limit: number; total: number; items: T[]; }
 
 @Injectable({ providedIn: 'root' })
