@@ -1,8 +1,10 @@
 <nav class="navbar navbar-expand-lg bg-primary fixed-top" data-bs-theme="dark">
   <div class="container-fluid">
     <button class="btn btn-outline-light border-0 me-2" type="button" (click)="sidebar.toggle()">
-      <i class="bi bi-list"></i></button
-    ><a class="navbar-brand" routerLink="/working/dashboard">Gestión</a>
+      <i class="bi bi-list"></i>
+    </button>
+    <a class="navbar-brand" routerLink="/working/dashboard">Gestión</a>
+    <a class="nav-link text-white ms-2" routerLink="/working/report" routerLinkActive="fw-semibold">Reportes</a>
     <div class="ms-auto d-flex gap-2 align-items-center">
       <span class="navbar-text border border-light rounded px-2">{{ session.userName() }}</span>
       @if (sessionTimer.remainingTime(); as remainingTime) {
@@ -10,9 +12,9 @@
           <i class="bi bi-clock me-1"></i>{{ remainingTime }}
         </span>
       }
-      <app-theme-toggle></app-theme-toggle
-      ><a class="btn btn-outline-light" routerLink="/portal/home">Portal</a
-      ><button class="btn btn-outline-light" type="button" (click)="logout()">Cerrar sesión</button>
+      <app-theme-toggle></app-theme-toggle>
+      <a class="btn btn-outline-light" routerLink="/portal/home">Portal</a>
+      <button class="btn btn-outline-light" type="button" (click)="logout()">Cerrar sesión</button>
     </div>
   </div>
 </nav>

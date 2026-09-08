@@ -1,0 +1,9 @@
+.report-page { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+.report-surveys { position: sticky; top: 5rem; }
+.report-surveys .card-header, .report-question .card-header { font-weight: 600; }
+.report-surveys .list-group-item { text-align: left; }
+.report-surveys .list-group-item.active small { color: inherit; }
+.report-question .card-header { align-items: center; }
+.report-chart { min-height: 320px; width: 100%; }
+.report-empty { min-height: 260px; }
+@media (max-width: 991.98px) { .report-surveys { position: static; } }

@@ -14,6 +14,7 @@ import { MdD2e6ded6 } from './web/working/md-d2e6ded6/md-d2e6ded6';
 import { MdD76a0e67 } from './web/working/md-d76a0e67/md-d76a0e67';
 import { MdA5acf579 } from './web/working/md-a5acf579/md-a5acf579';
 import { authGuard } from './guards/auth.guard';
+import { loginGuard } from './guards/login.guard';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'portal/home' },
@@ -25,7 +26,7 @@ export const routes: Routes = [
       { path: 'home', component: PtHome },
     ],
   },
-  { path: 'login', component: CeLogin },
+  { path: 'login', component: CeLogin, canActivate: [loginGuard] },
   {
     path: 'working',
     component: Working,
@@ -34,6 +35,10 @@ export const routes: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       { path: 'dashboard', component: WgDashboard },
+      {
+        path: 'report',
+        loadComponent: () => import('./web/working/wg-report/wg-report').then((module) => module.WgReport),
+      },
       { path: 'e144c860', component: MdE144c860 },
       { path: 'b64883b6', component: MdB64883b6 },
       { path: 'e5520e1e', component: MdE5520e1e },

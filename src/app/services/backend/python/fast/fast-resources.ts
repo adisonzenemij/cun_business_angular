@@ -45,6 +45,7 @@ export interface Question {
 export interface Value {
   id_universal: string;
   fd_option: string;
+  fd_order?: number;
   pm_0acc84ae: string;
 }
 export interface Answer {
