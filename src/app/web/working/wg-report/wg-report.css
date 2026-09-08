@@ -1,11 +1,11 @@
 .report-page {
   display: flex;
   flex-direction: column;
-  height: calc(100dvh - 9.5rem);
+  height: calc(100dvh - 7.5rem);
   min-height: 0;
   overflow: hidden;
-  padding-top: 1.5rem;
-  padding-bottom: 1.5rem;
+  padding-top: .5rem;
+  padding-bottom: .5rem;
 }
 
 .report-header, .report-survey-title { flex: 0 0 auto; }
@@ -17,8 +17,22 @@
 .report-surveys-list { flex: 1 1 auto; }
 .report-results-scroll { flex: 1 1 auto; padding-right: .25rem; }
 .report-surveys .card-header, .report-question .card-header { font-weight: 600; }
-.report-surveys .list-group-item { text-align: left; }
-.report-surveys .list-group-item.active small { color: inherit; }
+.report-survey-item {
+  background-color: var(--bs-body-bg);
+  text-align: left;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.report-survey-item.active {
+  border-color: var(--bs-primary) !important;
+  box-shadow: 0 0 0 .2rem rgba(var(--bs-primary-rgb), .25) !important;
+}
+.report-survey-item.active .text-body-secondary { color: inherit !important; }
+.report-survey-item:hover { border-color: var(--bs-primary) !important; transform: translateY(-1px); }
+[data-bs-theme='dark'] .report-survey-item:not(.active) {
+  background-color: #252a2f;
+  border-color: #4b5560 !important;
+  color: #f8f9fa;
+}
 .report-question .card-header { align-items: center; }
 .report-chart { min-height: 320px; width: 100%; }
 .report-empty { min-height: 260px; }

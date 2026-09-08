@@ -11,24 +11,30 @@
 
   <div class="row g-4 report-content">
     <aside class="col-12 col-lg-3 d-flex min-h-0">
-      <div class="card report-surveys h-100 w-100">
-        <div class="card-header"><i class="bi bi-clipboard-data me-2"></i>Encuestas</div>
-        <div class="list-group list-group-flush report-surveys-list">
+      <section class="report-surveys w-100">
+        <div class="card report-surveys-heading shadow-sm border mb-3">
+          <header class="card-header bg-primary text-white"><i class="bi bi-card-checklist me-2"></i>Encuestas</header>
+        </div>
+        <div class="report-surveys-list">
           @if (loading()) {
           <div class="list-group-item text-body-secondary">Cargando encuestas...</div>
           } @else {
           @for (survey of surveys(); track survey.id_universal) {
-          <button type="button" class="list-group-item list-group-item-action"
-            [class.active]="selectedSurvey()?.id_universal === survey.id_universal" (click)="selectSurvey(survey)">
-            <span class="d-block fw-semibold">{{ survey.fd_name }}</span>
-            <small><i class="bi bi-question-circle me-1"></i>{{ survey.fd_query }} preguntas</small>
+          <button type="button" class="card report-survey-item shadow-sm border w-100 mb-3"
+            [class.active]="selectedSurvey()?.id_universal === survey.id_universal"
+            [attr.aria-pressed]="selectedSurvey()?.id_universal === survey.id_universal"
+            (click)="selectSurvey(survey)">
+            <span class="card-body p-3">
+              <span class="d-block fw-semibold">{{ survey.fd_name }}</span>
+              <small class="text-body-secondary"><i class="bi bi-question-circle me-1"></i>{{ survey.fd_query }} preguntas</small>
+            </span>
           </button>
           } @empty {
-          <div class="list-group-item text-body-secondary">No hay encuestas disponibles.</div>
+            <div class="card border shadow-sm text-body-secondary p-3 text-center">No hay encuestas disponibles.</div>
           }
           }
         </div>
-      </div>
+      </section>
     </aside>
 
     <div class="col-12 col-lg-9 d-flex min-h-0">

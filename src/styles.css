@@ -5,6 +5,11 @@
 body {
   background: var(--bs-body-bg);
 }
+@media (min-width: 992px) {
+  html:has(app-wg-report), body:has(app-wg-report) {
+    overflow: hidden;
+  }
+}
 * {
   scrollbar-color: var(--bs-secondary-color) var(--bs-tertiary-bg);
   scrollbar-width: thin;

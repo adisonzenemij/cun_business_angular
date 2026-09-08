@@ -15,8 +15,22 @@
 .working-content.sidebar-visible {
   margin-left: 17.5rem;
 }
+/* Reportes administra su propio desplazamiento: la vista no usa el del documento. */
+.working-content:has(app-wg-report) {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+.working-content main:has(app-wg-report) {
+  min-height: 0;
+  overflow: hidden;
+  padding-top: .5rem;
+  padding-bottom: .5rem;
+}
 @media (max-width: 991.98px) {
   .working-content.sidebar-visible {
     margin-left: 0;
   }
+  .working-content:has(app-wg-report) { height: auto; overflow: visible; }
+  .working-content main:has(app-wg-report) { overflow: visible; }
 }

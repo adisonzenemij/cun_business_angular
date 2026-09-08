@@ -31,6 +31,8 @@ export class WgReport implements OnDestroy {
   private readonly valuesApi = inject(FtD76a0e67);
   private readonly answersApi = inject(FtA5acf579);
   private charts: Highcharts.Chart[] = [];
+  private chartRenderTimer?: ReturnType<typeof setTimeout>;
+  private chartRenderVersion = 0;
 
   readonly loading = signal(true);
   readonly error = signal('');
@@ -92,6 +94,12 @@ export class WgReport implements OnDestroy {
   }
 
   selectSurvey(survey: Survey): void {
+    if (this.selectedSurvey()?.id_universal === survey.id_universal) {
+      this.selectedSurvey.set(null);
+      this.cancelChartRender();
+      this.destroyCharts();
+      return;
+    }
     this.selectedSurvey.set(survey);
     this.scheduleCharts();
   }
@@ -101,16 +109,34 @@ export class WgReport implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.cancelChartRender();
     this.destroyCharts();
   }
 
-  private scheduleCharts(): void {
-    setTimeout(() => this.renderCharts());
+  private scheduleCharts(attempt = 0): void {
+    const version = ++this.chartRenderVersion;
+    if (this.chartRenderTimer) clearTimeout(this.chartRenderTimer);
+    this.chartRenderTimer = setTimeout(() => {
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (version !== this.chartRenderVersion) return;
+        const reports = this.reports;
+        const ready = reports.every((report) => {
+          const bar = document.getElementById(`report-bar-${report.question.id_universal}`);
+          const pie = document.getElementById(`report-pie-${report.question.id_universal}`);
+          return !!bar && !!pie && bar.clientWidth > 0 && pie.clientWidth > 0;
+        });
+        if (!ready && attempt < 8) {
+          this.scheduleCharts(attempt + 1);
+          return;
+        }
+        this.renderCharts(reports);
+      }));
+    }, attempt ? 75 : 0);
   }
 
-  private renderCharts(): void {
+  private renderCharts(reports: QuestionReport[]): void {
     this.destroyCharts();
-    for (const report of this.reports) {
+    for (const report of reports) {
       const categories = report.values.map((value) => value.fd_option);
       const colors = ['#0d6efd', '#20c997', '#ffc107', '#dc3545', '#6f42c1', '#0dcaf0', '#fd7e14'];
       const common: Highcharts.Options = {
@@ -149,10 +175,17 @@ export class WgReport implements OnDestroy {
         }),
       );
     }
+    setTimeout(() => this.charts.forEach((chart) => chart.reflow()));
   }
 
   private destroyCharts(): void {
     this.charts.forEach((chart) => chart.destroy());
     this.charts = [];
+  }
+
+  private cancelChartRender(): void {
+    this.chartRenderVersion++;
+    if (this.chartRenderTimer) clearTimeout(this.chartRenderTimer);
+    this.chartRenderTimer = undefined;
   }
 }
