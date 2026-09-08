@@ -8,4 +8,6 @@ import { ENTITY_CONFIGS } from '../entity-configs';
   styleUrl: './md-e144c860.css',
   templateUrl: './md-e144c860.html',
 })
-export class MdE144c860 { readonly config = ENTITY_CONFIGS['e144c860']; }
+export class MdE144c860 {
+  readonly config = ENTITY_CONFIGS['e144c860'];
+}

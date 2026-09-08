@@ -2,6 +2,14 @@
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 @import 'datatables.net-bs5/css/dataTables.bootstrap5.css';
 
-body { background: var(--bs-body-bg); }
-*{scrollbar-color:var(--bs-secondary-color) var(--bs-tertiary-bg);scrollbar-width:thin}
-[data-bs-theme='dark'] .swal2-popup{background:var(--bs-dark);color:var(--bs-light)}
+body {
+  background: var(--bs-body-bg);
+}
+* {
+  scrollbar-color: var(--bs-secondary-color) var(--bs-tertiary-bg);
+  scrollbar-width: thin;
+}
+[data-bs-theme='dark'] .swal2-popup {
+  background: var(--bs-dark);
+  color: var(--bs-light);
+}

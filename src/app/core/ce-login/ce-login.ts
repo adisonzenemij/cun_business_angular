@@ -26,11 +26,22 @@ export class CeLogin {
   });
 
   submit(): void {
-    if (this.form.invalid || this.loading()) { this.form.markAllAsTouched(); return; }
-    this.error.set(''); this.loading.set(true);
-    this.auth.login(this.form.getRawValue()).pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: ({ access_token }) => { this.session.save(access_token); void this.router.navigate(['/working/dashboard']); },
-      error: () => this.error.set('No fue posible iniciar sesión. Verifica tus credenciales y el backend.'),
-    });
+    if (this.form.invalid || this.loading()) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    this.error.set('');
+    this.loading.set(true);
+    this.auth
+      .login(this.form.getRawValue())
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: ({ access_token }) => {
+          this.session.save(access_token);
+          void this.router.navigate(['/working/dashboard']);
+        },
+        error: () =>
+          this.error.set('No fue posible iniciar sesión. Verifica tus credenciales y el backend.'),
+      });
   }
 }

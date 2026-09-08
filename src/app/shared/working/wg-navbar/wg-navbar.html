@@ -1,1 +1,12 @@
-<nav class="navbar navbar-expand-lg bg-primary fixed-top" data-bs-theme="dark"><div class="container-fluid"><button class="btn btn-outline-light border-0 me-2" type="button" (click)="sidebar.toggle()"><i class="bi bi-list fs-4"></i></button><a class="navbar-brand" routerLink="/working/dashboard">Gestión</a><div class="ms-auto d-flex gap-2 align-items-center"><span class="navbar-text border border-light rounded px-2">{{ session.userName() }}</span><a class="btn btn-outline-light" routerLink="/portal/home">Portal</a><button class="btn btn-outline-light" type="button" (click)="logout()">Cerrar sesión</button></div></div></nav>
+<nav class="navbar navbar-expand-lg bg-primary fixed-top" data-bs-theme="dark">
+  <div class="container-fluid">
+    <button class="btn btn-outline-light border-0 me-2" type="button" (click)="sidebar.toggle()">
+      <i class="bi bi-list fs-4"></i></button
+    ><a class="navbar-brand" routerLink="/working/dashboard">Gestión</a>
+    <div class="ms-auto d-flex gap-2 align-items-center">
+      <span class="navbar-text border border-light rounded px-2">{{ session.userName() }}</span
+      ><a class="btn btn-outline-light" routerLink="/portal/home">Portal</a
+      ><button class="btn btn-outline-light" type="button" (click)="logout()">Cerrar sesión</button>
+    </div>
+  </div>
+</nav>

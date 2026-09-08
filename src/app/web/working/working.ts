@@ -11,4 +11,6 @@ import { SidebarState } from '../../services/core/sidebar-state';
   styleUrl: './working.css',
   templateUrl: './working.html',
 })
-export class Working { readonly sidebar = inject(SidebarState); }
+export class Working {
+  readonly sidebar = inject(SidebarState);
+}

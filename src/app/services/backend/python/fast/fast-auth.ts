@@ -2,8 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { FastApi, FAST_API_URL } from './fast-api';
 
-export interface LoginRequest { fd_login: string; fd_passd: string; }
-export interface LoginResponse { access_token: string; token_type: 'bearer'; }
+export interface LoginRequest {
+  fd_login: string;
+  fd_passd: string;
+}
+export interface LoginResponse {
+  access_token: string;
+  token_type: 'bearer';
+}
 
 @Injectable({ providedIn: 'root' })
 export class FastAuth {

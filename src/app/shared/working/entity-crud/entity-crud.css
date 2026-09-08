@@ -1,1 +1,54 @@
-.crud{display:grid;gap:1rem;padding:1rem}.crud header,.actions{display:flex;gap:.6rem;align-items:center}.crud form{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.75rem}.crud label{display:grid;gap:.3rem;font-weight:600}.crud input,.crud button{padding:.5rem;border:1px solid #cbd5e1;border-radius:.3rem}.crud button{cursor:pointer;background:#0f4c81;color:#fff}.crud .danger{background:#b42318}.message{color:#475569}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse}th,td{padding:.5rem;border-bottom:1px solid #e2e8f0;text-align:left}tbody tr{cursor:pointer}
+.crud {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+.crud header,
+.actions {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+.crud form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.75rem;
+}
+.crud label {
+  display: grid;
+  gap: 0.3rem;
+  font-weight: 600;
+}
+.crud input,
+.crud button {
+  padding: 0.5rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.3rem;
+}
+.crud button {
+  cursor: pointer;
+  background: #0f4c81;
+  color: #fff;
+}
+.crud .danger {
+  background: #b42318;
+}
+.message {
+  color: #475569;
+}
+.table-wrap {
+  overflow: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th,
+td {
+  padding: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+}
+tbody tr {
+  cursor: pointer;
+}

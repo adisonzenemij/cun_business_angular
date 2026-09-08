@@ -8,4 +8,6 @@ import { SidebarState } from '../../../services/core/sidebar-state';
   styleUrl: './wg-sidebar.css',
   templateUrl: './wg-sidebar.html',
 })
-export class WgSidebar { readonly sidebar = inject(SidebarState); }
+export class WgSidebar {
+  readonly sidebar = inject(SidebarState);
+}

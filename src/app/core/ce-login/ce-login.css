@@ -1,1 +1,24 @@
-:host{display:flex;flex-direction:column;min-height:100dvh}:host>app-pt-navbar{flex:0 0 56px}.auth-page{display:flex;align-items:center;flex:1;padding-block:1.5rem}.auth-page .container{width:100%}:host>app-pt-footer{flex:0 0 auto}.error{color:#ffb4ab;margin:.75rem 0 0}
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+:host > app-pt-navbar {
+  flex: 0 0 56px;
+}
+.auth-page {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  padding-block: 1.5rem;
+}
+.auth-page .container {
+  width: 100%;
+}
+:host > app-pt-footer {
+  flex: 0 0 auto;
+}
+.error {
+  color: #ffb4ab;
+  margin: 0.75rem 0 0;
+}

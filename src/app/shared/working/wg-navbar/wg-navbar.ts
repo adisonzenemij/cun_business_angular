@@ -10,4 +10,21 @@ import { SidebarState } from '../../../services/core/sidebar-state';
   styleUrl: './wg-navbar.css',
   templateUrl: './wg-navbar.html',
 })
-export class WgNavbar { readonly sidebar = inject(SidebarState); readonly session = inject(AuthSession); private readonly router = inject(Router); async logout(): Promise<void> { const result=await Swal.fire({icon:'warning',title:'¿Desea cerrar sesión?',showCancelButton:true,confirmButtonText:'Continuar',cancelButtonText:'Cancelar'}); if(result.isConfirmed){this.session.clear();void this.router.navigate(['/portal/home']);} } }
+export class WgNavbar {
+  readonly sidebar = inject(SidebarState);
+  readonly session = inject(AuthSession);
+  private readonly router = inject(Router);
+  async logout(): Promise<void> {
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: '¿Desea cerrar sesión?',
+      showCancelButton: true,
+      confirmButtonText: 'Continuar',
+      cancelButtonText: 'Cancelar',
+    });
+    if (result.isConfirmed) {
+      this.session.clear();
+      void this.router.navigate(['/portal/home']);
+    }
+  }
+}

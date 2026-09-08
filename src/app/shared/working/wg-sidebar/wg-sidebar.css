@@ -1,1 +1,16 @@
-.working-sidebar{position:fixed;z-index:1020;top:56px;bottom:0;left:0;width:17.5rem;overflow-y:auto}.working-sidebar .nav-link{color:var(--bs-body-color)}.working-sidebar .nav-link.active{background:var(--bs-primary);color:#fff}
+.working-sidebar {
+  position: fixed;
+  z-index: 1020;
+  top: 56px;
+  bottom: 0;
+  left: 0;
+  width: 17.5rem;
+  overflow-y: auto;
+}
+.working-sidebar .nav-link {
+  color: var(--bs-body-color);
+}
+.working-sidebar .nav-link.active {
+  background: var(--bs-primary);
+  color: #fff;
+}

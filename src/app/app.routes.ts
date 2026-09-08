@@ -17,15 +17,33 @@ import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'portal/home' },
-  { path: 'portal', component: Portal, children: [{ path: '', pathMatch: 'full', redirectTo: 'home' }, { path: 'home', component: PtHome }] },
+  {
+    path: 'portal',
+    component: Portal,
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'home' },
+      { path: 'home', component: PtHome },
+    ],
+  },
   { path: 'login', component: CeLogin },
-  { path: 'working', component: Working, canActivate: [authGuard], canActivateChild: [authGuard], children: [
-    { path: '', pathMatch: 'full', redirectTo: 'dashboard' }, { path: 'dashboard', component: WgDashboard },
-    { path: 'e144c860', component: MdE144c860 }, { path: 'b64883b6', component: MdB64883b6 },
-    { path: 'e5520e1e', component: MdE5520e1e }, { path: 'a6aedeb5', component: MdA6aedeb5 },
-    { path: 'a3b378b4', component: MdA3b378b4 }, { path: 'd5fb87de', component: MdD5fb87de },
-    { path: 'd2e6ded6', component: MdD2e6ded6 }, { path: 'd76a0e67', component: MdD76a0e67 },
-    { path: 'a5acf579', component: MdA5acf579 },
-  ] },
+  {
+    path: 'working',
+    component: Working,
+    canActivate: [authGuard],
+    canActivateChild: [authGuard],
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+      { path: 'dashboard', component: WgDashboard },
+      { path: 'e144c860', component: MdE144c860 },
+      { path: 'b64883b6', component: MdB64883b6 },
+      { path: 'e5520e1e', component: MdE5520e1e },
+      { path: 'a6aedeb5', component: MdA6aedeb5 },
+      { path: 'a3b378b4', component: MdA3b378b4 },
+      { path: 'd5fb87de', component: MdD5fb87de },
+      { path: 'd2e6ded6', component: MdD2e6ded6 },
+      { path: 'd76a0e67', component: MdD76a0e67 },
+      { path: 'a5acf579', component: MdA5acf579 },
+    ],
+  },
   { path: '**', redirectTo: 'portal/home' },
 ];
