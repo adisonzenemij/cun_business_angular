@@ -2,6 +2,15 @@ import { CrudConfig } from '../../shared/working/entity-crud/entity-crud';
 const full = { select: true, insert: true, update: true, delete: true };
 const write = { select: true, insert: true, update: true, delete: true };
 export const ENTITY_CONFIGS: Record<string, CrudConfig> = {
+  a1cc27fb: {
+    title: 'Sociedades',
+    resource: 'societies',
+    operations: full,
+    fields: [
+      { name: 'fd_company', label: 'Empresa', required: true },
+      { name: 'fd_document', label: 'Documento', required: true },
+    ],
+  },
   a7b95fe8: {
     title: 'Métodos',
     resource: 'methods',
