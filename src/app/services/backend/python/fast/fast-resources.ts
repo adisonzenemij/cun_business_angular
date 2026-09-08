@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { FastApi } from './fast-api';
+import { FAST_API_URL, FastApi } from './fast-api';
 
 export interface CorsOrigin {
   id_universal: string;
@@ -13,6 +13,8 @@ export interface User {
 export interface Anonymous {
   id_universal: string;
   fd_random: string;
+  pm_4d802b91: string | null;
+  fd_reservation_key: string | null;
 }
 export interface Scope {
   id_universal: string;
@@ -87,6 +89,18 @@ export class FtE5520e1e extends Resource<Anonymous> {
   constructor() {
     super('anonymous');
   }
+
+  release(id: string, fd_reservation_key: string): Observable<void> {
+    return this.api.http.post<void>(`${FAST_API_URL}/anonymous/${id}/release`, {
+      fd_reservation_key,
+    });
+  }
+
+  renew(id: string, fd_reservation_key: string): Observable<Anonymous> {
+    return this.api.http.post<Anonymous>(`${FAST_API_URL}/anonymous/${id}/renew`, {
+      fd_reservation_key,
+    });
+  }
 }
 @Injectable({ providedIn: 'root' })
 export class FtA6aedeb5 extends Resource<Scope> {
@@ -104,6 +118,10 @@ export class FtA3b378b4 extends Resource<Type> {
 export class FtD5fb87de extends Resource<Survey> {
   constructor() {
     super('surveys');
+  }
+
+  listAvailable(): Observable<Survey[]> {
+    return this.api.list<Survey>('surveys/available');
   }
 }
 @Injectable({ providedIn: 'root' })

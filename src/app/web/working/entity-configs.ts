@@ -22,7 +22,16 @@ export const ENTITY_CONFIGS: Record<string, CrudConfig> = {
     title: 'Anónimos',
     resource: 'anonymous',
     operations: full,
-    fields: [{ name: 'fd_random', label: 'Aleatorio', required: true }],
+    fields: [
+      { name: 'fd_random', label: 'Aleatorio' },
+      { name: 'fd_reservation_key', label: 'Clave de reserva', required: true },
+      {
+        name: 'pm_4d802b91',
+        label: 'Encuesta',
+        required: true,
+        relation: { resource: 'surveys', displayField: 'fd_name' },
+      },
+    ],
   },
   a6aedeb5: {
     title: 'Alcances',

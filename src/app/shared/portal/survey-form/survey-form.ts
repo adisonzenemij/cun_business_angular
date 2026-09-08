@@ -1,17 +1,18 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnDestroy, inject, signal } from '@angular/core';
 import {
   ReactiveFormsModule,
   UntypedFormBuilder,
   UntypedFormGroup,
   Validators,
 } from '@angular/forms';
-import { forkJoin, switchMap } from 'rxjs';
+import { forkJoin } from 'rxjs';
 import {
   FtA5acf579,
   FtD2e6ded6,
   FtD5fb87de,
   FtD76a0e67,
   FtE5520e1e,
+  Anonymous,
   Question,
   Survey,
   Value,
@@ -23,7 +24,7 @@ import {
   templateUrl: './survey-form.html',
   styleUrl: './survey-form.css',
 })
-export class SurveyForm {
+export class SurveyForm implements OnDestroy {
   private readonly surveysApi = inject(FtD5fb87de);
   private readonly questionsApi = inject(FtD2e6ded6);
   private readonly valuesApi = inject(FtD76a0e67);
@@ -34,12 +35,14 @@ export class SurveyForm {
   readonly questions = signal<Question[]>([]);
   readonly values = signal<Value[]>([]);
   readonly selectedSurvey = signal<Survey | null>(null);
+  readonly reservation = signal<Anonymous | null>(null);
   readonly loadingDetails = signal(false);
   readonly submitting = signal(false);
   readonly answerForm: UntypedFormGroup = this.formBuilder.group({});
   readonly message = signal('Cargando encuestas…');
+  private reservationRenewal?: ReturnType<typeof setInterval>;
   constructor() {
-    this.surveysApi.list().subscribe({
+    this.surveysApi.listAvailable().subscribe({
       next: (surveys) => {
         this.surveys.set(surveys);
         this.message.set(
@@ -53,8 +56,13 @@ export class SurveyForm {
     });
   }
 
+  ngOnDestroy(): void {
+    this.releaseReservation();
+  }
+
   selectSurvey(survey: Survey): void {
     if (this.selectedSurvey()?.id_universal === survey.id_universal) return;
+    this.releaseReservation();
     this.selectedSurvey.set(survey);
     this.questions.set([]);
     this.values.set([]);
@@ -62,7 +70,29 @@ export class SurveyForm {
     for (const controlName of Object.keys(this.answerForm.controls))
       this.answerForm.removeControl(controlName);
     this.loadingDetails.set(true);
+    const fd_reservation_key = this.reservationKey(survey.id_universal);
+    this.anonymousApi
+      .create({
+        fd_random: '',
+        pm_4d802b91: survey.id_universal,
+        fd_reservation_key,
+      })
+      .subscribe({
+        next: (reservation) => {
+          this.reservation.set(reservation);
+          this.startReservationRenewal();
+          this.loadSurveyDetails(survey);
+        },
+        error: () => {
+          this.selectedSurvey.set(null);
+          this.loadingDetails.set(false);
+          this.message.set('Esta encuesta ya no está disponible o alcanzó su límite.');
+          this.loadAvailableSurveys();
+        },
+      });
+  }
 
+  private loadSurveyDetails(survey: Survey): void {
     forkJoin({ questions: this.questionsApi.list(), values: this.valuesApi.list() }).subscribe({
       next: ({ questions, values }) => {
         const surveyQuestions = questions
@@ -85,12 +115,55 @@ export class SurveyForm {
     });
   }
 
+  private releaseReservation(): void {
+    const reservation = this.reservation();
+    this.stopReservationRenewal();
+    if (!reservation?.fd_reservation_key) return;
+    this.reservation.set(null);
+    this.anonymousApi.release(reservation.id_universal, reservation.fd_reservation_key).subscribe({
+      error: () => undefined,
+    });
+  }
+
+  private reservationKey(surveyId: string): string {
+    const storageKey = `survey-reservation-${surveyId}`;
+    const stored = sessionStorage.getItem(storageKey);
+    if (stored) return stored;
+    const key = crypto.randomUUID();
+    sessionStorage.setItem(storageKey, key);
+    return key;
+  }
+
+  private startReservationRenewal(): void {
+    this.stopReservationRenewal();
+    this.reservationRenewal = setInterval(() => {
+      const reservation = this.reservation();
+      if (!reservation?.fd_reservation_key) return;
+      this.anonymousApi.renew(reservation.id_universal, reservation.fd_reservation_key).subscribe({
+        next: (renewed) => this.reservation.set(renewed),
+        error: () => this.stopReservationRenewal(),
+      });
+    }, 5 * 60 * 1000);
+  }
+
+  private stopReservationRenewal(): void {
+    if (this.reservationRenewal) clearInterval(this.reservationRenewal);
+    this.reservationRenewal = undefined;
+  }
+
+  private loadAvailableSurveys(): void {
+    this.surveysApi.listAvailable().subscribe({
+      next: (surveys) => this.surveys.set(surveys),
+    });
+  }
+
   valuesFor(question: Question): Value[] {
     return this.values().filter((value) => value.pm_0acc84ae === question.id_universal);
   }
 
   submit(): void {
-    if (!this.selectedSurvey() || this.answerForm.invalid) {
+    const reservation = this.reservation();
+    if (!this.selectedSurvey() || !reservation || this.answerForm.invalid) {
       this.answerForm.markAllAsTouched();
       return;
     }
@@ -98,27 +171,27 @@ export class SurveyForm {
       .map((question) => this.answerForm.controls[question.id_universal]?.value as string)
       .filter(Boolean);
     this.submitting.set(true);
-    this.anonymousApi
-      .create({ fd_random: crypto.randomUUID() })
-      .pipe(
-        switchMap((anonymous) =>
-          forkJoin(
-            selectedValues.map((valueId) => {
-              const value = this.values().find((item) => item.id_universal === valueId);
-              return this.answersApi.create({
-                fd_repply: value?.fd_option ?? '',
-                pm_9a582ff6: valueId,
-                pm_1a4a8cd7: anonymous.id_universal,
-              });
-            }),
-          ),
-        ),
-      )
+    forkJoin(
+      selectedValues.map((valueId) => {
+        const value = this.values().find((item) => item.id_universal === valueId);
+        return this.answersApi.create({
+          fd_repply: value?.fd_option ?? '',
+          pm_9a582ff6: valueId,
+          pm_1a4a8cd7: reservation.id_universal,
+        });
+      }),
+    )
       .subscribe({
         next: () => {
           this.answerForm.reset();
+          this.stopReservationRenewal();
+          this.reservation.set(null);
+          sessionStorage.removeItem(
+            `survey-reservation-${this.selectedSurvey()!.id_universal}`,
+          );
           this.message.set('Tus respuestas fueron enviadas correctamente.');
           this.submitting.set(false);
+          this.loadAvailableSurveys();
         },
         error: () => {
           this.message.set('No fue posible enviar las respuestas. Inténtalo nuevamente.');
