@@ -130,6 +130,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   }
   closeFormModal(): void {
     this.showFormModal.set(false);
+    this.clearSelection();
   }
   openPassword(): void {
     if (!this.selectedRecord()) return;
@@ -257,7 +258,10 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       cancelButtonText: 'Cancelar',
       confirmButtonColor: '#dc3545',
     }).then((result) => {
-      if (!result.isConfirmed) return;
+      if (!result.isConfirmed) {
+        this.clearSelection();
+        return;
+      }
       this.loading.set(true);
       this.api
         .delete(this.config().resource, id)
@@ -266,12 +270,16 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   }
   toggleSelection(row: Record<string, unknown>): void {
     if (this.selectedRecord()?.['id_universal'] === row['id_universal']) {
-      this.selectedRecord.set(null);
-      this.form.reset({ id_universal: '' });
+      this.clearSelection();
       return;
     }
     this.form.patchValue(row);
     this.selectedRecord.set(row);
+  }
+  private clearSelection(): void {
+    this.selectedRecord.set(null);
+    this.form.get('id_universal')?.enable();
+    this.form.reset({ id_universal: '' });
   }
   displayValue(row: Record<string, unknown>, field: CrudField): unknown {
     const value = row[field.name];
