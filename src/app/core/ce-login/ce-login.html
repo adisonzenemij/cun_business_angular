@@ -41,9 +41,6 @@
             @if (form.controls.fd_passd.touched && form.controls.fd_passd.invalid) {
               <small>La contraseña es obligatoria.</small>
             }
-            @if (error()) {
-              <p class="error">{{ error() }}</p>
-            }
             <button class="btn btn-primary w-100 mt-4" type="submit" [disabled]="loading()">
               <i class="bi bi-box-arrow-in-right me-2"></i
               >{{ loading() ? 'Ingresando…' : 'Ingresar' }}

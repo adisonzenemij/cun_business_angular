@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 
-export const FAST_API_URL = `${environment.apiUrl}/api/v1`;
+export const FAST_API_URL = `${environment.apiUrl}/api`;
 export interface Page<T> {
   offset: number;
   limit: number;
