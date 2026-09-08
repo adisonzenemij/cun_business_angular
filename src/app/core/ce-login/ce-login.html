@@ -1,1 +1,14 @@
-<p>ce-login works!</p>
+<main class="login-page">
+  <form class="login-card" [formGroup]="form" (ngSubmit)="submit()">
+    <h1>Iniciar sesión</h1>
+    <p>Accede a la administración de encuestas.</p>
+    <label for="fd_login">Usuario</label>
+    <input id="fd_login" formControlName="fd_login" autocomplete="username" [readOnly]="loading()" />
+    @if (form.controls.fd_login.touched && form.controls.fd_login.invalid) { <small>El usuario es obligatorio.</small> }
+    <label for="fd_passd">Contraseña</label>
+    <input id="fd_passd" type="password" formControlName="fd_passd" autocomplete="current-password" [readOnly]="loading()" />
+    @if (form.controls.fd_passd.touched && form.controls.fd_passd.invalid) { <small>La contraseña es obligatoria.</small> }
+    @if (error()) { <p class="error">{{ error() }}</p> }
+    <button type="submit" [disabled]="loading()">{{ loading() ? 'Ingresando…' : 'Ingresar' }}</button>
+  </form>
+</main>

@@ -1,4 +1,1 @@
-import { Service } from '@angular/core';
-
-@Service()
-export class FtA5acf579 {}
+export { FtA5acf579 } from '../fast-resources';
