@@ -155,9 +155,15 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       this.api.update('values', String(target['id_universal']), { fd_order: currentOrder }),
     ]).subscribe({
       next: () => {
-        const surveyId = this.selectedRecord()?.['id_universal'] as string;
-        this.loadSurveyValues(surveyId);
-        this.completed('Orden de valores actualizado.');
+        const selected = this.selectedRecord();
+        const surveyId = (this.config().resource === 'surveys'
+          ? selected?.['id_universal']
+          : selected?.['pm_4d802b91']) as string;
+        const questionId = this.config().resource === 'questions'
+          ? String(selected?.['id_universal'])
+          : undefined;
+        this.loading.set(false);
+        this.loadSurveyValues(surveyId, questionId);
       },
       error: () => this.failed(),
     });
