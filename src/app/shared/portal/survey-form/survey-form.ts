@@ -80,6 +80,7 @@ export class SurveyForm implements OnDestroy {
       .subscribe({
         next: (reservation) => {
           this.reservation.set(reservation);
+          this.message.set('');
           this.startReservationRenewal();
           this.loadSurveyDetails(survey);
         },
