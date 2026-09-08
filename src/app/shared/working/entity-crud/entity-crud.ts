@@ -28,6 +28,7 @@ export interface CrudConfig {
   resource: string;
   fields: CrudField[];
   operations: { select?: boolean; insert?: boolean; update?: boolean; delete?: boolean };
+  passwordChange?: boolean;
 }
 
 @Component({
@@ -44,7 +45,12 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   readonly message = signal('');
   readonly editing = signal(false);
   readonly showFormModal = signal(false);
+  readonly showPasswordModal = signal(false);
   readonly form: UntypedFormGroup = new UntypedFormBuilder().group({ id_universal: [''] });
+  readonly passwordForm: UntypedFormGroup = new UntypedFormBuilder().group({
+    fd_passd: ['', Validators.required],
+    confirmation: ['', Validators.required],
+  });
   @ViewChild('dataTable') private readonly table?: ElementRef<HTMLTableElement>;
   private dataTable?: { destroy(remove?: boolean): unknown };
   constructor(private readonly api: FastApi) {}
@@ -88,6 +94,35 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   closeFormModal(): void {
     this.showFormModal.set(false);
   }
+  openPassword(): void {
+    if (!this.selectedRecord()) return;
+    this.passwordForm.reset();
+    this.showPasswordModal.set(true);
+  }
+  closePasswordModal(): void {
+    this.showPasswordModal.set(false);
+  }
+  submitPassword(): void {
+    if (this.passwordForm.invalid) {
+      this.passwordForm.markAllAsTouched();
+      return;
+    }
+    const { fd_passd, confirmation } = this.passwordForm.getRawValue() as Record<string, string>;
+    if (fd_passd !== confirmation) {
+      this.message.set('La contraseña y su confirmación no coinciden.');
+      return;
+    }
+    const id = this.selectedRecord()?.['id_universal'] as string | undefined;
+    if (!id) return;
+    this.loading.set(true);
+    this.api.update(this.config().resource, id, { fd_passd }).subscribe({
+      next: () => {
+        this.closePasswordModal();
+        this.completed('Contraseña actualizada.');
+      },
+      error: () => this.failed(),
+    });
+  }
   submit(operation: 'insert' | 'update'): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -95,6 +130,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     }
     const raw = this.form.getRawValue() as Record<string, string>;
     const { id_universal, ...payload } = raw;
+    if (operation === 'update' && this.config().passwordChange) delete payload['fd_passd'];
     if (operation === 'update' && !id_universal) {
       this.message.set('Indica el ID universal para actualizar.');
       return;
@@ -125,7 +161,12 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       .delete(this.config().resource, id)
       .subscribe({ next: () => this.completed('Registro eliminado.'), error: () => this.failed() });
   }
-  select(row: Record<string, unknown>): void {
+  toggleSelection(row: Record<string, unknown>): void {
+    if (this.selectedRecord()?.['id_universal'] === row['id_universal']) {
+      this.selectedRecord.set(null);
+      this.form.reset({ id_universal: '' });
+      return;
+    }
     this.form.patchValue(row);
     this.selectedRecord.set(row);
   }
@@ -150,6 +191,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   }
   private completed(message: string): void {
     this.closeFormModal();
+    this.closePasswordModal();
     this.selectedRecord.set(null);
     this.message.set(message);
     this.loading.set(false);
