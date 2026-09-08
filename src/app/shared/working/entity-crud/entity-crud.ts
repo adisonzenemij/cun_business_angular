@@ -23,7 +23,7 @@ import { forkJoin, map } from 'rxjs';
 export interface CrudField {
   name: string;
   label: string;
-  type?: 'text' | 'number' | 'password' | 'date';
+  type?: 'text' | 'number' | 'password' | 'date' | 'checkbox';
   required?: boolean;
   showInTable?: boolean;
   relation?: { resource: string; displayField: string; orderBy?: string };
@@ -81,7 +81,10 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     for (const field of this.config().fields)
       this.form.addControl(
         field.name,
-        new UntypedFormBuilder().control('', field.required ? Validators.required : []),
+        new UntypedFormBuilder().control(
+          field.type === 'checkbox' ? false : '',
+          field.required ? Validators.required : [],
+        ),
       );
     this.load();
   }
@@ -109,7 +112,11 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   }
   openCreate(): void {
     this.editing.set(false);
-    this.form.reset({ id_universal: '' });
+    const defaults: Record<string, unknown> = { id_universal: '' };
+    for (const field of this.config().fields) {
+      defaults[field.name] = field.type === 'checkbox' ? false : '';
+    }
+    this.form.reset(defaults);
     this.loadRelationOptions();
     this.showFormModal.set(true);
   }

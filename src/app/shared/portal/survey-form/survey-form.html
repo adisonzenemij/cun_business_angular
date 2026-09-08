@@ -47,6 +47,9 @@
                 <fieldset class="question-block mb-4">
                   <legend class="fs-6 fw-semibold mb-3">
                     {{ index + 1 }}. {{ question.fd_ask }}
+                    @if (question.fd_required) {
+                      <span class="text-danger" aria-label="Obligatoria">*</span>
+                    }
                   </legend>
                   @for (value of valuesFor(question); track value.id_universal) {
                     <div class="form-check mb-2">

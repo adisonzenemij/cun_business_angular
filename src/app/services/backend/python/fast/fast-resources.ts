@@ -37,6 +37,7 @@ export interface Question {
   id_universal: string;
   fd_ask: string;
   fd_order: number;
+  fd_required: boolean;
   pm_0d3dc00e: string;
   pm_4d802b91: string;
 }

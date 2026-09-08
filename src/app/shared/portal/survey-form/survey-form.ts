@@ -102,7 +102,7 @@ export class SurveyForm implements OnDestroy {
         for (const question of surveyQuestions) {
           this.answerForm.addControl(
             question.id_universal,
-            this.formBuilder.control('', Validators.required),
+            this.formBuilder.control('', question.fd_required ? Validators.required : []),
           );
         }
         this.questions.set(surveyQuestions);
