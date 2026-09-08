@@ -2,6 +2,41 @@ import { CrudConfig } from '../../shared/working/entity-crud/entity-crud';
 const full = { select: true, insert: true, update: true, delete: true };
 const write = { select: true, insert: true, update: true, delete: true };
 export const ENTITY_CONFIGS: Record<string, CrudConfig> = {
+  a7b95fe8: {
+    title: 'Métodos',
+    resource: 'methods',
+    operations: full,
+    fields: [{ name: 'fd_service', label: 'Método', required: true }],
+  },
+  d35a393b: {
+    title: 'Servicios',
+    resource: 'services',
+    operations: full,
+    fields: [
+      { name: 'fd_name', label: 'Nombre', required: true },
+      { name: 'fd_service', label: 'Servicio', required: true },
+    ],
+  },
+  '8ebaa791': {
+    title: 'Recursos',
+    resource: 'resources',
+    operations: full,
+    fields: [
+      { name: 'fd_path', label: 'Ruta', required: true },
+      {
+        name: 'sd_3a731d00',
+        label: 'Método',
+        required: true,
+        relation: { resource: 'methods', displayField: 'fd_service' },
+      },
+      {
+        name: 'pm_0dfa99e2',
+        label: 'Servicio',
+        required: true,
+        relation: { resource: 'services', displayField: 'fd_name' },
+      },
+    ],
+  },
   e144c860: {
     title: 'Orígenes',
     resource: 'cors-origins',

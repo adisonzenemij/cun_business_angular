@@ -4,10 +4,10 @@ import { ENTITY_CONFIGS } from '../entity-configs';
 
 @Component({
   imports: [EntityCrud],
-  selector: 'app-md-a7b95fe8',
-  styleUrl: './md-a7b95fe8.css',
-  templateUrl: './md-a7b95fe8.html',
+  selector: 'app-md-8ebaa791',
+  styleUrl: './md-8ebaa791.css',
+  templateUrl: './md-8ebaa791.html',
 })
-export class MdA7b95fe8 {
-  readonly config = ENTITY_CONFIGS['a7b95fe8'];
+export class Md8ebaa791 {
+  readonly config = ENTITY_CONFIGS['8ebaa791'];
 }
