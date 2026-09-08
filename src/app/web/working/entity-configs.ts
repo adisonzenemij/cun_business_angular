@@ -78,7 +78,7 @@ export const ENTITY_CONFIGS: Record<string, CrudConfig> = {
     fields: [
       { name: 'fd_ask', label: 'Pregunta', required: true },
       { name: 'fd_order', label: 'Orden', type: 'number', required: true },
-      { name: 'fd_required', label: 'Obligatoria', type: 'checkbox' },
+      { name: 'fd_required', label: 'Requerido', type: 'boolean' },
       {
         name: 'pm_0d3dc00e',
         label: 'Tipo',

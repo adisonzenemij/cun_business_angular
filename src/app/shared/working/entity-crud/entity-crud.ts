@@ -23,7 +23,7 @@ import { forkJoin, map } from 'rxjs';
 export interface CrudField {
   name: string;
   label: string;
-  type?: 'text' | 'number' | 'password' | 'date' | 'checkbox';
+  type?: 'text' | 'number' | 'password' | 'date' | 'boolean';
   required?: boolean;
   showInTable?: boolean;
   relation?: { resource: string; displayField: string; orderBy?: string };
@@ -82,7 +82,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       this.form.addControl(
         field.name,
         new UntypedFormBuilder().control(
-          field.type === 'checkbox' ? false : '',
+          field.type === 'boolean' ? false : '',
           field.required ? Validators.required : [],
         ),
       );
@@ -112,9 +112,10 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   }
   openCreate(): void {
     this.editing.set(false);
+    this.form.get('id_universal')?.enable();
     const defaults: Record<string, unknown> = { id_universal: '' };
     for (const field of this.config().fields) {
-      defaults[field.name] = field.type === 'checkbox' ? false : '';
+      defaults[field.name] = field.type === 'boolean' ? false : '';
     }
     this.form.reset(defaults);
     this.loadRelationOptions();
@@ -123,6 +124,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   openEdit(): void {
     if (!this.selectedRecord()) return;
     this.editing.set(true);
+    this.form.get('id_universal')?.disable();
     this.loadRelationOptions();
     this.showFormModal.set(true);
   }
@@ -246,11 +248,21 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       this.message.set('Indica el ID universal para eliminar.');
       return;
     }
-    if (!confirm('¿Eliminar este registro?')) return;
-    this.loading.set(true);
-    this.api
-      .delete(this.config().resource, id)
-      .subscribe({ next: () => this.completed('Registro eliminado'), error: () => this.failed() });
+    void Swal.fire({
+      title: '¿Eliminar registro?',
+      text: `Esta acción eliminará el registro de ${this.config().title}.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc3545',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      this.loading.set(true);
+      this.api
+        .delete(this.config().resource, id)
+        .subscribe({ next: () => this.completed('Registro eliminado'), error: () => this.failed() });
+    });
   }
   toggleSelection(row: Record<string, unknown>): void {
     if (this.selectedRecord()?.['id_universal'] === row['id_universal']) {
@@ -263,6 +275,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   }
   displayValue(row: Record<string, unknown>, field: CrudField): unknown {
     const value = row[field.name];
+    if (field.type === 'boolean') return value ? 'Sí' : 'No';
     if (!field.relation) return value;
     const related = this.relationOptions()[field.name]?.find(
       (option) => option['id_universal'] === value,

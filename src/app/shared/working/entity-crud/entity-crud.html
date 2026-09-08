@@ -161,10 +161,7 @@
         </div>
         <div class="modal-body">
           @if (editing()) {
-            <div class="mb-3">
-              <label class="form-label" for="id_universal">ID universal</label>
-              <input id="id_universal" class="form-control" formControlName="id_universal" />
-            </div>
+            <input type="hidden" formControlName="id_universal" />
           }
           <div class="row">
             @for (field of config().fields; track field.name) {
@@ -182,6 +179,11 @@
                           {{ relationOptionLabel(field, option) }}
                         </option>
                       }
+                    </select>
+                  } @else if (field.type === 'boolean') {
+                    <select class="form-select" [id]="field.name" [formControlName]="field.name">
+                      <option [ngValue]="true">Sí</option>
+                      <option [ngValue]="false">No</option>
                     </select>
                   } @else {
                     <input
