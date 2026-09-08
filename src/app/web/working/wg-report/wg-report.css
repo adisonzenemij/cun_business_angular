@@ -1,9 +1,30 @@
-.report-page { padding-top: 1.5rem; padding-bottom: 1.5rem; }
-.report-surveys { position: sticky; top: 5rem; }
+.report-page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - 9.5rem);
+  min-height: 0;
+  overflow: hidden;
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+.report-header, .report-survey-title { flex: 0 0 auto; }
+.report-header { margin-bottom: 1.5rem; }
+.report-content { flex: 1 1 auto; min-height: 0; }
+.report-content > [class*='col-'] { min-height: 0; }
+.report-surveys, .report-results { display: flex; flex-direction: column; min-height: 0; }
+.report-surveys-list, .report-results-scroll { overflow-y: auto; min-height: 0; }
+.report-surveys-list { flex: 1 1 auto; }
+.report-results-scroll { flex: 1 1 auto; padding-right: .25rem; }
 .report-surveys .card-header, .report-question .card-header { font-weight: 600; }
 .report-surveys .list-group-item { text-align: left; }
 .report-surveys .list-group-item.active small { color: inherit; }
 .report-question .card-header { align-items: center; }
 .report-chart { min-height: 320px; width: 100%; }
 .report-empty { min-height: 260px; }
-@media (max-width: 991.98px) { .report-surveys { position: static; } }
+
+@media (max-width: 991.98px) {
+  .report-page { height: auto; overflow: visible; }
+  .report-content, .report-results-scroll { overflow: visible; }
+  .report-surveys { max-height: 18rem; }
+}

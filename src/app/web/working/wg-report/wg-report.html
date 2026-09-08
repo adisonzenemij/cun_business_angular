@@ -1,5 +1,5 @@
 <section class="report-page container-fluid">
-  <div class="d-flex justify-content-between align-items-center mb-4">
+  <header class="report-header d-flex justify-content-between align-items-center gap-3">
     <div>
       <h1 class="h2 mb-1">Reportes</h1>
       <p class="text-body-secondary mb-0">Distribución de respuestas por encuesta y pregunta.</p>
@@ -7,67 +7,57 @@
     <button class="btn btn-outline-primary" type="button" (click)="load()" [disabled]="loading()">
       <i class="bi bi-arrow-clockwise me-1"></i>Refrescar
     </button>
-  </div>
+  </header>
 
-  <div class="row g-4">
-    <aside class="col-12 col-lg-3">
-      <div class="card report-surveys">
+  <div class="row g-4 report-content">
+    <aside class="col-12 col-lg-3 d-flex min-h-0">
+      <div class="card report-surveys h-100 w-100">
         <div class="card-header"><i class="bi bi-clipboard-data me-2"></i>Encuestas</div>
-        <div class="list-group list-group-flush">
+        <div class="list-group list-group-flush report-surveys-list">
           @if (loading()) {
-          <div class="list-group-item text-body-secondary">Cargando encuestas...</div>
+            <div class="list-group-item text-body-secondary">Cargando encuestas...</div>
           } @else {
-          @for (survey of surveys(); track survey.id_universal) {
-          <button type="button" class="list-group-item list-group-item-action"
-            [class.active]="selectedSurvey()?.id_universal === survey.id_universal" (click)="selectSurvey(survey)">
-            <span class="d-block fw-semibold">{{ survey.fd_name }}</span>
-            <small><i class="bi bi-question-circle me-1"></i>{{ survey.fd_query }} preguntas</small>
-          </button>
-          } @empty {
-          <div class="list-group-item text-body-secondary">No hay encuestas disponibles.</div>
-          }
+            @for (survey of surveys(); track survey.id_universal) {
+              <button type="button" class="list-group-item list-group-item-action" [class.active]="selectedSurvey()?.id_universal === survey.id_universal" (click)="selectSurvey(survey)">
+                <span class="d-block fw-semibold">{{ survey.fd_name }}</span>
+                <small><i class="bi bi-question-circle me-1"></i>{{ survey.fd_query }} preguntas</small>
+              </button>
+            } @empty {
+              <div class="list-group-item text-body-secondary">No hay encuestas disponibles.</div>
+            }
           }
         </div>
       </div>
     </aside>
 
-    <div class="col-12 col-lg-9">
-      @if (error()) {
-      <div class="alert alert-danger">{{ error() }}</div>
-      } @else if (!selectedSurvey()) {
-      <div class="card report-empty">
-        <div class="card-body text-center text-body-secondary py-5"><i
-            class="bi bi-bar-chart-line fs-1 d-block mb-3"></i>Selecciona una encuesta para consultar sus reportes.
+    <div class="col-12 col-lg-9 d-flex min-h-0">
+      <div class="report-results w-100">
+        @if (selectedSurvey()) {
+          <h2 class="h4 report-survey-title">{{ selectedSurvey()?.fd_name }}</h2>
+        }
+        <div class="report-results-scroll">
+          @if (error()) {
+            <div class="alert alert-danger">{{ error() }}</div>
+          } @else if (!selectedSurvey()) {
+            <div class="card report-empty"><div class="card-body text-center text-body-secondary py-5"><i class="bi bi-bar-chart-line fs-1 d-block mb-3"></i>Selecciona una encuesta para consultar sus reportes.</div></div>
+          } @else {
+            @for (report of reports; track trackQuestion($index, report)) {
+              <article class="card report-question mb-4">
+                <div class="card-header d-flex justify-content-between gap-3">
+                  <span><strong>{{ report.question.fd_order }}.</strong> {{ report.question.fd_ask }}</span>
+                  <span class="badge text-bg-primary align-self-start text-nowrap">{{ report.total }} respuestas</span>
+                </div>
+                <div class="card-body"><div class="row g-4">
+                  <div class="col-12 col-xl-6"><h3 class="h6 text-center mb-3">Gráfico de barras</h3><div class="report-chart" [id]="'report-bar-' + report.question.id_universal"></div></div>
+                  <div class="col-12 col-xl-6"><h3 class="h6 text-center mb-3">Gráfico de torta</h3><div class="report-chart" [id]="'report-pie-' + report.question.id_universal"></div></div>
+                </div></div>
+              </article>
+            } @empty {
+              <div class="card report-empty"><div class="card-body text-center text-body-secondary py-5">La encuesta seleccionada no tiene preguntas configuradas.</div></div>
+            }
+          }
         </div>
       </div>
-      } @else {
-      <h2 class="h4 mb-3">{{ selectedSurvey()?.fd_name }}</h2>
-      @for (report of reports; track trackQuestion($index, report)) {
-      <article class="card report-question mb-4">
-        <div class="card-header d-flex justify-content-between gap-3">
-          <span><strong>{{ report.question.fd_order }}.</strong> {{ report.question.fd_ask }}</span>
-          <span class="badge text-bg-primary align-self-start text-nowrap">{{ report.total }} respuestas</span>
-        </div>
-        <div class="card-body">
-          <div class="row g-4">
-            <div class="col-12 col-xl-6">
-              <h3 class="h6 text-center mb-3">Gráfico de barras</h3>
-              <div class="report-chart" [id]="'report-bar-' + report.question.id_universal"></div>
-            </div>
-            <div class="col-12 col-xl-6">
-              <h3 class="h6 text-center mb-3">Gráfico de torta</h3>
-              <div class="report-chart" [id]="'report-pie-' + report.question.id_universal"></div>
-            </div>
-          </div>
-        </div>
-      </article>
-      } @empty {
-      <div class="card report-empty">
-        <div class="card-body text-center text-body-secondary py-5">La encuesta seleccionada no tiene preguntas
-          configuradas.</div>
-      </div>
-      }
-      }
     </div>
   </div>
 </section>
