@@ -22,11 +22,25 @@
 }
 
 .selector-card,
-.consultation-card {
+.data-card {
   border-color: var(--bs-border-color);
 }
 
-.consultation-body h2 {
+.data-card h2 {
   font-size: 1.1rem;
-  margin-bottom: 1rem;
+  margin: 0;
+}
+
+.detail-table {
+  max-height: 34rem;
+  overflow: auto;
+}
+
+.detail-table td:first-child {
+  min-width: 15rem;
+  font-weight: 500;
+}
+
+.detail-table td:last-child {
+  overflow-wrap: anywhere;
 }

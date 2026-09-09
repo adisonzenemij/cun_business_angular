@@ -10,17 +10,10 @@
     <div class="card-body row g-3 align-items-end">
       <div class="col-12 col-md-8 col-lg-6">
         <label class="form-label" for="society">Sociedad</label>
-        <select
-          id="society"
-          class="form-select"
-          [ngModel]="selectedId()"
-          (ngModelChange)="changeSociety($event)"
-          [disabled]="loading()">
+        <select id="society" class="form-select" [ngModel]="selectedId()" (ngModelChange)="changeSociety($event)" [disabled]="loading()">
           <option value="">Ninguno</option>
           @for (society of societies(); track society.id_universal) {
-            <option [value]="society.id_universal">
-              {{ society.fd_company }} — {{ society.fd_document }}
-            </option>
+            <option [value]="society.id_universal">{{ society.fd_company }} — {{ society.fd_document }}</option>
           }
         </select>
       </div>
@@ -36,55 +29,66 @@
     <div class="alert alert-danger mt-3 mb-0" role="alert">{{ error() }}</div>
   }
 
-  @if (consultation(); as data) {
-    <section class="consultation-card card mt-4">
-      <div class="card-header bg-transparent">
-        <ul class="nav nav-tabs card-header-tabs">
-          @for (tab of tabs; track tab.key) {
-            <li class="nav-item">
-              <button
-                class="nav-link"
-                type="button"
-                [class.active]="activeTab() === tab.key"
-                (click)="activeTab.set(tab.key)">
-                {{ tab.label }}
-              </button>
-            </li>
-          }
-        </ul>
-      </div>
-
-      <div class="card-body consultation-body">
-        @for (tab of tabs; track tab.key) {
-          @if (activeTab() === tab.key) {
-            <h2>{{ tab.label }}</h2>
-            @if (records(tab.key).length && fields(tab.key).length) {
-              <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                  <thead>
-                    <tr>
-                      @for (field of fields(tab.key); track field) {
-                        <th scope="col">{{ field }}</th>
-                      }
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (record of records(tab.key); track record._id) {
-                      <tr>
-                        @for (field of fields(tab.key); track field) {
-                          <td>{{ record._source[field] ?? '—' }}</td>
-                        }
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            } @else {
-              <p class="text-body-secondary mb-0">No se encontraron registros para esta consulta.</p>
-            }
-          }
+  @if (consultation()) {
+    <section class="card data-card mt-4">
+      <div class="card-header"><h2>Vista 360</h2></div>
+      <div class="card-body">
+        @if (vistaRecords().length) {
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  @for (field of vistaFields(); track field) { <th scope="col">{{ field }}</th> }
+                </tr>
+              </thead>
+              <tbody>
+                @for (record of vistaRecords(); track record._id) {
+                  <tr>
+                    @for (field of vistaFields(); track field) { <td>{{ record._source[field] ?? '—' }}</td> }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="text-body-secondary mb-0">No se encontraron registros de Vista 360.</p>
         }
       </div>
     </section>
+
+    @for (card of detailCards; track card.key) {
+      <section class="card data-card mt-4">
+        <div class="card-header bg-transparent">
+          <h2>{{ card.label }}</h2>
+          @if (cutoffs(card.key).length) {
+            <ul class="nav nav-tabs card-header-tabs mt-3">
+              @for (cutoff of cutoffs(card.key); track cutoff) {
+                <li class="nav-item">
+                  <button class="nav-link" type="button" [class.active]="activeCutoffs()[card.key] === cutoff" (click)="selectCutoff(card.key, cutoff)">
+                    {{ cutoff }}
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+        <div class="card-body">
+          @if (detailRows(card.key).length) {
+            <div class="table-responsive detail-table">
+              <table class="table table-hover align-middle mb-0">
+                <thead><tr><th scope="col">Campo</th><th scope="col">Valor</th></tr></thead>
+                <tbody>
+                  @for (row of detailRows(card.key); track row.field) {
+                    <tr><td>{{ row.field }}</td><td>{{ row.value }}</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p class="text-body-secondary mb-0">No se encontró información para esta fecha de corte.</p>
+          }
+        </div>
+      </section>
+    }
   }
 </section>

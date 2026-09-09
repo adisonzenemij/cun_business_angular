@@ -17,8 +17,20 @@ interface SearchResult {
   hits?: { hits?: SearchHit[] };
 }
 
-type TabKey = 'vista_360' | 'financieros' | 'situacion_financiera' | 'resultado_integral';
-type Consultation = Record<TabKey, SearchResult>;
+type DetailKey = 'financieros' | 'situacion_financiera' | 'resultado_integral';
+type Consultation = {
+  vista_360: SearchResult;
+} & Record<DetailKey, Record<string, SearchResult>>;
+
+interface DetailCard {
+  key: DetailKey;
+  label: string;
+}
+
+interface ValueRow {
+  field: string;
+  value: string;
+}
 
 @Component({
   imports: [FormsModule],
@@ -34,9 +46,12 @@ export class WgSociety {
   readonly consulting = signal(false);
   readonly error = signal('');
   readonly consultation = signal<Consultation | null>(null);
-  readonly activeTab = signal<TabKey>('vista_360');
-  readonly tabs: { key: TabKey; label: string }[] = [
-    { key: 'vista_360', label: 'Vista 360' },
+  readonly activeCutoffs = signal<Record<DetailKey, string>>({
+    financieros: '',
+    situacion_financiera: '',
+    resultado_integral: '',
+  });
+  readonly detailCards: DetailCard[] = [
     { key: 'financieros', label: 'Financieros' },
     { key: 'situacion_financiera', label: 'Situación financiera' },
     { key: 'resultado_integral', label: 'Resultado integral' },
@@ -68,7 +83,11 @@ export class WgSociety {
     this.api.http.post<Consultation>(`${FAST_API_URL}/societies/${societyId}/consult`, {}).subscribe({
       next: (consultation) => {
         this.consultation.set(consultation);
-        this.activeTab.set('vista_360');
+        this.activeCutoffs.set({
+          financieros: this.cutoffsFrom(consultation.financieros)[0] ?? '',
+          situacion_financiera: this.cutoffsFrom(consultation.situacion_financiera)[0] ?? '',
+          resultado_integral: this.cutoffsFrom(consultation.resultado_integral)[0] ?? '',
+        });
         this.consulting.set(false);
       },
       error: (error) => {
@@ -84,11 +103,40 @@ export class WgSociety {
     this.error.set('');
   }
 
-  records(tab: TabKey): SearchHit[] {
-    return this.consultation()?.[tab]?.hits?.hits ?? [];
+  vistaRecords(): SearchHit[] {
+    return this.consultation()?.vista_360.hits?.hits ?? [];
   }
 
-  fields(tab: TabKey): string[] {
-    return [...new Set(this.records(tab).flatMap((record) => Object.keys(record._source)))];
+  vistaFields(): string[] {
+    return [...new Set(this.vistaRecords().flatMap((record) => Object.keys(record._source)))];
+  }
+
+  cutoffs(key: DetailKey): string[] {
+    return this.cutoffsFrom(this.consultation()?.[key] ?? {});
+  }
+
+  selectCutoff(key: DetailKey, cutoff: string): void {
+    this.activeCutoffs.update((current) => ({ ...current, [key]: cutoff }));
+  }
+
+  detailRows(key: DetailKey): ValueRow[] {
+    const cutoff = this.activeCutoffs()[key];
+    const source = this.consultation()?.[key]?.[cutoff]?.hits?.hits?.[0]?._source;
+    return source ? this.flatten(source) : [];
+  }
+
+  private cutoffsFrom(results: Record<string, SearchResult>): string[] {
+    return Object.keys(results).sort((first, second) => second.localeCompare(first));
+  }
+
+  private flatten(value: unknown, prefix = ''): ValueRow[] {
+    if (value === null || value === undefined) return [{ field: prefix, value: '—' }];
+    if (typeof value !== 'object') return [{ field: prefix, value: String(value) }];
+    if (Array.isArray(value)) {
+      return value.length ? value.flatMap((item, index) => this.flatten(item, `${prefix}[${index}]`)) : [{ field: prefix, value: '—' }];
+    }
+    return Object.entries(value as Record<string, unknown>).flatMap(([field, item]) =>
+      this.flatten(item, prefix ? `${prefix}.${field}` : field),
+    );
   }
 }
