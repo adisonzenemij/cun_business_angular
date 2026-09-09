@@ -142,6 +142,28 @@ export class WgReport implements OnDestroy {
     }, attempt ? 75 : 0);
   }
 
+  private chartExporting(dark: boolean): Highcharts.ExportingOptions {
+    const foreground = dark ? '#f8f9fa' : '#212529';
+    return {
+      enabled: true,
+      buttons: {
+        contextButton: {
+          menuItems: ['viewFullscreen', 'printChart', 'separator', 'downloadPNG', 'downloadJPEG', 'downloadSVG', 'downloadPDF', 'separator', 'downloadCSV', 'downloadXLS', 'viewData'],
+          theme: { fill: 'transparent', stroke: dark ? '#6c757d' : '#adb5bd', style: { color: foreground } },
+        },
+      },
+    };
+  }
+
+  private chartNavigation(dark: boolean): Highcharts.NavigationOptions {
+    const foreground = dark ? '#f8f9fa' : '#212529';
+    return {
+      menuStyle: { background: dark ? '#212529' : '#ffffff', border: `1px solid ${dark ? '#495057' : '#ced4da'}`, color: foreground },
+      menuItemStyle: { color: foreground, fontWeight: '400' },
+      menuItemHoverStyle: { background: dark ? '#343a40' : '#e9ecef', color: foreground },
+    };
+  }
+
   private renderCharts(reports: QuestionReport[]): void {
     this.destroyCharts();
     const isDarkTheme = document.documentElement.dataset['bsTheme'] === 'dark';
@@ -154,10 +176,8 @@ export class WgReport implements OnDestroy {
         chart: { backgroundColor: 'transparent' },
         colors,
         credits: { enabled: false },
-        exporting: {
-          enabled: true,
-          buttons: { contextButton: { menuItems: ['viewFullscreen', 'printChart', 'separator', 'downloadPNG', 'downloadJPEG', 'downloadSVG', 'downloadPDF', 'separator', 'downloadCSV', 'downloadXLS', 'viewData'] } },
-        },
+        exporting: this.chartExporting(isDarkTheme),
+        navigation: this.chartNavigation(isDarkTheme),
         title: { text: undefined },
         legend: { itemStyle: normalText, itemHoverStyle: normalText },
         accessibility: { enabled: false },

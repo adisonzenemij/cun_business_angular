@@ -101,7 +101,15 @@ export class WgSociety implements OnDestroy {
 
   openDetail(key: DetailKey): void { this.financialChartTab.set('comparacion'); this.activeDetail.set(key); }
   closeDetail(): void { this.financialFieldsOpen.set(false); this.activeDetail.set(null); this.detailChart?.destroy(); }
-  refreshDetailChart(): void { this.scheduleDetailChart(); }
+  refreshDetailChart(): void {
+    if (this.chartTimer) clearTimeout(this.chartTimer);
+    this.detailChart?.destroy();
+    this.detailChart = undefined;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      this.renderDetailChart();
+      this.detailChart?.reflow();
+    }));
+  }
   selectFinancialChartTab(tab: FinancialChartTab): void { this.financialChartTab.set(tab); }
   detailLabel(key: DetailKey | null = this.activeDetail()): string {
     return ({ financieros: 'Financieros', situacion_financiera: 'Situación Financiera', resultado_integral: 'Resultado Integral' } as Record<DetailKey, string>)[key ?? 'financieros'];
@@ -149,6 +157,28 @@ export class WgSociety implements OnDestroy {
     this.chartTimer = setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(() => this.renderDetailChart())), 0);
   }
 
+  private chartExporting(dark: boolean): Highcharts.ExportingOptions {
+    const foreground = dark ? '#f8f9fa' : '#212529';
+    return {
+      enabled: true,
+      buttons: {
+        contextButton: {
+          menuItems: ['viewFullscreen', 'printChart', 'separator', 'downloadPNG', 'downloadJPEG', 'downloadSVG', 'downloadPDF', 'separator', 'downloadCSV', 'downloadXLS', 'viewData'],
+          theme: { fill: 'transparent', stroke: dark ? '#6c757d' : '#adb5bd', style: { color: foreground } },
+        },
+      },
+    };
+  }
+
+  private chartNavigation(dark: boolean): Highcharts.NavigationOptions {
+    const foreground = dark ? '#f8f9fa' : '#212529';
+    return {
+      menuStyle: { background: dark ? '#212529' : '#ffffff', border: `1px solid ${dark ? '#495057' : '#ced4da'}`, color: foreground },
+      menuItemStyle: { color: foreground, fontWeight: '400' },
+      menuItemHoverStyle: { background: dark ? '#343a40' : '#e9ecef', color: foreground },
+    };
+  }
+
   private renderDetailChart(): void {
     this.detailChart?.destroy();
     const key = this.activeDetail();
@@ -168,10 +198,8 @@ export class WgSociety implements OnDestroy {
         title: { text: metric.name, style },
         subtitle: { text: 'Distribución por fecha de corte', style },
         credits: { enabled: false },
-        exporting: {
-          enabled: true,
-          buttons: { contextButton: { menuItems: ['viewFullscreen', 'printChart', 'separator', 'downloadPNG', 'downloadJPEG', 'downloadSVG', 'downloadPDF', 'separator', 'downloadCSV', 'downloadXLS', 'viewData'] } },
-        },
+        exporting: this.chartExporting(dark),
+        navigation: this.chartNavigation(dark),
         accessibility: { enabled: false },
         tooltip: { pointFormat: '<b>$ {point.y:,.0f}</b> ({point.percentage:.1f}%)' },
         plotOptions: {
@@ -192,10 +220,8 @@ export class WgSociety implements OnDestroy {
       title: { text: key === 'financieros' ? 'Comparación' : 'General', style },
       subtitle: { text: `${this.detailLabel(key)} por fecha de corte`, style },
       credits: { enabled: false },
-      exporting: {
-        enabled: true,
-        buttons: { contextButton: { menuItems: ['viewFullscreen', 'printChart', 'separator', 'downloadPNG', 'downloadJPEG', 'downloadSVG', 'downloadPDF', 'separator', 'downloadCSV', 'downloadXLS', 'viewData'] } },
-      },
+      exporting: this.chartExporting(dark),
+      navigation: this.chartNavigation(dark),
       accessibility: { enabled: false },
       xAxis: { categories: cutoffs, labels: { style } },
       yAxis: { title: { text: 'Pesos colombianos', style }, labels: { style, formatter() { return compact.format(this.value as number); } } },
