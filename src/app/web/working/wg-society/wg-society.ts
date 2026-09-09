@@ -240,7 +240,7 @@ export class WgSociety implements OnDestroy {
   }
 
   chartSeriesTabs(key: DetailKey): ChartMetric[] { return this.chartMetrics(key); }
-  showChartSeriesTabs(key: DetailKey): boolean { return this.chartMetrics(key).length > 1; }
+  showChartSeriesTabs(key: DetailKey): boolean { return this.situationChartType() === 'donas' && this.chartMetrics(key).length > 1; }
 
   private selectedSource(key: DetailKey): Record<string, unknown> | undefined {
     const cutoff = this.activeCutoffs()[key];
@@ -363,7 +363,7 @@ export class WgSociety implements OnDestroy {
   private displayChartMetrics(key: DetailKey): ChartMetric[] {
     const metrics = this.chartMetrics(key);
     const selected = this.activeChartSeriesTab(key);
-    return metrics.length > 1 && selected !== 'unificado'
+    return this.situationChartType() === 'donas' && metrics.length > 1 && selected !== 'unificado'
       ? metrics.filter((metric) => metric.field === selected)
       : metrics;
   }
