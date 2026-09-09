@@ -50,6 +50,24 @@
   max-width: 100%;
 }
 
+.chart-with-series-tabs .financial-chart {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.chart-series-tabs {
+  flex: 0 0 11rem;
+  max-height: 31rem;
+  overflow-y: auto;
+}
+
+.chart-series-tabs .nav-link {
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .society-detail-modal .data-card .chart-card-body {
   flex: 1 1 auto;
   min-height: 0;

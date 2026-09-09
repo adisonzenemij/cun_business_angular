@@ -122,8 +122,20 @@
                 </div>
               </div>
               <div class="card-body chart-card-body">
-                <div id="society-detail-chart" class="financial-chart"
-                  [class.donut-chart]="detail === 'situacion_financiera' && situationChartType() === 'donas'"></div>
+                <div class="d-flex align-items-stretch h-100 gap-3 chart-with-series-tabs">
+                  <div id="society-detail-chart" class="financial-chart flex-grow-1"
+                    [class.donut-chart]="situationChartType() === 'donas'"></div>
+                  @if (showChartSeriesTabs(detail)) {
+                    <div class="nav flex-column nav-pills chart-series-tabs" role="tablist" aria-orientation="vertical">
+                      <button class="nav-link" type="button" [class.active]="activeChartSeriesTab(detail) === 'unificado'"
+                        (click)="selectChartSeriesTab(detail, 'unificado')">Unificado</button>
+                      @for (series of chartSeriesTabs(detail); track series.field) {
+                        <button class="nav-link" type="button" [class.active]="activeChartSeriesTab(detail) === series.field"
+                          (click)="selectChartSeriesTab(detail, series.field)">{{ series.name }}</button>
+                      }
+                    </div>
+                  }
+                </div>
               </div>
             </div>
           </section>

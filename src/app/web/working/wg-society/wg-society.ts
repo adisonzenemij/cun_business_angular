@@ -58,6 +58,9 @@ export class WgSociety implements OnDestroy {
     situacion_financiera: ['resultado.activos.activoTotal.valorCorte', 'resultado.pasivos.pasivoTotal.valorCorte', 'resultado.patrimonio.patrimonioTotal.valorCorte'],
     resultado_integral: ['resultado.registros.ingresosActividadesOrdinarias.corte', 'resultado.registros.costoVentas.corte', 'resultado.registros.gananciaPerdida.corte'],
   });
+  readonly chartSeriesTab = signal<Record<DetailKey, string>>({
+    financieros: 'unificado', situacion_financiera: 'unificado', resultado_integral: 'unificado',
+  });
   readonly activeCutoffs = signal<Record<DetailKey, string>>({
     financieros: '', situacion_financiera: '', resultado_integral: '',
   });
@@ -69,6 +72,7 @@ export class WgSociety implements OnDestroy {
       this.activeDetail();
       this.situationChartType();
       this.visibleChartFields();
+      this.chartSeriesTab();
       this.scheduleDetailChart();
     });
     this.loadSocieties();
@@ -117,10 +121,12 @@ export class WgSociety implements OnDestroy {
     this.error.set('');
   }
 
-  openDetail(key: DetailKey): void { this.situationChartType.set('lineas'); this.activeDetail.set(key); }
+  openDetail(key: DetailKey): void { this.situationChartType.set('lineas'); this.chartSeriesTab.update((tabs) => ({ ...tabs, [key]: 'unificado' })); this.activeDetail.set(key); }
   closeDetail(): void { this.columnsDetail.set(null); this.chartFieldsDetail.set(null); this.layoutOpen.set(false); this.activeDetail.set(null); this.chartRenderVersion++; this.destroyDetailChart(); }
   refreshDetailChart(): void { this.scheduleDetailChart(); }
   selectSituationChartType(type: SituationChartType): void { this.situationChartType.set(type); }
+  selectChartSeriesTab(key: DetailKey, field: string): void { this.chartSeriesTab.update((tabs) => ({ ...tabs, [key]: field })); }
+  activeChartSeriesTab(key: DetailKey): string { return this.chartSeriesTab()[key]; }
   rightColumnWidth(): number { return 12 - this.leftColumnWidth(); }
   setLeftColumnWidth(value: number | string): void { this.leftColumnWidth.set(Math.max(2, Math.min(10, Number(value) || 6))); }
   setRightColumnWidth(value: number | string): void { this.setLeftColumnWidth(12 - (Number(value) || 6)); }
@@ -226,11 +232,15 @@ export class WgSociety implements OnDestroy {
       ...selected,
       [key]: checked ? [...new Set([...selected[key], field])] : selected[key].filter((item) => item !== field),
     }));
+    if (!checked && this.activeChartSeriesTab(key) === field) this.selectChartSeriesTab(key, 'unificado');
   }
 
   filteredChartFieldsAvailable(key: DetailKey): FinancialRow[] {
     return this.filterFields(this.chartFieldsAvailable(key), this.chartFieldsSearch());
   }
+
+  chartSeriesTabs(key: DetailKey): ChartMetric[] { return this.chartMetrics(key); }
+  showChartSeriesTabs(key: DetailKey): boolean { return this.chartMetrics(key).length > 1; }
 
   private selectedSource(key: DetailKey): Record<string, unknown> | undefined {
     const cutoff = this.activeCutoffs()[key];
@@ -282,7 +292,7 @@ export class WgSociety implements OnDestroy {
     const container = document.getElementById('society-detail-chart');
     if (!key || !consultation || !container || !container.clientWidth) return;
     const cutoffs = this.cutoffsFrom(consultation[key]).reverse();
-    const metrics = this.chartMetrics(key);
+    const metrics = this.displayChartMetrics(key);
     const dark = document.documentElement.dataset['bsTheme'] === 'dark';
     const style: Highcharts.CSSObject = { color: dark ? '#f8f9fa' : '#212529', fontWeight: '400' };
     const compact = new Intl.NumberFormat('es-CO', { notation: 'compact', maximumFractionDigits: 1 });
@@ -348,6 +358,14 @@ export class WgSociety implements OnDestroy {
     return this.chartFieldsAvailable(key)
       .filter((field) => this.visibleChartFields()[key].includes(field.key))
       .map((field) => ({ name: field.label, field: field.key }));
+  }
+
+  private displayChartMetrics(key: DetailKey): ChartMetric[] {
+    const metrics = this.chartMetrics(key);
+    const selected = this.activeChartSeriesTab(key);
+    return metrics.length > 1 && selected !== 'unificado'
+      ? metrics.filter((metric) => metric.field === selected)
+      : metrics;
   }
 
   situationChartTypeLabel(type: SituationChartType): string {
