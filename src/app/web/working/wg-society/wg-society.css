@@ -62,6 +62,10 @@
   z-index: 1055;
 }
 
+.society-detail-backdrop {
+  z-index: 1054;
+}
+
 .society-detail-modal .modal-content {
   height: 100dvh;
   overflow: hidden;
@@ -93,6 +97,10 @@
 
 .society-modal {
   z-index: 1060;
+}
+
+.society-modal-backdrop {
+  z-index: 1059;
 }
 
 .society-modal .modal-body {

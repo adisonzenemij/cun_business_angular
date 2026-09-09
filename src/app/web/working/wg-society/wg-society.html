@@ -54,7 +54,7 @@
 </section>
 
 @if (activeDetail(); as detail) {
-<div class="modal d-block society-detail-modal" tabindex="-1" role="dialog" aria-modal="true"
+<div class="modal fade show d-block society-detail-modal" tabindex="-1" role="dialog" aria-modal="true"
   aria-labelledby="detail-title">
   <div class="modal-dialog modal-fullscreen" role="document">
     <div class="modal-content">
@@ -144,13 +144,13 @@
     </div>
   </div>
 </div>
-<div class="modal-backdrop fade show"></div>
+<div class="modal-backdrop fade show society-detail-backdrop"></div>
 }
 
 @if (situationChartFieldsOpen()) {
-<div class="modal d-block society-modal" tabindex="-1" role="dialog" aria-modal="true"
+<div class="modal fade show d-block society-modal" tabindex="-1" role="dialog" aria-modal="true"
   aria-labelledby="situation-chart-fields-title">
-  <div class="modal-dialog modal-dialog-scrollable" role="document">
+  <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h3 class="modal-title fs-6" id="situation-chart-fields-title">Series del gráfico</h3><button type="button" class="btn-close"
@@ -176,13 +176,13 @@
     </div>
   </div>
 </div>
-<div class="modal-backdrop fade show"></div>
+<div class="modal-backdrop fade show society-modal-backdrop"></div>
 }
 
 @if (columnsDetail(); as selectedColumnsDetail) {
-<div class="modal d-block society-modal" tabindex="-1" role="dialog" aria-modal="true"
+<div class="modal fade show d-block society-modal" tabindex="-1" role="dialog" aria-modal="true"
   aria-labelledby="columns-fields-title">
-  <div class="modal-dialog modal-dialog-scrollable" role="document">
+  <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h3 class="modal-title fs-6" id="columns-fields-title">Columnas - {{ detailLabel(selectedColumnsDetail) }}</h3><button type="button" class="btn-close"
@@ -215,5 +215,5 @@
     </div>
   </div>
 </div>
-<div class="modal-backdrop fade show"></div>
+<div class="modal-backdrop fade show society-modal-backdrop"></div>
 }
