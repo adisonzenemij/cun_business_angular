@@ -58,11 +58,16 @@
 }
 
 .society-modal .check-column {
-  width: 2rem;
+  width: 5.5rem;
 }
 
 .society-modal .form-check-label {
   cursor: pointer;
+}
+
+.society-modal .original-value {
+  max-width: 15rem;
+  overflow-wrap: anywhere;
 }
 
 .detail-table td:first-child {

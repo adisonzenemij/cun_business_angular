@@ -24,7 +24,7 @@ type Consultation = { vista_360: SearchResult } & Record<DetailKey, Record<strin
 
 interface DetailCard { key: Exclude<DetailKey, 'financieros'>; label: string; }
 interface ValueRow { field: string; value: string; }
-interface FinancialRow { key: string; label: string; value: string; }
+interface FinancialRow { key: string; label: string; value: string; rawValue: string; }
 
 @Component({
   imports: [FormsModule],
@@ -122,10 +122,11 @@ export class WgSociety implements OnDestroy {
       key: row.field,
       label: this.financialLabel(row.field),
       value: this.formatFinancialValue(row.field, row.value),
+      rawValue: row.value,
     }));
     rows.push(
-      { key: 'calculated.ros', label: 'ROS', value: this.formatPercent(this.ratio(this.path(source, 'resultadoIntegral.gananciaPerdida'), this.path(source, 'resultadoIntegral.ingreso'))) },
-      { key: 'calculated.margenBruto', label: 'Margen bruto', value: this.formatPercent(this.ratio(this.path(source, 'resultadoIntegral.utilidad'), this.path(source, 'resultadoIntegral.ingreso'))) },
+      { key: 'calculated.ros', label: 'ROS', value: this.formatPercent(this.ratio(this.path(source, 'resultadoIntegral.gananciaPerdida'), this.path(source, 'resultadoIntegral.ingreso'))), rawValue: String(this.ratio(this.path(source, 'resultadoIntegral.gananciaPerdida'), this.path(source, 'resultadoIntegral.ingreso')) ?? '') },
+      { key: 'calculated.margenBruto', label: 'Margen bruto', value: this.formatPercent(this.ratio(this.path(source, 'resultadoIntegral.utilidad'), this.path(source, 'resultadoIntegral.ingreso'))), rawValue: String(this.ratio(this.path(source, 'resultadoIntegral.utilidad'), this.path(source, 'resultadoIntegral.ingreso')) ?? '') },
     );
     return rows;
   }
@@ -192,7 +193,12 @@ export class WgSociety implements OnDestroy {
       'resultadoIntegral.ingreso': 'Ingresos', 'resultadoIntegral.gananciaPerdida': 'Utilidad neta',
       'indicadores.roa': 'ROA', 'indicadores.roe': 'ROE',
     };
-    return labels[field] ?? field;
+    if (labels[field]) return labels[field];
+    return field
+      .replace(/\./g, ' · ')
+      .replace(/([a-záéíóúñ])([A-Z])/g, '$1 $2')
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (character) => character.toUpperCase());
   }
   private formatFinancialValue(field: string, value: string): string {
     if (['situacionFinanciera.activo', 'resultadoIntegral.ingreso', 'resultadoIntegral.gananciaPerdida'].includes(field)) return this.formatCurrency(value);
