@@ -11,6 +11,7 @@ interface SearchHit { _id: string; _source: Record<string, unknown>; }
 interface SearchResult { hits?: { hits?: SearchHit[] }; }
 type DetailKey = 'financieros' | 'situacion_financiera' | 'resultado_integral';
 type FinancialChartTab = 'comparacion' | 'activos' | 'ingresos' | 'utilidad_neta';
+type SituationChartType = 'lineas' | 'columnas' | 'barras' | 'donas';
 type Consultation = { vista_360: SearchResult } & Record<DetailKey, Record<string, SearchResult>>;
 interface ValueRow { field: string; value: string; }
 interface FinancialRow { key: string; label: string; value: string; }
@@ -37,6 +38,7 @@ export class WgSociety implements OnDestroy {
   readonly consultation = signal<Consultation | null>(null);
   readonly activeDetail = signal<DetailKey | null>(null);
   readonly financialChartTab = signal<FinancialChartTab>('comparacion');
+  readonly situationChartType = signal<SituationChartType>('lineas');
   readonly columnsDetail = signal<DetailKey | null>(null);
   readonly situationChartFieldsOpen = signal(false);
   readonly columnsSearch = signal('');
@@ -62,6 +64,7 @@ export class WgSociety implements OnDestroy {
       this.consultation();
       this.activeDetail();
       this.financialChartTab();
+      this.situationChartType();
       this.visibleSituationChartFields();
       this.scheduleDetailChart();
     });
@@ -111,10 +114,11 @@ export class WgSociety implements OnDestroy {
     this.error.set('');
   }
 
-  openDetail(key: DetailKey): void { this.financialChartTab.set('comparacion'); this.activeDetail.set(key); }
+  openDetail(key: DetailKey): void { this.financialChartTab.set('comparacion'); this.situationChartType.set('lineas'); this.activeDetail.set(key); }
   closeDetail(): void { this.columnsDetail.set(null); this.situationChartFieldsOpen.set(false); this.activeDetail.set(null); this.chartRenderVersion++; this.destroyDetailChart(); }
   refreshDetailChart(): void { this.scheduleDetailChart(); }
   selectFinancialChartTab(tab: FinancialChartTab): void { this.financialChartTab.set(tab); }
+  selectSituationChartType(type: SituationChartType): void { this.situationChartType.set(type); }
   detailLabel(key: DetailKey | null = this.activeDetail()): string {
     return ({ financieros: 'Financieros', situacion_financiera: 'Situación Financiera', resultado_integral: 'Resultado Integral' } as Record<DetailKey, string>)[key ?? 'financieros'];
   }
@@ -286,9 +290,37 @@ export class WgSociety implements OnDestroy {
       });
       return;
     }
+    const situationType = this.situationChartType();
+    if (key === 'situacion_financiera' && situationType === 'donas') {
+      this.detailChart = Highcharts.chart(container, {
+        chart: { type: 'pie', backgroundColor: 'transparent' },
+        title: { text: 'Donas', style },
+        subtitle: { text: 'Situación Financiera por fecha de corte', style },
+        credits: { enabled: false },
+        exporting: this.chartExporting(dark),
+        navigation: this.chartNavigation(dark),
+        accessibility: { enabled: false },
+        legend: { itemStyle: style, itemHoverStyle: style },
+        tooltip: { pointFormat: '<b>$ {point.y:,.0f}</b> ({point.percentage:.1f}%)' },
+        plotOptions: { pie: { innerSize: '55%', borderRadius: 6, borderWidth: 2, dataLabels: { enabled: true, format: '{point.name}: {point.percentage:.0f}%', style: { ...style, textOutline: 'none' } } } },
+        series: [{
+          type: 'pie', name: 'Valores financieros',
+          data: metrics.flatMap((metric) => cutoffs.map((cutoff) => ({
+            name: `${metric.name} - ${cutoff}`,
+            y: this.number(this.path(consultation[key][cutoff]?.hits?.hits?.[0]?._source, metric.field)),
+          }))),
+        }],
+      });
+      return;
+    }
+    const cartesianType: 'line' | 'column' | 'bar' = key === 'situacion_financiera'
+      ? ({ lineas: 'line', columnas: 'column', barras: 'bar', donas: 'line' } as Record<SituationChartType, 'line' | 'column' | 'bar'>)[situationType]
+      : 'line';
+    const chartTitle = key === 'financieros' ? 'Comparación'
+      : key === 'situacion_financiera' ? this.situationChartTypeLabel(situationType) : 'General';
     this.detailChart = Highcharts.chart(container, {
-      chart: { type: 'line', backgroundColor: 'transparent' },
-      title: { text: key === 'financieros' ? 'Comparación' : 'General', style },
+      chart: { type: cartesianType, backgroundColor: 'transparent' },
+      title: { text: chartTitle, style },
       subtitle: { text: `${this.detailLabel(key)} por fecha de corte`, style },
       credits: { enabled: false },
       exporting: this.chartExporting(dark),
@@ -298,9 +330,13 @@ export class WgSociety implements OnDestroy {
       yAxis: { title: { text: 'Pesos colombianos', style }, labels: { style, formatter() { return compact.format(this.value as number); } } },
       legend: { itemStyle: style, itemHoverStyle: style },
       tooltip: { valuePrefix: '$ ', valueDecimals: 0 },
-      plotOptions: { line: { dataLabels: { enabled: true, formatter() { return compact.format(this.y as number); }, style: { ...style, textOutline: 'none' } } } },
+      plotOptions: cartesianType === 'line'
+        ? { line: { dataLabels: { enabled: true, formatter() { return compact.format(this.y as number); }, style: { ...style, textOutline: 'none' } } } }
+        : cartesianType === 'column'
+          ? { column: { borderWidth: 0, pointPadding: .1, dataLabels: { enabled: true, formatter() { return compact.format(this.y as number); }, style: { ...style, textOutline: 'none' } } } }
+          : { bar: { borderWidth: 0, borderRadius: 4, groupPadding: .1, dataLabels: { enabled: true, formatter() { return compact.format(this.y as number); }, style: { ...style, textOutline: 'none' } } } },
       series: metrics.map((metric) => ({
-        type: 'line', name: metric.name,
+        type: cartesianType, name: metric.name,
         data: cutoffs.map((cutoff) => this.number(this.path(consultation[key][cutoff]?.hits?.hits?.[0]?._source, metric.field))),
       })),
     });
@@ -327,6 +363,9 @@ export class WgSociety implements OnDestroy {
 
   financialTabLabel(tab: FinancialChartTab): string {
     return ({ comparacion: 'Comparación', activos: 'Activos', ingresos: 'Ingresos', utilidad_neta: 'Utilidad Neta' } as Record<FinancialChartTab, string>)[tab];
+  }
+  situationChartTypeLabel(type: SituationChartType): string {
+    return ({ lineas: 'Líneas', columnas: 'Columnas', barras: 'Barras', donas: 'Donas' } as Record<SituationChartType, string>)[type];
   }
 
   private cutoffsFrom(results: Record<string, SearchResult>): string[] { return Object.keys(results).sort((first, second) => second.localeCompare(first)); }
