@@ -38,12 +38,18 @@ export class WgSociety implements OnDestroy {
   readonly activeDetail = signal<DetailKey | null>(null);
   readonly financialChartTab = signal<FinancialChartTab>('comparacion');
   readonly columnsDetail = signal<DetailKey | null>(null);
+  readonly situationChartFieldsOpen = signal(false);
   readonly visibleFinancialFields = signal<string[]>([
     'infoEmpresa.NIT', 'infoEmpresa.nombreEmpresa', 'fechaCorte', 'infoEmpresa.puntoEntrada', 'estado',
     'situacionFinanciera.activo', 'resultadoIntegral.ingreso', 'resultadoIntegral.gananciaPerdida',
     'indicadores.roa', 'indicadores.roe', 'calculated.ros', 'calculated.margenBruto',
   ]);
   readonly visibleDetailFields = signal<Partial<Record<Exclude<DetailKey, 'financieros'>, string[]>>>({});
+  readonly visibleSituationChartFields = signal<string[]>([
+    'resultado.activos.activoTotal.valorCorte',
+    'resultado.pasivos.pasivoTotal.valorCorte',
+    'resultado.patrimonio.patrimonioTotal.valorCorte',
+  ]);
   readonly activeCutoffs = signal<Record<DetailKey, string>>({
     financieros: '', situacion_financiera: '', resultado_integral: '',
   });
@@ -54,6 +60,7 @@ export class WgSociety implements OnDestroy {
       this.consultation();
       this.activeDetail();
       this.financialChartTab();
+      this.visibleSituationChartFields();
       this.scheduleDetailChart();
     });
     this.loadSocieties();
@@ -103,7 +110,7 @@ export class WgSociety implements OnDestroy {
   }
 
   openDetail(key: DetailKey): void { this.financialChartTab.set('comparacion'); this.activeDetail.set(key); }
-  closeDetail(): void { this.columnsDetail.set(null); this.activeDetail.set(null); this.chartRenderVersion++; this.destroyDetailChart(); }
+  closeDetail(): void { this.columnsDetail.set(null); this.situationChartFieldsOpen.set(false); this.activeDetail.set(null); this.chartRenderVersion++; this.destroyDetailChart(); }
   refreshDetailChart(): void { this.scheduleDetailChart(); }
   selectFinancialChartTab(tab: FinancialChartTab): void { this.financialChartTab.set(tab); }
   detailLabel(key: DetailKey | null = this.activeDetail()): string {
@@ -170,6 +177,24 @@ export class WgSociety implements OnDestroy {
       const fields = current[key] ?? this.detailFieldsAvailable(key).map((row) => row.key);
       return { ...current, [key]: checked ? [...new Set([...fields, field])] : fields.filter((item) => item !== field) };
     });
+  }
+
+  situationChartFieldsAvailable(): FinancialRow[] {
+    const source = this.selectedSource('situacion_financiera');
+    if (!source) return [];
+    return this.flatten(source)
+      .filter((row) => row.field.startsWith('resultado.')
+        && /\.(corte|valorCorte|totalCorte)$/.test(row.field)
+        && Number.isFinite(Number(row.value)))
+      .map((row) => ({ key: row.field, label: this.situationChartFieldLabel(source, row.field), value: this.formatCurrency(row.value) }));
+  }
+
+  isSituationChartFieldVisible(field: string): boolean { return this.visibleSituationChartFields().includes(field); }
+
+  toggleSituationChartField(field: string, checked: boolean): void {
+    this.visibleSituationChartFields.update((selected) => checked
+      ? [...new Set([...selected, field])]
+      : selected.filter((item) => item !== field));
   }
 
   private selectedSource(key: DetailKey): Record<string, unknown> | undefined {
@@ -272,11 +297,12 @@ export class WgSociety implements OnDestroy {
   }
 
   private chartMetrics(key: DetailKey): ChartMetric[] {
-    if (key === 'situacion_financiera') return [
-      { name: 'Activos', field: 'resultado.activos.activoTotal.valorCorte' },
-      { name: 'Pasivos', field: 'resultado.pasivos.pasivoTotal.valorCorte' },
-      { name: 'Patrimonio', field: 'resultado.patrimonio.patrimonioTotal.valorCorte' },
-    ];
+    if (key === 'situacion_financiera') {
+      const source = this.selectedSource(key);
+      return source ? this.situationChartFieldsAvailable()
+        .filter((field) => this.visibleSituationChartFields().includes(field.key))
+        .map((field) => ({ name: field.label, field: field.key })) : [];
+    }
     if (key === 'resultado_integral') return [
       { name: 'Ingresos', field: 'resultado.registros.ingresosActividadesOrdinarias.corte' },
       { name: 'Costo de ventas', field: 'resultado.registros.costoVentas.corte' },
@@ -344,6 +370,17 @@ export class WgSociety implements OnDestroy {
     const isAmount = /\.(corte|corteAnterior|valorCorte|valorAnterior)$/.test(field)
       && !['infoEmpresa.corte', 'resultado.fechaCorte'].includes(field);
     return isAmount ? this.formatCurrency(value) : value;
+  }
+  private situationChartFieldLabel(source: Record<string, unknown>, field: string): string {
+    const labels: Record<string, string> = {
+      'resultado.activos.activoTotal.valorCorte': 'Activos',
+      'resultado.pasivos.pasivoTotal.valorCorte': 'Pasivos',
+      'resultado.patrimonio.patrimonioTotal.valorCorte': 'Patrimonio',
+    };
+    if (labels[field]) return labels[field];
+    const nameField = field.replace(/\.(corte|valorCorte|totalCorte)$/, '.nombre');
+    const name = this.path(source, nameField);
+    return typeof name === 'string' && name.trim() ? name : this.detailFieldLabel(field);
   }
   private flatten(value: unknown, prefix = ''): ValueRow[] {
     if (value === null || value === undefined) return [{ field: prefix, value: '—' }];
