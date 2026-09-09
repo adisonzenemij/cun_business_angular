@@ -294,7 +294,7 @@ export class WgSociety implements OnDestroy {
     if (key === 'situacion_financiera' && situationType === 'donas') {
       this.detailChart = Highcharts.chart(container, {
         chart: { type: 'pie', backgroundColor: 'transparent' },
-        title: { text: 'Donas', style },
+        title: { text: undefined, style },
         subtitle: { text: 'Situación Financiera por fecha de corte', style },
         credits: { enabled: false },
         exporting: this.chartExporting(dark),
@@ -316,11 +316,10 @@ export class WgSociety implements OnDestroy {
     const cartesianType: 'line' | 'column' | 'bar' = key === 'situacion_financiera'
       ? ({ lineas: 'line', columnas: 'column', barras: 'bar', donas: 'line' } as Record<SituationChartType, 'line' | 'column' | 'bar'>)[situationType]
       : 'line';
-    const chartTitle = key === 'financieros' ? 'Comparación'
-      : key === 'situacion_financiera' ? this.situationChartTypeLabel(situationType) : 'General';
+    const chartTitle = key === 'financieros' ? 'Comparación' : 'General';
     this.detailChart = Highcharts.chart(container, {
       chart: { type: cartesianType, backgroundColor: 'transparent' },
-      title: { text: chartTitle, style },
+      title: { text: key === 'situacion_financiera' ? undefined : chartTitle, style },
       subtitle: { text: `${this.detailLabel(key)} por fecha de corte`, style },
       credits: { enabled: false },
       exporting: this.chartExporting(dark),
