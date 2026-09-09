@@ -36,6 +36,35 @@
   overflow: auto;
 }
 
+.financial-table {
+  max-height: 32rem;
+  overflow: auto;
+}
+
+.financial-table td:first-child {
+  font-weight: 500;
+}
+
+.financial-chart {
+  min-height: 31rem;
+}
+
+.society-modal {
+  z-index: 1060;
+}
+
+.society-modal .modal-body {
+  max-height: 65vh;
+}
+
+.society-modal .check-column {
+  width: 2rem;
+}
+
+.society-modal .form-check-label {
+  cursor: pointer;
+}
+
 .detail-table td:first-child {
   min-width: 15rem;
   font-weight: 500;
