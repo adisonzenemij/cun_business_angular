@@ -60,11 +60,14 @@
     <div class="modal-content">
       <div class="modal-header bg-primary text-white" data-bs-theme="dark">
         <h2 class="modal-title fs-5" id="detail-title">{{ detailLabel(detail) }}</h2>
-        <button type="button" class="btn-close btn-close-white" aria-label="Cerrar" (click)="closeDetail()"></button>
+        <div class="d-flex align-items-center gap-2 ms-auto">
+          <button type="button" class="btn btn-sm btn-outline-light" (click)="layoutOpen.set(true)">Distribución</button>
+          <button type="button" class="btn-close btn-close-white" aria-label="Cerrar" (click)="closeDetail()"></button>
+        </div>
       </div>
       <div class="modal-body">
         <div class="row g-4 h-100">
-          <section class="col-12 col-xl-6">
+          <section [class]="'col-12 col-xl-' + leftColumnWidth()">
             <div class="card data-card h-100">
               <div class="card-header">
                 <div class="d-flex align-items-center justify-content-between gap-2">
@@ -104,7 +107,7 @@
               </div>
             </div>
           </section>
-          <section class="col-12 col-xl-6">
+          <section [class]="'col-12 col-xl-' + rightColumnWidth()">
             <div class="card data-card h-100">
               <div class="card-header d-flex align-items-center justify-content-between gap-2">
                 <ul class="nav nav-underline flex-grow-1">
@@ -130,6 +133,40 @@
   </div>
 </div>
 <div class="modal-backdrop fade show society-detail-backdrop"></div>
+}
+
+@if (layoutOpen()) {
+<div class="modal fade show d-block society-modal" tabindex="-1" role="dialog" aria-modal="true"
+  aria-labelledby="layout-title">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title fs-6" id="layout-title">Distribución de tarjetas</h3>
+        <button type="button" class="btn-close" aria-label="Cerrar" (click)="layoutOpen.set(false)"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-body-secondary">Asigna entre 2 y 10 columnas a cada tarjeta. La suma siempre será 12.</p>
+        <div class="row g-3 align-items-end">
+          <div class="col-6">
+            <label class="form-label" for="left-card-columns">Tarjeta izquierda</label>
+            <input id="left-card-columns" class="form-control" type="number" min="2" max="10"
+              [ngModel]="leftColumnWidth()" (ngModelChange)="setLeftColumnWidth($event)">
+          </div>
+          <div class="col-6">
+            <label class="form-label" for="right-card-columns">Tarjeta derecha</label>
+            <input id="right-card-columns" class="form-control" type="number" min="2" max="10"
+              [ngModel]="rightColumnWidth()" (ngModelChange)="setRightColumnWidth($event)">
+          </div>
+        </div>
+        <label class="form-label mt-3" for="left-card-range">Ajustar distribución</label>
+        <input id="left-card-range" class="form-range" type="range" min="2" max="10" step="1"
+          [value]="leftColumnWidth()" (input)="setLeftColumnWidth($any($event.target).value)">
+      </div>
+      <div class="modal-footer"><button class="btn btn-primary btn-sm" type="button" (click)="layoutOpen.set(false)">Listo</button></div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade show society-modal-backdrop"></div>
 }
 
 @if (chartFieldsDetail(); as selectedChartFieldsDetail) {

@@ -40,6 +40,8 @@ export class WgSociety implements OnDestroy {
   readonly situationChartType = signal<SituationChartType>('lineas');
   readonly columnsDetail = signal<DetailKey | null>(null);
   readonly chartFieldsDetail = signal<DetailKey | null>(null);
+  readonly layoutOpen = signal(false);
+  readonly leftColumnWidth = signal(6);
   readonly columnsSearch = signal('');
   readonly chartFieldsSearch = signal('');
   readonly tableSearches = signal<Record<DetailKey, Record<string, string>>>({
@@ -116,9 +118,12 @@ export class WgSociety implements OnDestroy {
   }
 
   openDetail(key: DetailKey): void { this.situationChartType.set('lineas'); this.activeDetail.set(key); }
-  closeDetail(): void { this.columnsDetail.set(null); this.chartFieldsDetail.set(null); this.activeDetail.set(null); this.chartRenderVersion++; this.destroyDetailChart(); }
+  closeDetail(): void { this.columnsDetail.set(null); this.chartFieldsDetail.set(null); this.layoutOpen.set(false); this.activeDetail.set(null); this.chartRenderVersion++; this.destroyDetailChart(); }
   refreshDetailChart(): void { this.scheduleDetailChart(); }
   selectSituationChartType(type: SituationChartType): void { this.situationChartType.set(type); }
+  rightColumnWidth(): number { return 12 - this.leftColumnWidth(); }
+  setLeftColumnWidth(value: number | string): void { this.leftColumnWidth.set(Math.max(2, Math.min(10, Number(value) || 6))); }
+  setRightColumnWidth(value: number | string): void { this.setLeftColumnWidth(12 - (Number(value) || 6)); }
   detailLabel(key: DetailKey | null = this.activeDetail()): string {
     return ({ financieros: 'Financieros', situacion_financiera: 'Situación Financiera', resultado_integral: 'Resultado Integral' } as Record<DetailKey, string>)[key ?? 'financieros'];
   }
