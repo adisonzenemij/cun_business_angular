@@ -121,24 +121,14 @@
           <section class="col-12 col-xl-6">
             <div class="card data-card h-100">
               <div class="card-header d-flex align-items-center justify-content-between gap-2">
-                @if (detail === 'financieros') {
-                  <ul class="nav nav-underline flex-grow-1">
-                    @for (tab of ['comparacion', 'activos', 'ingresos', 'utilidad_neta']; track tab) {
-                      <li class="nav-item"><button class="nav-link" type="button" [class.active]="financialChartTab() === tab" (click)="selectFinancialChartTab($any(tab))">{{ financialTabLabel($any(tab)) }}</button></li>
-                    }
-                  </ul>
-                } @else if (detail === 'situacion_financiera') {
-                  <ul class="nav nav-underline flex-grow-1">
-                    @for (type of ['lineas', 'columnas', 'barras', 'donas']; track type) {
-                      <li class="nav-item"><button class="nav-link" type="button" [class.active]="situationChartType() === type" (click)="selectSituationChartType($any(type))">{{ situationChartTypeLabel($any(type)) }}</button></li>
-                    }
-                  </ul>
-                } @else { <h3 class="fs-6 mb-0">General</h3> }
-                <div class="d-flex align-items-center gap-2 ms-auto">
-                  @if (detail === 'situacion_financiera') {
-                    <button class="btn btn-sm btn-outline-primary" type="button"
-                      (click)="situationChartFieldsOpen.set(true)">Series</button>
+                <ul class="nav nav-underline flex-grow-1">
+                  @for (type of ['lineas', 'columnas', 'barras', 'donas']; track type) {
+                    <li class="nav-item"><button class="nav-link" type="button" [class.active]="situationChartType() === type" (click)="selectSituationChartType($any(type))">{{ situationChartTypeLabel($any(type)) }}</button></li>
                   }
+                </ul>
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                  <button class="btn btn-sm btn-outline-primary" type="button"
+                    (click)="chartFieldsDetail.set(detail)">Series</button>
                   <button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshDetailChart()">Refrescar</button>
                 </div>
               </div>
@@ -156,36 +146,36 @@
 <div class="modal-backdrop fade show society-detail-backdrop"></div>
 }
 
-@if (situationChartFieldsOpen()) {
+@if (chartFieldsDetail(); as selectedChartFieldsDetail) {
 <div class="modal fade show d-block society-modal" tabindex="-1" role="dialog" aria-modal="true"
-  aria-labelledby="situation-chart-fields-title">
+  aria-labelledby="chart-fields-title">
   <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title fs-6" id="situation-chart-fields-title">Series del gráfico</h3><button type="button" class="btn-close"
-          aria-label="Cerrar" (click)="situationChartFieldsOpen.set(false)"></button>
+        <h3 class="modal-title fs-6" id="chart-fields-title">Series - {{ detailLabel(selectedChartFieldsDetail) }}</h3><button type="button" class="btn-close"
+          aria-label="Cerrar" (click)="chartFieldsDetail.set(null)"></button>
       </div>
       <div class="modal-body">
         <p class="small text-body-secondary">Marca los valores financieros que deseas incluir en el gráfico.</p>
-        <label class="visually-hidden" for="situation-chart-search">Buscar serie</label>
-        <input id="situation-chart-search" class="form-control form-control-sm mb-3" type="search"
-          placeholder="Buscar por propiedad o nombre técnico" [ngModel]="situationChartSearch()"
-          (ngModelChange)="situationChartSearch.set($event)">
+        <label class="visually-hidden" for="chart-fields-search">Buscar serie</label>
+        <input id="chart-fields-search" class="form-control form-control-sm mb-3" type="search"
+          placeholder="Buscar por propiedad o nombre técnico" [ngModel]="chartFieldsSearch()"
+          (ngModelChange)="chartFieldsSearch.set($event)">
         <table class="table table-sm align-middle mb-0">
           <thead><tr><th scope="col">Visualizar</th><th scope="col">Propiedad</th><th class="d-none" scope="col">Propiedad original</th></tr></thead>
-          <tbody>@for (field of filteredSituationChartFieldsAvailable(); track field.key) {
+          <tbody>@for (field of filteredChartFieldsAvailable(selectedChartFieldsDetail); track field.key) {
             <tr>
-              <td class="check-column"><input class="form-check-input" type="checkbox" [id]="'situation-chart-' + field.key"
-                [checked]="isSituationChartFieldVisible(field.key)"
-                (change)="toggleSituationChartField(field.key, $any($event.target).checked)"></td>
-              <td><label class="form-check-label" [for]="'situation-chart-' + field.key">{{ field.label }}</label></td>
+              <td class="check-column"><input class="form-check-input" type="checkbox" [id]="selectedChartFieldsDetail + '-chart-' + field.key"
+                [checked]="isChartFieldVisible(selectedChartFieldsDetail, field.key)"
+                (change)="toggleChartField(selectedChartFieldsDetail, field.key, $any($event.target).checked)"></td>
+              <td><label class="form-check-label" [for]="selectedChartFieldsDetail + '-chart-' + field.key">{{ field.label }}</label></td>
               <td class="d-none original-value">{{ field.key }}</td>
             </tr>
           }</tbody>
         </table>
       </div>
       <div class="modal-footer"><button class="btn btn-primary btn-sm" type="button"
-        (click)="situationChartFieldsOpen.set(false)">Listo</button></div>
+        (click)="chartFieldsDetail.set(null)">Listo</button></div>
     </div>
   </div>
 </div>

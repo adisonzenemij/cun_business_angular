@@ -37,23 +37,22 @@ export class WgSociety implements OnDestroy {
   readonly error = signal('');
   readonly consultation = signal<Consultation | null>(null);
   readonly activeDetail = signal<DetailKey | null>(null);
-  readonly financialChartTab = signal<FinancialChartTab>('comparacion');
   readonly situationChartType = signal<SituationChartType>('lineas');
   readonly columnsDetail = signal<DetailKey | null>(null);
-  readonly situationChartFieldsOpen = signal(false);
+  readonly chartFieldsDetail = signal<DetailKey | null>(null);
   readonly columnsSearch = signal('');
-  readonly situationChartSearch = signal('');
+  readonly chartFieldsSearch = signal('');
   readonly visibleFinancialFields = signal<string[]>([
     'infoEmpresa.NIT', 'infoEmpresa.nombreEmpresa', 'fechaCorte', 'infoEmpresa.puntoEntrada', 'estado',
     'situacionFinanciera.activo', 'resultadoIntegral.ingreso', 'resultadoIntegral.gananciaPerdida',
     'indicadores.roa', 'indicadores.roe', 'calculated.ros', 'calculated.margenBruto',
   ]);
   readonly visibleDetailFields = signal<Partial<Record<Exclude<DetailKey, 'financieros'>, string[]>>>({});
-  readonly visibleSituationChartFields = signal<string[]>([
-    'resultado.activos.activoTotal.valorCorte',
-    'resultado.pasivos.pasivoTotal.valorCorte',
-    'resultado.patrimonio.patrimonioTotal.valorCorte',
-  ]);
+  readonly visibleChartFields = signal<Record<DetailKey, string[]>>({
+    financieros: ['situacionFinanciera.activo', 'resultadoIntegral.ingreso', 'resultadoIntegral.gananciaPerdida'],
+    situacion_financiera: ['resultado.activos.activoTotal.valorCorte', 'resultado.pasivos.pasivoTotal.valorCorte', 'resultado.patrimonio.patrimonioTotal.valorCorte'],
+    resultado_integral: ['resultado.registros.ingresosActividadesOrdinarias.corte', 'resultado.registros.costoVentas.corte', 'resultado.registros.gananciaPerdida.corte'],
+  });
   readonly activeCutoffs = signal<Record<DetailKey, string>>({
     financieros: '', situacion_financiera: '', resultado_integral: '',
   });
@@ -63,9 +62,8 @@ export class WgSociety implements OnDestroy {
       this.theme.mode();
       this.consultation();
       this.activeDetail();
-      this.financialChartTab();
       this.situationChartType();
-      this.visibleSituationChartFields();
+      this.visibleChartFields();
       this.scheduleDetailChart();
     });
     this.loadSocieties();
@@ -114,10 +112,9 @@ export class WgSociety implements OnDestroy {
     this.error.set('');
   }
 
-  openDetail(key: DetailKey): void { this.financialChartTab.set('comparacion'); this.situationChartType.set('lineas'); this.activeDetail.set(key); }
-  closeDetail(): void { this.columnsDetail.set(null); this.situationChartFieldsOpen.set(false); this.activeDetail.set(null); this.chartRenderVersion++; this.destroyDetailChart(); }
+  openDetail(key: DetailKey): void { this.situationChartType.set('lineas'); this.activeDetail.set(key); }
+  closeDetail(): void { this.columnsDetail.set(null); this.chartFieldsDetail.set(null); this.activeDetail.set(null); this.chartRenderVersion++; this.destroyDetailChart(); }
   refreshDetailChart(): void { this.scheduleDetailChart(); }
-  selectFinancialChartTab(tab: FinancialChartTab): void { this.financialChartTab.set(tab); }
   selectSituationChartType(type: SituationChartType): void { this.situationChartType.set(type); }
   detailLabel(key: DetailKey | null = this.activeDetail()): string {
     return ({ financieros: 'Financieros', situacion_financiera: 'Situación Financiera', resultado_integral: 'Resultado Integral' } as Record<DetailKey, string>)[key ?? 'financieros'];
@@ -189,26 +186,25 @@ export class WgSociety implements OnDestroy {
     });
   }
 
-  situationChartFieldsAvailable(): FinancialRow[] {
-    const source = this.selectedSource('situacion_financiera');
+  chartFieldsAvailable(key: DetailKey): FinancialRow[] {
+    const source = this.selectedSource(key);
     if (!source) return [];
     return this.flatten(source)
-      .filter((row) => row.field.startsWith('resultado.')
-        && /\.(corte|valorCorte|totalCorte)$/.test(row.field)
-        && Number.isFinite(Number(row.value)))
-      .map((row) => ({ key: row.field, label: this.situationChartFieldLabel(source, row.field), value: this.formatCurrency(row.value) }));
+      .filter((row) => this.isChartAmountField(key, row.field, row.value))
+      .map((row) => ({ key: row.field, label: this.chartFieldLabel(key, source, row.field), value: this.formatCurrency(row.value) }));
   }
 
-  isSituationChartFieldVisible(field: string): boolean { return this.visibleSituationChartFields().includes(field); }
+  isChartFieldVisible(key: DetailKey, field: string): boolean { return this.visibleChartFields()[key].includes(field); }
 
-  toggleSituationChartField(field: string, checked: boolean): void {
-    this.visibleSituationChartFields.update((selected) => checked
-      ? [...new Set([...selected, field])]
-      : selected.filter((item) => item !== field));
+  toggleChartField(key: DetailKey, field: string, checked: boolean): void {
+    this.visibleChartFields.update((selected) => ({
+      ...selected,
+      [key]: checked ? [...new Set([...selected[key], field])] : selected[key].filter((item) => item !== field),
+    }));
   }
 
-  filteredSituationChartFieldsAvailable(): FinancialRow[] {
-    return this.filterFields(this.situationChartFieldsAvailable(), this.situationChartSearch());
+  filteredChartFieldsAvailable(key: DetailKey): FinancialRow[] {
+    return this.filterFields(this.chartFieldsAvailable(key), this.chartFieldsSearch());
   }
 
   private selectedSource(key: DetailKey): Record<string, unknown> | undefined {
@@ -265,37 +261,12 @@ export class WgSociety implements OnDestroy {
     const dark = document.documentElement.dataset['bsTheme'] === 'dark';
     const style: Highcharts.CSSObject = { color: dark ? '#f8f9fa' : '#212529', fontWeight: '400' };
     const compact = new Intl.NumberFormat('es-CO', { notation: 'compact', maximumFractionDigits: 1 });
-    const financialTab = this.financialChartTab();
-    if (key === 'financieros' && financialTab !== 'comparacion') {
-      const metric = metrics.find((item) => item.name === this.financialTabLabel(financialTab))!;
-      this.detailChart = Highcharts.chart(container, {
-        chart: { type: 'pie', backgroundColor: 'transparent' },
-        title: { text: metric.name, style },
-        subtitle: { text: 'Distribución por fecha de corte', style },
-        credits: { enabled: false },
-        exporting: this.chartExporting(dark),
-        navigation: this.chartNavigation(dark),
-        accessibility: { enabled: false },
-        tooltip: { pointFormat: '<b>$ {point.y:,.0f}</b> ({point.percentage:.1f}%)' },
-        plotOptions: {
-          pie: {
-            innerSize: '65%', borderRadius: 8, borderWidth: 2,
-            dataLabels: { enabled: true, format: '{point.name}: {point.percentage:.0f}%', style: { ...style, textOutline: 'none' } },
-          },
-        },
-        series: [{
-          type: 'pie', name: metric.name,
-          data: cutoffs.map((cutoff) => ({ name: cutoff, y: this.number(this.path(consultation[key][cutoff]?.hits?.hits?.[0]?._source, metric.field)) })),
-        }],
-      });
-      return;
-    }
     const situationType = this.situationChartType();
-    if (key === 'situacion_financiera' && situationType === 'donas') {
+    if (situationType === 'donas') {
       this.detailChart = Highcharts.chart(container, {
         chart: { type: 'pie', backgroundColor: 'transparent' },
         title: { text: undefined, style },
-        subtitle: { text: 'Situación Financiera por fecha de corte', style },
+        subtitle: { text: `${this.detailLabel(key)} por fecha de corte`, style },
         lang: { chartTitle: '' },
         credits: { enabled: false },
         exporting: this.chartExporting(dark),
@@ -322,14 +293,12 @@ export class WgSociety implements OnDestroy {
       ];
       return;
     }
-    const cartesianType: 'line' | 'column' | 'bar' = key === 'situacion_financiera'
-      ? ({ lineas: 'line', columnas: 'column', barras: 'bar', donas: 'line' } as Record<SituationChartType, 'line' | 'column' | 'bar'>)[situationType]
-      : 'line';
-    const chartTitle = key === 'financieros' ? 'Comparación' : 'General';
+    const cartesianType: 'line' | 'column' | 'bar' = ({ lineas: 'line', columnas: 'column', barras: 'bar', donas: 'line' } as Record<SituationChartType, 'line' | 'column' | 'bar'>)[situationType];
     this.detailChart = Highcharts.chart(container, {
       chart: { type: cartesianType, backgroundColor: 'transparent' },
-      title: { text: key === 'situacion_financiera' ? undefined : chartTitle, style },
+      title: { text: undefined, style },
       subtitle: { text: `${this.detailLabel(key)} por fecha de corte`, style },
+      lang: { chartTitle: '', exportData: { categoryHeader: 'Fecha de corte' } },
       credits: { enabled: false },
       exporting: this.chartExporting(dark),
       navigation: this.chartNavigation(dark),
@@ -351,27 +320,11 @@ export class WgSociety implements OnDestroy {
   }
 
   private chartMetrics(key: DetailKey): ChartMetric[] {
-    if (key === 'situacion_financiera') {
-      const source = this.selectedSource(key);
-      return source ? this.situationChartFieldsAvailable()
-        .filter((field) => this.visibleSituationChartFields().includes(field.key))
-        .map((field) => ({ name: field.label, field: field.key })) : [];
-    }
-    if (key === 'resultado_integral') return [
-      { name: 'Ingresos', field: 'resultado.registros.ingresosActividadesOrdinarias.corte' },
-      { name: 'Costo de ventas', field: 'resultado.registros.costoVentas.corte' },
-      { name: 'Utilidad Neta', field: 'resultado.registros.gananciaPerdida.corte' },
-    ];
-    return [
-      { name: 'Activos', field: 'situacionFinanciera.activo' },
-      { name: 'Ingresos', field: 'resultadoIntegral.ingreso' },
-      { name: 'Utilidad Neta', field: 'resultadoIntegral.gananciaPerdida' },
-    ];
+    return this.chartFieldsAvailable(key)
+      .filter((field) => this.visibleChartFields()[key].includes(field.key))
+      .map((field) => ({ name: field.label, field: field.key }));
   }
 
-  financialTabLabel(tab: FinancialChartTab): string {
-    return ({ comparacion: 'Comparación', activos: 'Activos', ingresos: 'Ingresos', utilidad_neta: 'Utilidad Neta' } as Record<FinancialChartTab, string>)[tab];
-  }
   situationChartTypeLabel(type: SituationChartType): string {
     return ({ lineas: 'Líneas', columnas: 'Columnas', barras: 'Barras', donas: 'Donas' } as Record<SituationChartType, string>)[type];
   }
@@ -428,11 +381,22 @@ export class WgSociety implements OnDestroy {
       && !['infoEmpresa.corte', 'resultado.fechaCorte'].includes(field);
     return isAmount ? this.formatCurrency(value) : value;
   }
-  private situationChartFieldLabel(source: Record<string, unknown>, field: string): string {
+  private isChartAmountField(key: DetailKey, field: string, value: string): boolean {
+    if (!Number.isFinite(Number(value))) return false;
+    if (key === 'financieros') return !/(^|\.)(NIT|num_radicado|hombres|mujeres|activos|cerrados|pais|sector|top500|top9000)(Anterior)?$/i.test(field);
+    if (key === 'resultado_integral') return field.startsWith('resultado.registros.') && field.endsWith('.corte');
+    return field.startsWith('resultado.') && /\.(corte|valorCorte|totalCorte)$/.test(field);
+  }
+  private chartFieldLabel(key: DetailKey, source: Record<string, unknown>, field: string): string {
     const labels: Record<string, string> = {
+      'situacionFinanciera.activo': 'Activos', 'resultadoIntegral.ingreso': 'Ingresos',
+      'resultadoIntegral.gananciaPerdida': 'Utilidad Neta',
       'resultado.activos.activoTotal.valorCorte': 'Activos',
       'resultado.pasivos.pasivoTotal.valorCorte': 'Pasivos',
       'resultado.patrimonio.patrimonioTotal.valorCorte': 'Patrimonio',
+      'resultado.registros.ingresosActividadesOrdinarias.corte': 'Ingresos',
+      'resultado.registros.costoVentas.corte': 'Costo de ventas',
+      'resultado.registros.gananciaPerdida.corte': 'Utilidad Neta',
     };
     if (labels[field]) return labels[field];
     const nameField = field.replace(/\.(corte|valorCorte|totalCorte)$/, '.nombre');
