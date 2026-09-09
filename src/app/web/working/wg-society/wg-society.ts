@@ -24,7 +24,7 @@ type Consultation = { vista_360: SearchResult } & Record<DetailKey, Record<strin
 
 interface DetailCard { key: Exclude<DetailKey, 'financieros'>; label: string; }
 interface ValueRow { field: string; value: string; }
-interface FinancialRow { key: string; label: string; value: string; rawValue: string; }
+interface FinancialRow { key: string; label: string; value: string; }
 
 @Component({
   imports: [FormsModule],
@@ -122,11 +122,10 @@ export class WgSociety implements OnDestroy {
       key: row.field,
       label: this.financialLabel(row.field),
       value: this.formatFinancialValue(row.field, row.value),
-      rawValue: row.value,
     }));
     rows.push(
-      { key: 'calculated.ros', label: 'ROS', value: this.formatPercent(this.ratio(this.path(source, 'resultadoIntegral.gananciaPerdida'), this.path(source, 'resultadoIntegral.ingreso'))), rawValue: String(this.ratio(this.path(source, 'resultadoIntegral.gananciaPerdida'), this.path(source, 'resultadoIntegral.ingreso')) ?? '') },
-      { key: 'calculated.margenBruto', label: 'Margen bruto', value: this.formatPercent(this.ratio(this.path(source, 'resultadoIntegral.utilidad'), this.path(source, 'resultadoIntegral.ingreso'))), rawValue: String(this.ratio(this.path(source, 'resultadoIntegral.utilidad'), this.path(source, 'resultadoIntegral.ingreso')) ?? '') },
+      { key: 'calculated.ros', label: 'ROS', value: this.formatPercent(this.ratio(this.path(source, 'resultadoIntegral.gananciaPerdida'), this.path(source, 'resultadoIntegral.ingreso'))) },
+      { key: 'calculated.margenBruto', label: 'Margen bruto', value: this.formatPercent(this.ratio(this.path(source, 'resultadoIntegral.utilidad'), this.path(source, 'resultadoIntegral.ingreso'))) },
     );
     return rows;
   }

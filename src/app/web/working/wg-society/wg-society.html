@@ -1,106 +1,170 @@
 <section class="society-page">
-  <header class="page-header"><div><h1>Sociedades</h1><p>Consulta la información pública registrada para una sociedad.</p></div></header>
-
-  <section class="card selector-card"><div class="card-body row g-3 align-items-end">
-    <div class="col-12 col-md-8 col-lg-6">
-      <label class="form-label" for="society">Sociedad</label>
-      <select id="society" class="form-select" [ngModel]="selectedId()" (ngModelChange)="changeSociety($event)" [disabled]="loading()">
-        <option value="">Ninguno</option>
-        @for (society of societies(); track society.id_universal) { <option [value]="society.id_universal">{{ society.fd_company }} — {{ society.fd_document }}</option> }
-      </select>
+  <header class="page-header">
+    <div>
+      <h1>Sociedades</h1>
+      <p>Consulta la información pública registrada para una sociedad.</p>
     </div>
-    <div class="col-12 col-md-auto"><button class="btn btn-primary" type="button" (click)="consult()" [disabled]="!selectedId() || consulting()">@if (consulting()) { Consultando... } @else { Consultar }</button></div>
-  </div></section>
+  </header>
+
+  <section class="card selector-card">
+    <div class="card-body row g-3 align-items-end">
+      <div class="col-12 col-md-8 col-lg-6">
+        <label class="form-label" for="society">Sociedad</label>
+        <select id="society" class="form-select" [ngModel]="selectedId()" (ngModelChange)="changeSociety($event)"
+          [disabled]="loading()">
+          <option value="">Ninguno</option>
+          @for (society of societies(); track society.id_universal) { <option [value]="society.id_universal">{{
+            society.fd_company }} — {{ society.fd_document }}</option> }
+        </select>
+      </div>
+      <div class="col-12 col-md-auto"><button class="btn btn-primary" type="button" (click)="consult()"
+          [disabled]="!selectedId() || consulting()">@if (consulting()) { Consultando... } @else { Consultar }</button>
+      </div>
+    </div>
+  </section>
 
   @if (error()) { <div class="alert alert-danger mt-3 mb-0" role="alert">{{ error() }}</div> }
 
   @if (consultation()) {
-    <section class="card data-card mt-4">
-      <div class="card-header"><h2>Vista 360</h2></div>
-      <div class="card-body">
-        @if (vistaRecords().length) {
-          <div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr>@for (field of vistaFields(); track field) { <th scope="col">{{ field }}</th> }</tr></thead>
-            <tbody>@for (record of vistaRecords(); track record._id) { <tr>@for (field of vistaFields(); track field) { <td>{{ record._source[field] ?? '—' }}</td> }</tr> }</tbody>
-          </table></div>
-        } @else { <p class="text-body-secondary mb-0">No se encontraron registros de Vista 360.</p> }
-      </div>
-    </section>
-
-    <div class="row g-4 mt-0">
-      <section class="col-12 col-xl-6">
-        <div class="card data-card h-100">
-          <div class="card-header bg-transparent">
-            <div class="d-flex align-items-center justify-content-between gap-2">
-              <h2>Financieros</h2>
-              <button class="btn btn-sm btn-outline-primary" type="button" (click)="financialFieldsOpen.set(true)">
-                Columnas
-              </button>
-            </div>
-            @if (cutoffs('financieros').length) {
-              <ul class="nav nav-tabs card-header-tabs mt-3">
-                @for (cutoff of cutoffs('financieros'); track cutoff) { <li class="nav-item"><button class="nav-link" type="button" [class.active]="activeCutoffs().financieros === cutoff" (click)="selectCutoff('financieros', cutoff)">{{ cutoff }}</button></li> }
-              </ul>
-            }
-          </div>
-          <div class="card-body">
-            @if (financialRows().length) {
-              <div class="table-responsive financial-table"><table class="table table-hover align-middle mb-0"><thead><tr><th scope="col">Campo</th><th scope="col">Valor</th></tr></thead>
-                <tbody>@for (row of financialRows(); track row.label) { <tr><td>{{ row.label }}</td><td>{{ row.value }}</td></tr> }</tbody>
-              </table></div>
-            } @else { <p class="text-body-secondary mb-0">No se encontró información para esta fecha de corte.</p> }
-          </div>
-        </div>
-      </section>
-      <section class="col-12 col-xl-6">
-        <div class="card data-card h-100"><div class="card-header"><h2>General</h2></div><div class="card-body"><div id="society-financial-chart" class="financial-chart"></div></div></div>
-      </section>
+  <section class="card data-card mt-4">
+    <div class="card-header">
+      <h2>Vista 360</h2>
     </div>
+    <div class="card-body">
+      @if (vistaRecords().length) {
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>@for (field of vistaFields(); track field) { <th scope="col">{{ field }}</th> }</tr>
+          </thead>
+          <tbody>@for (record of vistaRecords(); track record._id) { <tr>@for (field of vistaFields(); track field) {
+              <td>{{ record._source[field] ?? '—' }}</td> }</tr> }</tbody>
+        </table>
+      </div>
+      } @else { <p class="text-body-secondary mb-0">No se encontraron registros de Vista 360.</p> }
+    </div>
+  </section>
 
-    @for (card of detailCards; track card.key) {
-      <section class="card data-card mt-4">
-        <div class="card-header bg-transparent"><h2>{{ card.label }}</h2>
-          @if (cutoffs(card.key).length) { <ul class="nav nav-tabs card-header-tabs mt-3">@for (cutoff of cutoffs(card.key); track cutoff) { <li class="nav-item"><button class="nav-link" type="button" [class.active]="activeCutoffs()[card.key] === cutoff" (click)="selectCutoff(card.key, cutoff)">{{ cutoff }}</button></li> }</ul> }
+  <div class="row g-4 mt-0">
+    <section class="col-12 col-xl-6">
+      <div class="card data-card h-100">
+        <div class="card-header bg-transparent">
+          <div class="d-flex align-items-center justify-content-between gap-2">
+            <h2>Financieros</h2>
+            <button class="btn btn-sm btn-outline-primary" type="button" (click)="financialFieldsOpen.set(true)">
+              Columnas
+            </button>
+          </div>
+          @if (cutoffs('financieros').length) {
+          <ul class="nav nav-tabs card-header-tabs mt-3">
+            @for (cutoff of cutoffs('financieros'); track cutoff) { <li class="nav-item"><button class="nav-link"
+                type="button" [class.active]="activeCutoffs().financieros === cutoff"
+                (click)="selectCutoff('financieros', cutoff)">{{ cutoff }}</button></li> }
+          </ul>
+          }
         </div>
         <div class="card-body">
-          @if (detailRows(card.key).length) {
-            <div class="table-responsive detail-table"><table class="table table-hover align-middle mb-0"><thead><tr><th scope="col">Campo</th><th scope="col">Valor</th></tr></thead><tbody>@for (row of detailRows(card.key); track row.field) { <tr><td>{{ row.field }}</td><td>{{ row.value }}</td></tr> }</tbody></table></div>
+          @if (financialRows().length) {
+          <div class="table-responsive financial-table">
+            <table class="table table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th scope="col">Campo</th>
+                  <th scope="col">Valor</th>
+                </tr>
+              </thead>
+              <tbody>@for (row of financialRows(); track row.label) { <tr>
+                  <td>{{ row.label }}</td>
+                  <td>{{ row.value }}</td>
+                </tr> }</tbody>
+            </table>
+          </div>
           } @else { <p class="text-body-secondary mb-0">No se encontró información para esta fecha de corte.</p> }
         </div>
-      </section>
-    }
+      </div>
+    </section>
+    <section class="col-12 col-xl-6">
+      <div class="card data-card h-100">
+        <div class="card-header">
+          <h2>General</h2>
+        </div>
+        <div class="card-body">
+          <div id="society-financial-chart" class="financial-chart"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  @for (card of detailCards; track card.key) {
+  <section class="card data-card mt-4">
+    <div class="card-header bg-transparent">
+      <h2>{{ card.label }}</h2>
+      @if (cutoffs(card.key).length) { <ul class="nav nav-tabs card-header-tabs mt-3">@for (cutoff of cutoffs(card.key);
+        track cutoff) { <li class="nav-item"><button class="nav-link" type="button"
+            [class.active]="activeCutoffs()[card.key] === cutoff" (click)="selectCutoff(card.key, cutoff)">{{ cutoff
+            }}</button></li> }</ul> }
+    </div>
+    <div class="card-body">
+      @if (detailRows(card.key).length) {
+      <div class="table-responsive detail-table">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th scope="col">Campo</th>
+              <th scope="col">Valor</th>
+            </tr>
+          </thead>
+          <tbody>@for (row of detailRows(card.key); track row.field) { <tr>
+              <td>{{ row.field }}</td>
+              <td>{{ row.value }}</td>
+            </tr> }</tbody>
+        </table>
+      </div>
+      } @else { <p class="text-body-secondary mb-0">No se encontró información para esta fecha de corte.</p> }
+    </div>
+  </section>
+  }
   }
 </section>
 
 @if (financialFieldsOpen()) {
-  <div class="modal d-block society-modal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="financial-fields-title">
-    <div class="modal-dialog modal-dialog-scrollable" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3 class="modal-title fs-6" id="financial-fields-title">Columnas financieras</h3>
-          <button type="button" class="btn-close" aria-label="Cerrar" (click)="financialFieldsOpen.set(false)"></button>
-        </div>
-        <div class="modal-body">
-          <p class="small text-body-secondary">Marca las propiedades que deseas visualizar para cada fecha de corte.</p>
-          <table class="table table-sm align-middle mb-0">
-            <thead>
-              <tr><th scope="col">Visualizar</th><th scope="col">Propiedad</th><th scope="col">Valor original</th></tr>
-            </thead>
-            <tbody>
-              @for (field of financialFieldsAvailable(); track field.key) {
-                <tr>
-                  <td class="check-column">
-                    <input class="form-check-input" type="checkbox" [id]="'financial-' + field.key" [checked]="isFinancialFieldVisible(field.key)" (change)="toggleFinancialField(field.key, $any($event.target).checked)">
-                  </td>
-                  <td><label class="form-check-label" [for]="'financial-' + field.key">{{ field.label }}</label></td>
-                  <td class="original-value">{{ field.rawValue }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-        <div class="modal-footer"><button class="btn btn-primary btn-sm" type="button" (click)="financialFieldsOpen.set(false)">Listo</button></div>
+<div class="modal d-block society-modal" tabindex="-1" role="dialog" aria-modal="true"
+  aria-labelledby="financial-fields-title">
+  <div class="modal-dialog modal-dialog-scrollable" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title fs-6" id="financial-fields-title">Columnas financieras</h3>
+        <button type="button" class="btn-close" aria-label="Cerrar" (click)="financialFieldsOpen.set(false)"></button>
       </div>
+      <div class="modal-body">
+        <p class="small text-body-secondary">Marca las propiedades que deseas visualizar para cada fecha de corte.</p>
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th scope="col">Visualizar</th>
+              <th scope="col">Propiedad</th>
+              <th class="d-none" scope="col">Original</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (field of financialFieldsAvailable(); track field.key) {
+            <tr>
+              <td class="check-column">
+                <input class="form-check-input" type="checkbox" [id]="'financial-' + field.key"
+                  [checked]="isFinancialFieldVisible(field.key)"
+                  (change)="toggleFinancialField(field.key, $any($event.target).checked)">
+              </td>
+              <td><label class="form-check-label" [for]="'financial-' + field.key">{{ field.label }}</label></td>
+              <td class="d-none original-value">{{ field.key }}</td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer"><button class="btn btn-primary btn-sm" type="button"
+          (click)="financialFieldsOpen.set(false)">Listo</button></div>
     </div>
   </div>
-  <div class="modal-backdrop fade show"></div>
+</div>
+<div class="modal-backdrop fade show"></div>
 }
