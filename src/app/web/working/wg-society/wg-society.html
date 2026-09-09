@@ -35,21 +35,18 @@
 @if (activeDetail(); as detail) {
   <div class="modal d-block society-detail-modal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="detail-title">
     <div class="modal-dialog modal-fullscreen" role="document"><div class="modal-content">
-      <div class="modal-header">
+      <div class="modal-header bg-primary text-white" data-bs-theme="dark">
         <h2 class="modal-title fs-5" id="detail-title">{{ detailLabel(detail) }}</h2>
-        <button type="button" class="btn-close" aria-label="Cerrar" (click)="closeDetail()"></button>
+        <button type="button" class="btn-close btn-close-white" aria-label="Cerrar" (click)="closeDetail()"></button>
       </div>
       <div class="modal-body">
         <div class="row g-4 h-100">
           <section class="col-12 col-xl-6">
             <div class="card data-card h-100">
               <div class="card-header">
-                <div class="d-flex align-items-center justify-content-between gap-2">
-                  <h3 class="fs-6 mb-0">{{ detailLabel(detail) }}</h3>
-                  @if (detail === 'financieros') { <button class="btn btn-sm btn-outline-primary" type="button" (click)="financialFieldsOpen.set(true)">Columnas</button> }
-                </div>
+                @if (detail === 'financieros') { <div class="d-flex justify-content-end mb-2"><button class="btn btn-sm btn-outline-primary" type="button" (click)="financialFieldsOpen.set(true)">Columnas</button></div> }
                 @if (cutoffs(detail).length) {
-                  <ul class="nav nav-tabs card-header-tabs mt-3">
+                  <ul class="nav nav-underline">
                     @for (cutoff of cutoffs(detail); track cutoff) { <li class="nav-item"><button class="nav-link" type="button" [class.active]="activeCutoffs()[detail] === cutoff" (click)="selectCutoff(detail, cutoff)">{{ cutoff }}</button></li> }
                   </ul>
                 }
