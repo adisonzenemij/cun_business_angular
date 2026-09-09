@@ -1,5 +1,7 @@
 import { Component, OnDestroy, effect, inject, signal } from '@angular/core';
-import Highcharts from 'highcharts';
+import Highcharts from 'highcharts/esm/highcharts';
+import 'highcharts/esm/modules/exporting';
+import 'highcharts/esm/modules/export-data';
 import { forkJoin } from 'rxjs';
 import {
   Answer,
@@ -152,6 +154,10 @@ export class WgReport implements OnDestroy {
         chart: { backgroundColor: 'transparent' },
         colors,
         credits: { enabled: false },
+        exporting: {
+          enabled: true,
+          buttons: { contextButton: { menuItems: ['viewFullscreen', 'printChart', 'separator', 'downloadPNG', 'downloadJPEG', 'downloadSVG', 'downloadPDF', 'separator', 'downloadCSV', 'downloadXLS', 'viewData'] } },
+        },
         title: { text: undefined },
         legend: { itemStyle: normalText, itemHoverStyle: normalText },
         accessibility: { enabled: false },

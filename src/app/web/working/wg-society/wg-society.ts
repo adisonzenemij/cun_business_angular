@@ -1,6 +1,8 @@
 import { Component, OnDestroy, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import Highcharts from 'highcharts';
+import Highcharts from 'highcharts/esm/highcharts';
+import 'highcharts/esm/modules/exporting';
+import 'highcharts/esm/modules/export-data';
 import { FAST_API_URL, FastApi } from '../../../services/backend/python/fast/fast-api';
 import { Theme } from '../../../services/core/theme';
 
@@ -166,6 +168,10 @@ export class WgSociety implements OnDestroy {
         title: { text: metric.name, style },
         subtitle: { text: 'Distribución por fecha de corte', style },
         credits: { enabled: false },
+        exporting: {
+          enabled: true,
+          buttons: { contextButton: { menuItems: ['viewFullscreen', 'printChart', 'separator', 'downloadPNG', 'downloadJPEG', 'downloadSVG', 'downloadPDF', 'separator', 'downloadCSV', 'downloadXLS', 'viewData'] } },
+        },
         accessibility: { enabled: false },
         tooltip: { pointFormat: '<b>$ {point.y:,.0f}</b> ({point.percentage:.1f}%)' },
         plotOptions: {
@@ -186,6 +192,10 @@ export class WgSociety implements OnDestroy {
       title: { text: key === 'financieros' ? 'Comparación' : 'General', style },
       subtitle: { text: `${this.detailLabel(key)} por fecha de corte`, style },
       credits: { enabled: false },
+      exporting: {
+        enabled: true,
+        buttons: { contextButton: { menuItems: ['viewFullscreen', 'printChart', 'separator', 'downloadPNG', 'downloadJPEG', 'downloadSVG', 'downloadPDF', 'separator', 'downloadCSV', 'downloadXLS', 'viewData'] } },
+      },
       accessibility: { enabled: false },
       xAxis: { categories: cutoffs, labels: { style } },
       yAxis: { title: { text: 'Pesos colombianos', style }, labels: { style, formatter() { return compact.format(this.value as number); } } },
