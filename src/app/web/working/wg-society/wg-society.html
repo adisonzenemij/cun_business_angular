@@ -128,11 +128,13 @@
                     }
                   </ul>
                 } @else { <h3 class="fs-6 mb-0">General</h3> }
-                @if (detail === 'situacion_financiera') {
-                  <button class="btn btn-sm btn-outline-primary" type="button"
-                    (click)="situationChartFieldsOpen.set(true)">Series</button>
-                }
-                <button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshDetailChart()">Refrescar</button>
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                  @if (detail === 'situacion_financiera') {
+                    <button class="btn btn-sm btn-outline-primary" type="button"
+                      (click)="situationChartFieldsOpen.set(true)">Series</button>
+                  }
+                  <button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshDetailChart()">Refrescar</button>
+                </div>
               </div>
               <div class="card-body chart-card-body">
                 <div id="society-detail-chart" class="financial-chart"></div>
