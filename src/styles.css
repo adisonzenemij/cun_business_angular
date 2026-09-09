@@ -78,3 +78,14 @@ body {
 .highcharts-data-table tbody tr:hover {
   background: var(--bs-tertiary-bg);
 }
+
+/* La tabla comparativa de las donas conserva una lectura contable, sin bandas. */
+.financial-chart.donut-chart .highcharts-data-table tbody th {
+  font-weight: 400;
+}
+
+.financial-chart.donut-chart .highcharts-data-table tbody tr,
+.financial-chart.donut-chart .highcharts-data-table tbody tr:nth-child(even),
+.financial-chart.donut-chart .highcharts-data-table tbody tr:hover {
+  background: transparent;
+}

@@ -143,7 +143,8 @@
                 </div>
               </div>
               <div class="card-body chart-card-body">
-                <div id="society-detail-chart" class="financial-chart"></div>
+                <div id="society-detail-chart" class="financial-chart"
+                  [class.donut-chart]="detail === 'situacion_financiera' && situationChartType() === 'donas'"></div>
               </div>
             </div>
           </section>

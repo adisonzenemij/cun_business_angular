@@ -313,11 +313,11 @@ export class WgSociety implements OnDestroy {
         }],
       });
       this.detailChart.exporting.getDataRows = () => [
-        ['Comparativo', 'Fecha de corte', 'Valores financieros'],
+        ['Comparativo', 'Fecha de corte', 'Valores Financieros'],
         ...metrics.flatMap((metric) => cutoffs.map((cutoff) => [
           metric.name,
           cutoff,
-          this.number(this.path(consultation[key][cutoff]?.hits?.hits?.[0]?._source, metric.field)),
+          this.formatCurrency(this.path(consultation[key][cutoff]?.hits?.hits?.[0]?._source, metric.field)),
         ])),
       ];
       return;
