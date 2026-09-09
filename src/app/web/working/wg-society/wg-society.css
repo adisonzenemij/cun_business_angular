@@ -76,6 +76,10 @@
   overflow: hidden;
 }
 
+.society-detail-modal .data-card > .card-header {
+  min-height: 3.75rem;
+}
+
 .society-modal {
   z-index: 1060;
 }
