@@ -121,8 +121,14 @@
           <section class="col-12 col-xl-6">
             <div class="card data-card h-100">
               <div class="card-header d-flex align-items-center justify-content-between gap-2">
-                <h3 class="fs-6 mb-0">General</h3><button class="btn btn-sm btn-outline-primary" type="button"
-                  (click)="refreshDetailChart()">Refrescar</button>
+                @if (detail === 'financieros') {
+                  <ul class="nav nav-underline flex-grow-1">
+                    @for (tab of ['comparacion', 'activos', 'ingresos', 'utilidad_neta']; track tab) {
+                      <li class="nav-item"><button class="nav-link" type="button" [class.active]="financialChartTab() === tab" (click)="selectFinancialChartTab($any(tab))">{{ financialTabLabel($any(tab)) }}</button></li>
+                    }
+                  </ul>
+                } @else { <h3 class="fs-6 mb-0">General</h3> }
+                <button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshDetailChart()">Refrescar</button>
               </div>
               <div class="card-body">
                 <div id="society-detail-chart" class="financial-chart"></div>

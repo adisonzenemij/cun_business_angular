@@ -8,6 +8,7 @@ interface Society { id_universal: string; fd_company: string; fd_document: strin
 interface SearchHit { _id: string; _source: Record<string, unknown>; }
 interface SearchResult { hits?: { hits?: SearchHit[] }; }
 type DetailKey = 'financieros' | 'situacion_financiera' | 'resultado_integral';
+type FinancialChartTab = 'comparacion' | 'activos' | 'ingresos' | 'utilidad_neta';
 type Consultation = { vista_360: SearchResult } & Record<DetailKey, Record<string, SearchResult>>;
 interface ValueRow { field: string; value: string; }
 interface FinancialRow { key: string; label: string; value: string; }
@@ -32,6 +33,7 @@ export class WgSociety implements OnDestroy {
   readonly error = signal('');
   readonly consultation = signal<Consultation | null>(null);
   readonly activeDetail = signal<DetailKey | null>(null);
+  readonly financialChartTab = signal<FinancialChartTab>('comparacion');
   readonly financialFieldsOpen = signal(false);
   readonly visibleFinancialFields = signal<string[]>([
     'infoEmpresa.NIT', 'infoEmpresa.nombreEmpresa', 'fechaCorte', 'infoEmpresa.puntoEntrada', 'estado',
@@ -47,6 +49,7 @@ export class WgSociety implements OnDestroy {
       this.theme.mode();
       this.consultation();
       this.activeDetail();
+      this.financialChartTab();
       this.scheduleDetailChart();
     });
     this.loadSocieties();
@@ -94,9 +97,10 @@ export class WgSociety implements OnDestroy {
     this.error.set('');
   }
 
-  openDetail(key: DetailKey): void { this.activeDetail.set(key); }
+  openDetail(key: DetailKey): void { this.financialChartTab.set('comparacion'); this.activeDetail.set(key); }
   closeDetail(): void { this.financialFieldsOpen.set(false); this.activeDetail.set(null); this.detailChart?.destroy(); }
   refreshDetailChart(): void { this.scheduleDetailChart(); }
+  selectFinancialChartTab(tab: FinancialChartTab): void { this.financialChartTab.set(tab); }
   detailLabel(key: DetailKey | null = this.activeDetail()): string {
     return ({ financieros: 'Financieros', situacion_financiera: 'Situación Financiera', resultado_integral: 'Resultado Integral' } as Record<DetailKey, string>)[key ?? 'financieros'];
   }
@@ -154,9 +158,32 @@ export class WgSociety implements OnDestroy {
     const dark = document.documentElement.dataset['bsTheme'] === 'dark';
     const style: Highcharts.CSSObject = { color: dark ? '#f8f9fa' : '#212529', fontWeight: '400' };
     const compact = new Intl.NumberFormat('es-CO', { notation: 'compact', maximumFractionDigits: 1 });
+    const financialTab = this.financialChartTab();
+    if (key === 'financieros' && financialTab !== 'comparacion') {
+      const metric = metrics.find((item) => item.name === this.financialTabLabel(financialTab))!;
+      this.detailChart = Highcharts.chart(container, {
+        chart: { type: 'pie', backgroundColor: 'transparent' },
+        title: { text: metric.name, style },
+        subtitle: { text: 'Distribución por fecha de corte', style },
+        credits: { enabled: false },
+        accessibility: { enabled: false },
+        tooltip: { pointFormat: '<b>$ {point.y:,.0f}</b> ({point.percentage:.1f}%)' },
+        plotOptions: {
+          pie: {
+            innerSize: '65%', borderRadius: 8, borderWidth: 2,
+            dataLabels: { enabled: true, format: '{point.name}: {point.percentage:.0f}%', style: { ...style, textOutline: 'none' } },
+          },
+        },
+        series: [{
+          type: 'pie', name: metric.name,
+          data: cutoffs.map((cutoff) => ({ name: cutoff, y: this.number(this.path(consultation[key][cutoff]?.hits?.hits?.[0]?._source, metric.field)) })),
+        }],
+      });
+      return;
+    }
     this.detailChart = Highcharts.chart(container, {
       chart: { type: 'line', backgroundColor: 'transparent' },
-      title: { text: 'General', style },
+      title: { text: key === 'financieros' ? 'Comparación' : 'General', style },
       subtitle: { text: `${this.detailLabel(key)} por fecha de corte`, style },
       credits: { enabled: false },
       accessibility: { enabled: false },
@@ -188,6 +215,10 @@ export class WgSociety implements OnDestroy {
       { name: 'Ingresos', field: 'resultadoIntegral.ingreso' },
       { name: 'Utilidad neta', field: 'resultadoIntegral.gananciaPerdida' },
     ];
+  }
+
+  financialTabLabel(tab: FinancialChartTab): string {
+    return ({ comparacion: 'Comparación', activos: 'Activos', ingresos: 'Ingresos', utilidad_neta: 'Utilidad neta' } as Record<FinancialChartTab, string>)[tab];
   }
 
   private cutoffsFrom(results: Record<string, SearchResult>): string[] { return Object.keys(results).sort((first, second) => second.localeCompare(first)); }
