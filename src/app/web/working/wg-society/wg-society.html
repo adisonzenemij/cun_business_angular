@@ -67,16 +67,17 @@
           <section class="col-12 col-xl-6">
             <div class="card data-card h-100">
               <div class="card-header">
-                @if (detail === 'financieros') { <div class="d-flex justify-content-end mb-2"><button
-                    class="btn btn-sm btn-outline-primary" type="button"
-                    (click)="financialFieldsOpen.set(true)">Columnas</button></div> }
-                @if (cutoffs(detail).length) {
-                <ul class="nav nav-underline">
-                  @for (cutoff of cutoffs(detail); track cutoff) { <li class="nav-item"><button class="nav-link"
-                      type="button" [class.active]="activeCutoffs()[detail] === cutoff"
-                      (click)="selectCutoff(detail, cutoff)">{{ cutoff }}</button></li> }
-                </ul>
-                }
+                <div class="d-flex align-items-center justify-content-between gap-2">
+                  @if (cutoffs(detail).length) {
+                    <ul class="nav nav-underline flex-grow-1">
+                      @for (cutoff of cutoffs(detail); track cutoff) { <li class="nav-item"><button class="nav-link"
+                          type="button" [class.active]="activeCutoffs()[detail] === cutoff"
+                          (click)="selectCutoff(detail, cutoff)">{{ cutoff }}</button></li> }
+                    </ul>
+                  }
+                  @if (detail === 'financieros') { <button class="btn btn-sm btn-outline-primary" type="button"
+                      (click)="financialFieldsOpen.set(true)">Columnas</button> }
+                </div>
               </div>
               <div class="card-body">
                 @if (detail === 'financieros') {
