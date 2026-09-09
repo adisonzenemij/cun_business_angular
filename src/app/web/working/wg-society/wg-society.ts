@@ -37,12 +37,13 @@ export class WgSociety implements OnDestroy {
   readonly consultation = signal<Consultation | null>(null);
   readonly activeDetail = signal<DetailKey | null>(null);
   readonly financialChartTab = signal<FinancialChartTab>('comparacion');
-  readonly financialFieldsOpen = signal(false);
+  readonly columnsDetail = signal<DetailKey | null>(null);
   readonly visibleFinancialFields = signal<string[]>([
     'infoEmpresa.NIT', 'infoEmpresa.nombreEmpresa', 'fechaCorte', 'infoEmpresa.puntoEntrada', 'estado',
     'situacionFinanciera.activo', 'resultadoIntegral.ingreso', 'resultadoIntegral.gananciaPerdida',
     'indicadores.roa', 'indicadores.roe', 'calculated.ros', 'calculated.margenBruto',
   ]);
+  readonly visibleDetailFields = signal<Partial<Record<Exclude<DetailKey, 'financieros'>, string[]>>>({});
   readonly activeCutoffs = signal<Record<DetailKey, string>>({
     financieros: '', situacion_financiera: '', resultado_integral: '',
   });
@@ -102,7 +103,7 @@ export class WgSociety implements OnDestroy {
   }
 
   openDetail(key: DetailKey): void { this.financialChartTab.set('comparacion'); this.activeDetail.set(key); }
-  closeDetail(): void { this.financialFieldsOpen.set(false); this.activeDetail.set(null); this.chartRenderVersion++; this.destroyDetailChart(); }
+  closeDetail(): void { this.columnsDetail.set(null); this.activeDetail.set(null); this.chartRenderVersion++; this.destroyDetailChart(); }
   refreshDetailChart(): void { this.scheduleDetailChart(); }
   selectFinancialChartTab(tab: FinancialChartTab): void { this.financialChartTab.set(tab); }
   detailLabel(key: DetailKey | null = this.activeDetail()): string {
@@ -136,9 +137,39 @@ export class WgSociety implements OnDestroy {
   }
   isFinancialFieldVisible(field: string): boolean { return this.visibleFinancialFields().includes(field); }
 
-  detailRows(key: DetailKey): ValueRow[] {
+  detailRows(key: Exclude<DetailKey, 'financieros'>): FinancialRow[] {
+    const selected = this.visibleDetailFields()[key];
+    const rows = this.detailFieldsAvailable(key);
+    return selected ? rows.filter((row) => selected.includes(row.key)) : rows;
+  }
+
+  detailFieldsAvailable(key: Exclude<DetailKey, 'financieros'>): FinancialRow[] {
     const source = this.selectedSource(key);
-    return source ? this.flatten(source) : [];
+    return source ? this.flatten(source).map((row) => ({
+      key: row.field,
+      label: this.detailFieldLabel(row.field),
+      value: this.formatDetailValue(row.field, row.value),
+    })) : [];
+  }
+
+  fieldsAvailable(key: DetailKey): FinancialRow[] {
+    return key === 'financieros' ? this.financialFieldsAvailable() : this.detailFieldsAvailable(key);
+  }
+
+  isFieldVisible(key: DetailKey, field: string): boolean {
+    if (key === 'financieros') return this.isFinancialFieldVisible(field);
+    return this.visibleDetailFields()[key]?.includes(field) ?? true;
+  }
+
+  toggleField(key: DetailKey, field: string, checked: boolean): void {
+    if (key === 'financieros') {
+      this.toggleFinancialField(field, checked);
+      return;
+    }
+    this.visibleDetailFields.update((current) => {
+      const fields = current[key] ?? this.detailFieldsAvailable(key).map((row) => row.key);
+      return { ...current, [key]: checked ? [...new Set([...fields, field])] : fields.filter((item) => item !== field) };
+    });
   }
 
   private selectedSource(key: DetailKey): Record<string, unknown> | undefined {
@@ -285,6 +316,34 @@ export class WgSociety implements OnDestroy {
     if (['situacionFinanciera.activo', 'resultadoIntegral.ingreso', 'resultadoIntegral.gananciaPerdida'].includes(field)) return this.formatCurrency(value);
     if (['indicadores.roa', 'indicadores.roe'].includes(field)) return this.formatPercent(value);
     return value;
+  }
+  private detailFieldLabel(field: string): string {
+    const labels: Record<string, string> = {
+      'infoEmpresa.NIT': 'NIT', 'infoEmpresa.nombreEmpresa': 'Empresa', 'infoEmpresa.corte': 'Fecha de corte',
+      'infoEmpresa.puntoEntrada': 'Punto de entrada', 'infoEmpresa.formulario': 'Formulario',
+      'infoEmpresa.codigoFormulario': 'Código de formulario', 'infoEmpresa.num_radicado': 'Número de radicado',
+      'infoEmpresa.documentos_adicionales': 'Documentos adicionales', 'resultado.NIT': 'NIT',
+      'resultado.fechaCorte': 'Fecha de corte',
+    };
+    if (labels[field]) return labels[field];
+    const segments = field.split('.').map((segment) => {
+      const special: Record<string, string> = {
+        infoEmpresa: 'Información de empresa', resultado: 'Resultado', registros: 'Registros',
+        valorCorte: 'Valor al corte', valorAnterior: 'Valor anterior', corteAnterior: 'Corte anterior',
+        corte: 'Corte', nombre: 'Nombre', NIT: 'NIT',
+      };
+      return special[segment] ?? segment
+        .replace(/([a-záéíóúñ])([A-Z])/g, '$1 $2')
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (character) => character.toUpperCase());
+    });
+    return segments.join(' - ');
+  }
+  private formatDetailValue(field: string, value: string): string {
+    if (value === 'â€”' || value === '') return 'â€”';
+    const isAmount = /\.(corte|corteAnterior|valorCorte|valorAnterior)$/.test(field)
+      && !['infoEmpresa.corte', 'resultado.fechaCorte'].includes(field);
+    return isAmount ? this.formatCurrency(value) : value;
   }
   private flatten(value: unknown, prefix = ''): ValueRow[] {
     if (value === null || value === undefined) return [{ field: prefix, value: '—' }];

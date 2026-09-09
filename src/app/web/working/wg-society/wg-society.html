@@ -75,8 +75,8 @@
                           (click)="selectCutoff(detail, cutoff)">{{ cutoff }}</button></li> }
                     </ul>
                   }
-                  @if (detail === 'financieros') { <button class="btn btn-sm btn-outline-primary" type="button"
-                      (click)="financialFieldsOpen.set(true)">Columnas</button> }
+                  <button class="btn btn-sm btn-outline-primary" type="button"
+                    (click)="columnsDetail.set(detail)">Columnas</button>
                 </div>
               </div>
               <div class="card-body">
@@ -107,8 +107,8 @@
                         <th scope="col">Valor</th>
                       </tr>
                     </thead>
-                    <tbody>@for (row of detailRows(detail); track row.field) { <tr>
-                        <td>{{ row.field }}</td>
+                    <tbody>@for (row of detailRows(detail); track row.key) { <tr>
+                        <td>{{ row.label }}</td>
                         <td>{{ row.value }}</td>
                       </tr> }</tbody>
                   </table>
@@ -143,14 +143,14 @@
 <div class="modal-backdrop fade show"></div>
 }
 
-@if (financialFieldsOpen()) {
+@if (columnsDetail(); as selectedColumnsDetail) {
 <div class="modal d-block society-modal" tabindex="-1" role="dialog" aria-modal="true"
-  aria-labelledby="financial-fields-title">
+  aria-labelledby="columns-fields-title">
   <div class="modal-dialog modal-dialog-scrollable" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title fs-6" id="financial-fields-title">Columnas</h3><button type="button" class="btn-close"
-          aria-label="Cerrar" (click)="financialFieldsOpen.set(false)"></button>
+        <h3 class="modal-title fs-6" id="columns-fields-title">Columnas - {{ detailLabel(selectedColumnsDetail) }}</h3><button type="button" class="btn-close"
+          aria-label="Cerrar" (click)="columnsDetail.set(null)"></button>
       </div>
       <div class="modal-body">
         <p class="small text-body-secondary">Marca las propiedades que deseas visualizar para cada fecha de corte.</p>
@@ -162,12 +162,12 @@
               <th class="d-none" scope="col">Propiedad original</th>
             </tr>
           </thead>
-          <tbody>@for (field of financialFieldsAvailable(); track field.key) {
+          <tbody>@for (field of fieldsAvailable(selectedColumnsDetail); track field.key) {
             <tr>
-              <td class="check-column"><input class="form-check-input" type="checkbox" [id]="'financial-' + field.key"
-                  [checked]="isFinancialFieldVisible(field.key)"
-                  (change)="toggleFinancialField(field.key, $any($event.target).checked)"></td>
-              <td><label class="form-check-label" [for]="'financial-' + field.key">{{ field.label }}</label></td>
+              <td class="check-column"><input class="form-check-input" type="checkbox" [id]="selectedColumnsDetail + '-' + field.key"
+                  [checked]="isFieldVisible(selectedColumnsDetail, field.key)"
+                  (change)="toggleField(selectedColumnsDetail, field.key, $any($event.target).checked)"></td>
+              <td><label class="form-check-label" [for]="selectedColumnsDetail + '-' + field.key">{{ field.label }}</label></td>
               <td class="d-none original-value">{{ field.key }}</td>
             </tr>
             }
@@ -175,7 +175,7 @@
         </table>
       </div>
       <div class="modal-footer"><button class="btn btn-primary btn-sm" type="button"
-          (click)="financialFieldsOpen.set(false)">Listo</button></div>
+          (click)="columnsDetail.set(null)">Listo</button></div>
     </div>
   </div>
 </div>
