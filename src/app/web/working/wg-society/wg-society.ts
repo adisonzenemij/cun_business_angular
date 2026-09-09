@@ -27,6 +27,7 @@ export class WgSociety implements OnDestroy {
   private readonly theme = inject(Theme);
   private detailChart?: Highcharts.Chart;
   private chartTimer?: ReturnType<typeof setTimeout>;
+  private chartRenderVersion = 0;
 
   readonly societies = signal<Society[]>([]);
   readonly selectedId = signal('');
@@ -59,7 +60,8 @@ export class WgSociety implements OnDestroy {
 
   ngOnDestroy(): void {
     if (this.chartTimer) clearTimeout(this.chartTimer);
-    this.detailChart?.destroy();
+    this.chartRenderVersion++;
+    this.destroyDetailChart();
   }
 
   loadSocieties(): void {
@@ -100,16 +102,8 @@ export class WgSociety implements OnDestroy {
   }
 
   openDetail(key: DetailKey): void { this.financialChartTab.set('comparacion'); this.activeDetail.set(key); }
-  closeDetail(): void { this.financialFieldsOpen.set(false); this.activeDetail.set(null); this.detailChart?.destroy(); }
-  refreshDetailChart(): void {
-    if (this.chartTimer) clearTimeout(this.chartTimer);
-    this.detailChart?.destroy();
-    this.detailChart = undefined;
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      this.renderDetailChart();
-      this.detailChart?.reflow();
-    }));
-  }
+  closeDetail(): void { this.financialFieldsOpen.set(false); this.activeDetail.set(null); this.chartRenderVersion++; this.destroyDetailChart(); }
+  refreshDetailChart(): void { this.scheduleDetailChart(); }
   selectFinancialChartTab(tab: FinancialChartTab): void { this.financialChartTab.set(tab); }
   detailLabel(key: DetailKey | null = this.activeDetail()): string {
     return ({ financieros: 'Financieros', situacion_financiera: 'Situación Financiera', resultado_integral: 'Resultado Integral' } as Record<DetailKey, string>)[key ?? 'financieros'];
@@ -154,7 +148,18 @@ export class WgSociety implements OnDestroy {
 
   private scheduleDetailChart(): void {
     if (this.chartTimer) clearTimeout(this.chartTimer);
-    this.chartTimer = setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(() => this.renderDetailChart())), 0);
+    const version = ++this.chartRenderVersion;
+    this.chartTimer = setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (version !== this.chartRenderVersion) return;
+      this.renderDetailChart();
+      this.detailChart?.reflow();
+    })), 0);
+  }
+
+  private destroyDetailChart(): void {
+    const chart = this.detailChart;
+    this.detailChart = undefined;
+    if (chart?.container && chart.renderer) chart.destroy();
   }
 
   private chartExporting(dark: boolean): Highcharts.ExportingOptions {
@@ -180,7 +185,7 @@ export class WgSociety implements OnDestroy {
   }
 
   private renderDetailChart(): void {
-    this.detailChart?.destroy();
+    this.destroyDetailChart();
     const key = this.activeDetail();
     const consultation = this.consultation();
     const container = document.getElementById('society-detail-chart');
@@ -244,17 +249,17 @@ export class WgSociety implements OnDestroy {
     if (key === 'resultado_integral') return [
       { name: 'Ingresos', field: 'resultado.registros.ingresosActividadesOrdinarias.corte' },
       { name: 'Costo de ventas', field: 'resultado.registros.costoVentas.corte' },
-      { name: 'Utilidad neta', field: 'resultado.registros.gananciaPerdida.corte' },
+      { name: 'Utilidad Neta', field: 'resultado.registros.gananciaPerdida.corte' },
     ];
     return [
       { name: 'Activos', field: 'situacionFinanciera.activo' },
       { name: 'Ingresos', field: 'resultadoIntegral.ingreso' },
-      { name: 'Utilidad neta', field: 'resultadoIntegral.gananciaPerdida' },
+      { name: 'Utilidad Neta', field: 'resultadoIntegral.gananciaPerdida' },
     ];
   }
 
   financialTabLabel(tab: FinancialChartTab): string {
-    return ({ comparacion: 'Comparación', activos: 'Activos', ingresos: 'Ingresos', utilidad_neta: 'Utilidad neta' } as Record<FinancialChartTab, string>)[tab];
+    return ({ comparacion: 'Comparación', activos: 'Activos', ingresos: 'Ingresos', utilidad_neta: 'Utilidad Neta' } as Record<FinancialChartTab, string>)[tab];
   }
 
   private cutoffsFrom(results: Record<string, SearchResult>): string[] { return Object.keys(results).sort((first, second) => second.localeCompare(first)); }
@@ -270,7 +275,7 @@ export class WgSociety implements OnDestroy {
       'infoEmpresa.NIT': 'NIT', 'infoEmpresa.nombreEmpresa': 'Empresa', 'fechaCorte': 'Fecha de corte',
       'infoEmpresa.corte': 'Fecha de corte', 'infoEmpresa.puntoEntrada': 'Punto de entrada',
       estado: 'Estado actual', 'situacionFinanciera.activo': 'Activos',
-      'resultadoIntegral.ingreso': 'Ingresos', 'resultadoIntegral.gananciaPerdida': 'Utilidad neta',
+      'resultadoIntegral.ingreso': 'Ingresos', 'resultadoIntegral.gananciaPerdida': 'Utilidad Neta',
       'indicadores.roa': 'ROA', 'indicadores.roe': 'ROE',
     };
     if (labels[field]) return labels[field];
