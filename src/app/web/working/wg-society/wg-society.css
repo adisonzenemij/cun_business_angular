@@ -49,6 +49,14 @@
   min-height: 31rem;
 }
 
+.society-detail-modal {
+  z-index: 1055;
+}
+
+.society-detail-modal .modal-body {
+  overflow: auto;
+}
+
 .society-modal {
   z-index: 1060;
 }
