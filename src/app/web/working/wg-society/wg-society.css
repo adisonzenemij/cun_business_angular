@@ -33,9 +33,10 @@
 
 .detail-table,
 .financial-table {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-height: 0;
   overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .financial-table td:first-child {
@@ -48,6 +49,23 @@
 
 .society-detail-modal {
   z-index: 1055;
+}
+
+.society-detail-modal .modal-content {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.society-detail-modal .modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.society-detail-modal .modal-body > .row,
+.society-detail-modal .modal-body > .row > section {
+  height: 100%;
+  min-height: 0;
 }
 
 .society-detail-modal .data-card .card-body {
