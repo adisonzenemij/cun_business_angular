@@ -110,6 +110,7 @@ export class WgSociety implements OnDestroy {
   vistaFields(): string[] { return [...new Set(this.vistaRecords().flatMap((record) => Object.keys(record._source)))]; }
   cutoffs(key: DetailKey): string[] { return this.cutoffsFrom(this.consultation()?.[key] ?? {}); }
   selectCutoff(key: DetailKey, cutoff: string): void { this.activeCutoffs.update((current) => ({ ...current, [key]: cutoff })); }
+  refreshFinancialChart(): void { this.scheduleFinancialChart(); }
 
   financialRows(): FinancialRow[] {
     return this.financialFieldsAvailable().filter((row) => this.visibleFinancialFields().includes(row.key));

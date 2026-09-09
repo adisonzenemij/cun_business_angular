@@ -38,7 +38,8 @@
             <tr>@for (field of vistaFields(); track field) { <th scope="col">{{ field }}</th> }</tr>
           </thead>
           <tbody>@for (record of vistaRecords(); track record._id) { <tr>@for (field of vistaFields(); track field) {
-              <td>{{ record._source[field] ?? '—' }}</td> }</tr> }</tbody>
+              <td>{{ record._source[field] ?? '—' }}</td> }
+            </tr> }</tbody>
         </table>
       </div>
       } @else { <p class="text-body-secondary mb-0">No se encontraron registros de Vista 360.</p> }
@@ -48,7 +49,7 @@
   <div class="row g-4 mt-0">
     <section class="col-12 col-xl-6">
       <div class="card data-card h-100">
-        <div class="card-header bg-transparent">
+        <div class="card-header">
           <div class="d-flex align-items-center justify-content-between gap-2">
             <h2>Financieros</h2>
             <button class="btn btn-sm btn-outline-primary" type="button" (click)="financialFieldsOpen.set(true)">
@@ -85,8 +86,10 @@
     </section>
     <section class="col-12 col-xl-6">
       <div class="card data-card h-100">
-        <div class="card-header">
+        <div class="card-header d-flex align-items-center justify-content-between gap-2">
           <h2>General</h2>
+          <button class="btn btn-sm btn-outline-primary" type="button"
+            (click)="refreshFinancialChart()">Refrescar</button>
         </div>
         <div class="card-body">
           <div id="society-financial-chart" class="financial-chart"></div>
@@ -133,7 +136,7 @@
   <div class="modal-dialog modal-dialog-scrollable" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title fs-6" id="financial-fields-title">Columnas financieras</h3>
+        <h3 class="modal-title fs-6" id="financial-fields-title">Columnas</h3>
         <button type="button" class="btn-close" aria-label="Cerrar" (click)="financialFieldsOpen.set(false)"></button>
       </div>
       <div class="modal-body">
