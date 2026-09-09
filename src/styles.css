@@ -43,6 +43,10 @@ body {
   text-align: left;
 }
 
+.highcharts-data-table caption:empty {
+  display: none;
+}
+
 .highcharts-data-table th,
 .highcharts-data-table td {
   padding: .55rem .75rem;

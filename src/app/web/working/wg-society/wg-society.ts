@@ -296,6 +296,7 @@ export class WgSociety implements OnDestroy {
         chart: { type: 'pie', backgroundColor: 'transparent' },
         title: { text: undefined, style },
         subtitle: { text: 'Situación Financiera por fecha de corte', style },
+        lang: { chartTitle: '' },
         credits: { enabled: false },
         exporting: this.chartExporting(dark),
         navigation: this.chartNavigation(dark),
@@ -311,6 +312,14 @@ export class WgSociety implements OnDestroy {
           }))),
         }],
       });
+      this.detailChart.exporting.getDataRows = () => [
+        ['Comparativo', 'Fecha de corte', 'Valores financieros'],
+        ...metrics.flatMap((metric) => cutoffs.map((cutoff) => [
+          metric.name,
+          cutoff,
+          this.number(this.path(consultation[key][cutoff]?.hits?.hits?.[0]?._source, metric.field)),
+        ])),
+      ];
       return;
     }
     const cartesianType: 'line' | 'column' | 'bar' = key === 'situacion_financiera'
