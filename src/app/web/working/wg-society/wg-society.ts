@@ -98,7 +98,7 @@ export class WgSociety implements OnDestroy {
   closeDetail(): void { this.financialFieldsOpen.set(false); this.activeDetail.set(null); this.detailChart?.destroy(); }
   refreshDetailChart(): void { this.scheduleDetailChart(); }
   detailLabel(key: DetailKey | null = this.activeDetail()): string {
-    return ({ financieros: 'Financieros', situacion_financiera: 'Situación financiera', resultado_integral: 'Resultado integral' } as Record<DetailKey, string>)[key ?? 'financieros'];
+    return ({ financieros: 'Financieros', situacion_financiera: 'Situación Financiera', resultado_integral: 'Resultado Integral' } as Record<DetailKey, string>)[key ?? 'financieros'];
   }
 
   vistaRecords(): SearchHit[] { return this.consultation()?.vista_360.hits?.hits ?? []; }
