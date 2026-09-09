@@ -42,6 +42,9 @@ export class WgSociety implements OnDestroy {
   readonly chartFieldsDetail = signal<DetailKey | null>(null);
   readonly columnsSearch = signal('');
   readonly chartFieldsSearch = signal('');
+  readonly tableSearches = signal<Record<DetailKey, Record<string, string>>>({
+    financieros: {}, situacion_financiera: {}, resultado_integral: {},
+  });
   readonly visibleFinancialFields = signal<string[]>([
     'infoEmpresa.NIT', 'infoEmpresa.nombreEmpresa', 'fechaCorte', 'infoEmpresa.puntoEntrada', 'estado',
     'situacionFinanciera.activo', 'resultadoIntegral.ingreso', 'resultadoIntegral.gananciaPerdida',
@@ -125,6 +128,15 @@ export class WgSociety implements OnDestroy {
   cutoffs(key: DetailKey): string[] { return this.cutoffsFrom(this.consultation()?.[key] ?? {}); }
   selectCutoff(key: DetailKey, cutoff: string): void { this.activeCutoffs.update((current) => ({ ...current, [key]: cutoff })); }
 
+  tableSearch(key: DetailKey): string {
+    return this.tableSearches()[key][this.activeCutoffs()[key]] ?? '';
+  }
+
+  setTableSearch(key: DetailKey, search: string): void {
+    const cutoff = this.activeCutoffs()[key];
+    this.tableSearches.update((searches) => ({ ...searches, [key]: { ...searches[key], [cutoff]: search } }));
+  }
+
   financialRows(): FinancialRow[] {
     return this.financialFieldsAvailable().filter((row) => this.visibleFinancialFields().includes(row.key));
   }
@@ -151,6 +163,14 @@ export class WgSociety implements OnDestroy {
     const selected = this.visibleDetailFields()[key];
     const rows = this.detailFieldsAvailable(key);
     return selected ? rows.filter((row) => selected.includes(row.key)) : rows;
+  }
+
+  tableRows(key: DetailKey): FinancialRow[] {
+    return key === 'financieros' ? this.financialRows() : this.detailRows(key);
+  }
+
+  filteredTableRows(key: DetailKey): FinancialRow[] {
+    return this.filterFields(this.tableRows(key), this.tableSearch(key));
   }
 
   detailFieldsAvailable(key: Exclude<DetailKey, 'financieros'>): FinancialRow[] {

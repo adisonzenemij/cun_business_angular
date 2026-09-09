@@ -80,9 +80,13 @@
                 </div>
               </div>
               <div class="card-body">
-                @if (detail === 'financieros') {
-                @if (financialRows().length) {
-                <div class="table-responsive financial-table">
+                @if (tableRows(detail).length) {
+                <label class="visually-hidden" [for]="'detail-search-' + detail + '-' + activeCutoffs()[detail]">Buscar en la tabla</label>
+                <input class="form-control form-control-sm mb-3" type="search"
+                  [id]="'detail-search-' + detail + '-' + activeCutoffs()[detail]"
+                  placeholder="Buscar por campo o valor" [ngModel]="tableSearch(detail)"
+                  (ngModelChange)="setTableSearch(detail, $event)">
+                <div class="table-responsive" [class.financial-table]="detail === 'financieros'" [class.detail-table]="detail !== 'financieros'">
                   <table class="table table-hover align-middle mb-0">
                     <thead>
                       <tr>
@@ -90,31 +94,13 @@
                         <th scope="col">Valor</th>
                       </tr>
                     </thead>
-                    <tbody>@for (row of financialRows(); track row.key) { <tr>
+                    <tbody>@for (row of filteredTableRows(detail); track row.key) { <tr>
                         <td>{{ row.label }}</td>
                         <td>{{ row.value }}</td>
-                      </tr> }</tbody>
+                      </tr> } @empty { <tr><td colspan="2" class="text-body-secondary">No se encontraron coincidencias.</td></tr> }</tbody>
                   </table>
                 </div>
                 } @else { <p class="text-body-secondary mb-0">No se encontró información para esta fecha de corte.</p> }
-                } @else {
-                @if (detailRows(detail).length) {
-                <div class="table-responsive detail-table">
-                  <table class="table table-hover align-middle mb-0">
-                    <thead>
-                      <tr>
-                        <th scope="col">Campo</th>
-                        <th scope="col">Valor</th>
-                      </tr>
-                    </thead>
-                    <tbody>@for (row of detailRows(detail); track row.key) { <tr>
-                        <td>{{ row.label }}</td>
-                        <td>{{ row.value }}</td>
-                      </tr> }</tbody>
-                  </table>
-                </div>
-                } @else { <p class="text-body-secondary mb-0">No se encontró información para esta fecha de corte.</p> }
-                }
               </div>
             </div>
           </section>
