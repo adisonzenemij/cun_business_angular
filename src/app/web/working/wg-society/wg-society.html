@@ -158,9 +158,13 @@
       </div>
       <div class="modal-body">
         <p class="small text-body-secondary">Marca los valores financieros que deseas incluir en el gráfico.</p>
+        <label class="visually-hidden" for="situation-chart-search">Buscar serie</label>
+        <input id="situation-chart-search" class="form-control form-control-sm mb-3" type="search"
+          placeholder="Buscar por propiedad o nombre técnico" [ngModel]="situationChartSearch()"
+          (ngModelChange)="situationChartSearch.set($event)">
         <table class="table table-sm align-middle mb-0">
           <thead><tr><th scope="col">Visualizar</th><th scope="col">Propiedad</th><th class="d-none" scope="col">Propiedad original</th></tr></thead>
-          <tbody>@for (field of situationChartFieldsAvailable(); track field.key) {
+          <tbody>@for (field of filteredSituationChartFieldsAvailable(); track field.key) {
             <tr>
               <td class="check-column"><input class="form-check-input" type="checkbox" [id]="'situation-chart-' + field.key"
                 [checked]="isSituationChartFieldVisible(field.key)"
@@ -190,6 +194,10 @@
       </div>
       <div class="modal-body">
         <p class="small text-body-secondary">Marca las propiedades que deseas visualizar para cada fecha de corte.</p>
+        <label class="visually-hidden" for="columns-search">Buscar propiedad</label>
+        <input id="columns-search" class="form-control form-control-sm mb-3" type="search"
+          placeholder="Buscar por propiedad o nombre técnico" [ngModel]="columnsSearch()"
+          (ngModelChange)="columnsSearch.set($event)">
         <table class="table table-sm align-middle mb-0">
           <thead>
             <tr>
@@ -198,7 +206,7 @@
               <th class="d-none" scope="col">Propiedad original</th>
             </tr>
           </thead>
-          <tbody>@for (field of fieldsAvailable(selectedColumnsDetail); track field.key) {
+          <tbody>@for (field of filteredFieldsAvailable(selectedColumnsDetail); track field.key) {
             <tr>
               <td class="check-column"><input class="form-check-input" type="checkbox" [id]="selectedColumnsDetail + '-' + field.key"
                   [checked]="isFieldVisible(selectedColumnsDetail, field.key)"

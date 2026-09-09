@@ -39,6 +39,8 @@ export class WgSociety implements OnDestroy {
   readonly financialChartTab = signal<FinancialChartTab>('comparacion');
   readonly columnsDetail = signal<DetailKey | null>(null);
   readonly situationChartFieldsOpen = signal(false);
+  readonly columnsSearch = signal('');
+  readonly situationChartSearch = signal('');
   readonly visibleFinancialFields = signal<string[]>([
     'infoEmpresa.NIT', 'infoEmpresa.nombreEmpresa', 'fechaCorte', 'infoEmpresa.puntoEntrada', 'estado',
     'situacionFinanciera.activo', 'resultadoIntegral.ingreso', 'resultadoIntegral.gananciaPerdida',
@@ -163,6 +165,10 @@ export class WgSociety implements OnDestroy {
     return key === 'financieros' ? this.financialFieldsAvailable() : this.detailFieldsAvailable(key);
   }
 
+  filteredFieldsAvailable(key: DetailKey): FinancialRow[] {
+    return this.filterFields(this.fieldsAvailable(key), this.columnsSearch());
+  }
+
   isFieldVisible(key: DetailKey, field: string): boolean {
     if (key === 'financieros') return this.isFinancialFieldVisible(field);
     return this.visibleDetailFields()[key]?.includes(field) ?? true;
@@ -195,6 +201,10 @@ export class WgSociety implements OnDestroy {
     this.visibleSituationChartFields.update((selected) => checked
       ? [...new Set([...selected, field])]
       : selected.filter((item) => item !== field));
+  }
+
+  filteredSituationChartFieldsAvailable(): FinancialRow[] {
+    return this.filterFields(this.situationChartFieldsAvailable(), this.situationChartSearch());
   }
 
   private selectedSource(key: DetailKey): Record<string, unknown> | undefined {
@@ -381,6 +391,11 @@ export class WgSociety implements OnDestroy {
     const nameField = field.replace(/\.(corte|valorCorte|totalCorte)$/, '.nombre');
     const name = this.path(source, nameField);
     return typeof name === 'string' && name.trim() ? name : this.detailFieldLabel(field);
+  }
+  private filterFields(fields: FinancialRow[], query: string): FinancialRow[] {
+    const normalizedQuery = query.trim().toLocaleLowerCase('es-CO');
+    if (!normalizedQuery) return fields;
+    return fields.filter((field) => `${field.label} ${field.key}`.toLocaleLowerCase('es-CO').includes(normalizedQuery));
   }
   private flatten(value: unknown, prefix = ''): ValueRow[] {
     if (value === null || value === undefined) return [{ field: prefix, value: '—' }];
