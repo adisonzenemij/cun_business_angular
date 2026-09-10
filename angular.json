@@ -30,11 +30,12 @@
           },
           "configurations": {
             "production": {
+              "outputPath": "dist/d36851fed952_prod",
               "budgets": [
                 {
                   "type": "initial",
                   "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumError": "15MB"
                 },
                 {
                   "type": "anyComponentStyle",
@@ -45,6 +46,14 @@
               "outputHashing": "all"
             },
             "development": {
+              "outputPath": "dist/d36851fed952_dev",
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "15MB"
+                }
+              ],
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true,
@@ -54,18 +63,43 @@
                   "with": "src/environments/environment.dev.ts"
                 }
               ]
+            },
+            "staging": {
+              "outputPath": "dist/d36851fed952_stag",
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "15MB"
+                }
+              ],
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.stag.ts"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "allowedHosts": [
+              "localhost",
+              "127.0.0.1"
+            ]
+          },
           "configurations": {
             "production": {
               "buildTarget": "d36851fed952:build:production"
             },
             "development": {
               "buildTarget": "d36851fed952:build:development"
+            },
+            "staging": {
+              "buildTarget": "d36851fed952:build:staging"
             }
           },
           "defaultConfiguration": "development"
