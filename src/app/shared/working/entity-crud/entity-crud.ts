@@ -156,6 +156,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     this.selectedValues.set([]);
     this.editingValue.set(null);
     this.showValuesModal.set(false);
+    this.clearSelection();
   }
   moveValue(value: Record<string, unknown>, direction: -1 | 1): void {
     const questionId = value['pm_0acc84ae'];
