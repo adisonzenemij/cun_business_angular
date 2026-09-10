@@ -213,6 +213,7 @@ export class SurveyForm implements OnDestroy {
     };
     this.autoFilling.set(true);
     this.autoFillForm.disable();
+    this.answerForm.disable();
     this.api.autoFill(survey.id_universal, {
       responses: Number(values.responses),
       bots: Number(values.bots),
@@ -223,6 +224,7 @@ export class SurveyForm implements OnDestroy {
       next: (result) => {
         this.autoFilling.set(false);
         this.autoFillVisible.set(false);
+        this.answerForm.enable();
         // Actualiza de inmediato el contador mostrado; la recarga posterior lo
         // confirma con el valor real del servidor.
         this.selectedSurvey.update((current) =>
@@ -244,6 +246,7 @@ export class SurveyForm implements OnDestroy {
       error: (error: { status?: number; error?: { detail?: string } }) => {
         this.autoFilling.set(false);
         this.autoFillForm.enable();
+        this.answerForm.enable();
         this.loadAvailableSurveys();
         const detail = error.error?.detail;
         void Swal.fire({
@@ -395,6 +398,7 @@ export class SurveyForm implements OnDestroy {
   }
 
   submit(): void {
+    if (this.autoFilling()) return;
     const reservation = this.reservation();
     if (!this.selectedSurvey() || !reservation || this.answerForm.invalid) {
       this.answerForm.markAllAsTouched();
