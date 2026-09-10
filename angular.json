@@ -29,41 +29,6 @@
             ]
           },
           "configurations": {
-            "production": {
-              "outputPath": "dist/d36851fed952_prod",
-              "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "15MB"
-                },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
-                }
-              ],
-              "outputHashing": "all"
-            },
-            "development": {
-              "outputPath": "dist/d36851fed952_dev",
-              "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "15MB"
-                }
-              ],
-              "optimization": false,
-              "extractLicenses": false,
-              "sourceMap": true,
-              "fileReplacements": [
-                {
-                  "replace": "src/environments/environment.ts",
-                  "with": "src/environments/environment.dev.ts"
-                }
-              ]
-            },
             "local": {
               "outputPath": "dist/d36851fed952_local",
               "budgets": [
@@ -102,6 +67,25 @@
                 }
               ]
             },
+            "development": {
+              "outputPath": "dist/d36851fed952_dev",
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "15MB"
+                }
+              ],
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.dev.ts"
+                }
+              ]
+            },
             "staging": {
               "outputPath": "dist/d36851fed952_stag",
               "budgets": [
@@ -117,6 +101,22 @@
                   "with": "src/environments/environment.stag.ts"
                 }
               ]
+            },
+            "production": {
+              "outputPath": "dist/d36851fed952_prod",
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "15MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "4kB",
+                  "maximumError": "8kB"
+                }
+              ],
+              "outputHashing": "all"
             }
           },
           "defaultConfiguration": "production"
@@ -130,20 +130,20 @@
             ]
           },
           "configurations": {
-            "production": {
-              "buildTarget": "d36851fed952:build:production"
-            },
-            "development": {
-              "buildTarget": "d36851fed952:build:development"
-            },
             "local": {
               "buildTarget": "d36851fed952:build:local"
             },
             "docker": {
               "buildTarget": "d36851fed952:build:docker"
             },
+            "development": {
+              "buildTarget": "d36851fed952:build:development"
+            },
             "staging": {
               "buildTarget": "d36851fed952:build:staging"
+            },
+            "production": {
+              "buildTarget": "d36851fed952:build:production"
             }
           },
           "defaultConfiguration": "development"
