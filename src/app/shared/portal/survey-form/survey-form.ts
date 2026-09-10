@@ -207,7 +207,7 @@ export class SurveyForm implements OnDestroy {
         void Swal.fire({
           icon: result.failed ? 'warning' : 'success',
           title: result.failed ? 'Autocompletado parcial' : 'Encuesta autocompletada',
-          text: `Completadas: ${result.completed} de ${result.requested}. Bots: ${result.bots}. Memoria por bot: ${result.memory_mb_per_bot} MB.${result.failures.length ? `\n\n${result.failures.join('\n')}` : ''}`,
+          html: `Completadas: ${result.completed} de ${result.requested}. Bots: ${result.bots}.<br>Memoria por bot: ${result.memory_mb_per_bot} MB.${result.failures.length ? `<br><br>${result.failures.join('<br>')}` : ''}`,
           confirmButtonText: 'Aceptar',
         });
         this.loadAvailableSurveys();

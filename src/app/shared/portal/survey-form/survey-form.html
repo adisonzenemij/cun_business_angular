@@ -43,7 +43,8 @@
               <small class="text-body-secondary">Genera respuestas aleatorias con Chromium del servidor.</small>
             </div>
             <div class="d-flex gap-2">
-              <button class="btn btn-outline-primary" type="button" (click)="toggleAutoFill()" [disabled]="autoFilling()">
+              <button class="btn btn-outline-primary" type="button" (click)="toggleAutoFill()"
+                [disabled]="autoFilling()">
                 <i class="bi bi-robot me-1"></i>Autocompletar
               </button>
               @if (autoFillVisible()) {
@@ -79,8 +80,8 @@
                   <option value="GB" [disabled]="autoFillMemoryMaxMb() < 1024">GB</option>
                 </select>
               </div>
-              <div class="form-text">Máximo permitido: {{ autoFillMemoryMaximum() }} {{ autoFillMemoryUnit() }} por bot,
-                según la memoria disponible del servidor.</div>
+              <div class="form-text">Máximo permitido: {{ autoFillMemoryMaximum() }} {{ autoFillMemoryUnit() }} por bot.
+              </div>
             </div>
           </form>
           }

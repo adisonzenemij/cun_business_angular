@@ -242,7 +242,8 @@
           </div>
           }
           <div class="col-12" [class.col-md-8]="!managingQuestionValues()" [class.col-md-10]="managingQuestionValues()">
-            <label class="form-label">Opción</label><input class="form-control" formControlName="fd_option" /></div>
+            <label class="form-label">Opción</label><input class="form-control" formControlName="fd_option" />
+          </div>
           <div class="col-12 col-md-2"><label class="form-label">Orden</label><input class="form-control" type="number"
               min="1" formControlName="fd_order" /></div>
           <div class="col-12 text-end">
@@ -338,12 +339,13 @@
             </select>
           </div>
           <div class="form-text">Máximo permitido: {{ autoFillMemoryMaximum() }} {{ autoFillMemoryUnit() }} por bot,
-            según la memoria disponible del servidor.</div>
+            según disponiblidad del servidor.</div>
           <div class="form-text">Se aplica al proceso Chromium mediante su límite de memoria JavaScript.</div>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-outline-secondary" type="button" (click)="closeAutoFill()" [disabled]="loading()">Cancelar</button>
+        <button class="btn btn-outline-secondary" type="button" (click)="closeAutoFill()"
+          [disabled]="loading()">Cancelar</button>
         <button class="btn btn-outline-primary" type="submit"
           [disabled]="loading() || !autoFillAvailableSlots() || !autoFillMemoryMaxMb()">
           <i class="bi bi-robot me-1"></i>{{ loading() ? 'Autocompletando...' : 'Autocompletar' }}
