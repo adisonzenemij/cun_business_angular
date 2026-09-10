@@ -135,6 +135,11 @@ export class FtD5fb87de extends Resource<Survey> {
       `${FAST_API_URL}/public/surveys/${surveyId}/details`,
     );
   }
+  resume(surveyId: string, reservationKey: string): Observable<{ survey: Survey; reservation: Anonymous }> {
+    return this.api.http.get<{ survey: Survey; reservation: Anonymous }>(
+      `${FAST_API_URL}/public/surveys/resume/${surveyId}?reservation_key=${encodeURIComponent(reservationKey)}`,
+    );
+  }
 }
 @Injectable({ providedIn: 'root' })
 export class FtD2e6ded6 extends Resource<Question> {

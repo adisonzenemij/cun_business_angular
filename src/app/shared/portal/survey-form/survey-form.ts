@@ -57,28 +57,19 @@ export class SurveyForm implements OnDestroy {
   });
   readonly message = signal('Cargando encuestas…');
   private reservationRenewal?: ReturnType<typeof setInterval>;
+  private attemptedReservationRestore = false;
   constructor() {
-    this.surveysApi.listAvailable().subscribe({
-      next: (surveys) => {
-        this.surveys.set(surveys);
-        this.message.set(
-          surveys.length
-            ? 'Selecciona una encuesta para comenzar.'
-            : 'No hay encuestas disponibles.',
-        );
-      },
-      error: () =>
-        this.message.set('La consulta pública de encuestas aún no está habilitada en el backend.'),
-    });
+    this.loadAvailableSurveys();
   }
 
   ngOnDestroy(): void {
-    this.releaseReservation();
+    // Conserva la reserva de esta pestaña para poder reanudarla tras recargar.
+    this.stopReservationRenewal();
   }
 
   selectSurvey(survey: Survey): void {
     if (this.selectedSurvey()?.id_universal === survey.id_universal) return;
-    this.releaseReservation();
+    this.releaseReservation(true);
     this.autoFillVisible.set(false);
     this.autoFillConfigurationVisible.set(false);
     this.selectedSurvey.set(survey);
@@ -303,11 +294,14 @@ export class SurveyForm implements OnDestroy {
     });
   }
 
-  private releaseReservation(): void {
+  private releaseReservation(clearStoredKey = false): void {
     const reservation = this.reservation();
     this.stopReservationRenewal();
     if (!reservation?.fd_reservation_key) return;
     this.reservation.set(null);
+    if (clearStoredKey && reservation.pm_4d802b91) {
+      sessionStorage.removeItem(`survey-reservation-${reservation.pm_4d802b91}`);
+    }
     this.anonymousApi.release(reservation.id_universal, reservation.fd_reservation_key).subscribe({
       error: () => undefined,
     });
@@ -342,13 +336,43 @@ export class SurveyForm implements OnDestroy {
   private loadAvailableSurveys(): void {
     this.surveysApi.listAvailable().subscribe({
       next: (surveys) => {
-        this.surveys.set(surveys);
         const selected = this.selectedSurvey();
         const refreshed = selected && surveys.find((survey) => survey.id_universal === selected.id_universal);
+        this.surveys.set(refreshed || !selected ? surveys : [selected, ...surveys]);
         // Si aún hay cupos, usa el conteo recién calculado por el backend. Si
         // llegó a cero, conserva el valor local actualizado para mostrarlo.
         if (refreshed) this.selectedSurvey.set(refreshed);
+        if (!selected) {
+          this.message.set(surveys.length ? 'Selecciona una encuesta para comenzar.' : 'No hay encuestas disponibles.');
+          this.restoreSavedReservation();
+        }
       },
+      error: () => this.message.set('La consulta pública de encuestas aún no está habilitada en el backend.'),
+    });
+  }
+
+  private restoreSavedReservation(): void {
+    if (this.attemptedReservationRestore || this.selectedSurvey()) return;
+    this.attemptedReservationRestore = true;
+    const storageKey = Array.from({ length: sessionStorage.length }, (_, index) => sessionStorage.key(index))
+      .find((key): key is string => key?.startsWith('survey-reservation-') ?? false);
+    if (!storageKey) return;
+    const surveyId = storageKey.substring('survey-reservation-'.length);
+    const reservationKey = sessionStorage.getItem(storageKey);
+    if (!surveyId || !reservationKey) return;
+    this.surveysApi.resume(surveyId, reservationKey).subscribe({
+      next: ({ survey, reservation }) => {
+        this.surveys.update((surveys) =>
+          surveys.some((item) => item.id_universal === survey.id_universal) ? surveys : [survey, ...surveys],
+        );
+        this.selectedSurvey.set(survey);
+        this.reservation.set(reservation);
+        this.message.set('');
+        this.loadingDetails.set(true);
+        this.startReservationRenewal();
+        this.loadSurveyDetails(survey);
+      },
+      error: () => sessionStorage.removeItem(storageKey),
     });
   }
 
