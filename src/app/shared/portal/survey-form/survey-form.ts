@@ -45,6 +45,7 @@ export class SurveyForm implements OnDestroy {
   readonly submitting = signal(false);
   readonly autoFillVisible = signal(false);
   readonly autoFilling = signal(false);
+  readonly autoFillMemoryMaxMb = signal(0);
   readonly answerForm: UntypedFormGroup = this.formBuilder.group({});
   readonly autoFillForm: UntypedFormGroup = this.formBuilder.group({
     responses: [1, [Validators.required, Validators.min(1)]],
@@ -121,7 +122,8 @@ export class SurveyForm implements OnDestroy {
 
   toggleAutoFill(): void {
     const survey = this.selectedSurvey();
-    if (!survey) return;
+    if (!survey || this.autoFilling()) return;
+    this.autoFillForm.enable();
     this.autoFillForm.reset({ responses: 1, bots: 1, memory_value: 512, memory_unit: 'MB' });
     this.autoFillForm.get('responses')?.setValidators([
       Validators.required,
@@ -130,6 +132,51 @@ export class SurveyForm implements OnDestroy {
     ]);
     this.autoFillForm.get('responses')?.updateValueAndValidity();
     this.autoFillVisible.update((visible) => !visible);
+    if (this.autoFillVisible()) this.refreshAutoFillMemoryCapacity();
+  }
+
+  refreshAutoFillMemoryCapacity(): void {
+    const bots = Math.min(10, Math.max(1, Number(this.autoFillForm.get('bots')?.value) || 1));
+    this.api.autoFillCapacity(bots).subscribe({
+      next: (capacity) => {
+        this.autoFillMemoryMaxMb.set(capacity.max_memory_per_bot_mb);
+        this.clampAutoFillMemory();
+      },
+      error: () => this.autoFillMemoryMaxMb.set(0),
+    });
+  }
+
+  onAutoFillMemoryUnitChange(): void {
+    this.clampAutoFillMemory();
+  }
+
+  clampAutoFillMemory(): void {
+    const maximumMb = this.autoFillMemoryMaxMb();
+    if (!maximumMb) return;
+    if (this.autoFillForm.get('memory_unit')?.value === 'GB' && maximumMb < 1024) {
+      this.autoFillForm.patchValue({ memory_unit: 'MB' });
+    }
+    const maximum = this.autoFillMemoryMaximum();
+    const value = Math.max(1, Number(this.autoFillForm.get('memory_value')?.value) || 1);
+    if (value > maximum) this.autoFillForm.patchValue({ memory_value: maximum });
+    this.autoFillForm.get('memory_value')?.setValidators([
+      Validators.required,
+      Validators.min(1),
+      Validators.max(maximum),
+    ]);
+    this.autoFillForm.get('memory_value')?.updateValueAndValidity();
+  }
+
+  autoFillMemoryMaximum(): number {
+    const maximumMb = this.autoFillMemoryMaxMb();
+    if (!maximumMb) return 1;
+    return this.autoFillForm.get('memory_unit')?.value === 'GB'
+      ? Math.max(1, Math.floor(maximumMb / 1024))
+      : maximumMb;
+  }
+
+  autoFillMemoryUnit(): 'MB' | 'GB' {
+    return this.autoFillForm.get('memory_unit')?.value === 'GB' ? 'GB' : 'MB';
   }
 
   runAutoFill(): void {
@@ -147,6 +194,7 @@ export class SurveyForm implements OnDestroy {
       return;
     }
     this.autoFilling.set(true);
+    this.autoFillForm.disable();
     this.api.autoFill(survey.id_universal, {
       responses: Number(values.responses),
       bots: Number(values.bots),
@@ -166,6 +214,7 @@ export class SurveyForm implements OnDestroy {
       },
       error: () => {
         this.autoFilling.set(false);
+        this.autoFillForm.enable();
         void Swal.fire({ icon: 'error', title: 'No fue posible autocompletar la encuesta', confirmButtonText: 'Aceptar' });
       },
     });

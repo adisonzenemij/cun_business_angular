@@ -18,6 +18,11 @@ export interface AutoFillResult {
   memory_mb_per_bot: number;
   failures: string[];
 }
+export interface AutoFillCapacity {
+  available_mb: number;
+  reserved_mb: number;
+  max_memory_per_bot_mb: number;
+}
 
 @Injectable({ providedIn: 'root' })
 export class FastApi {
@@ -49,5 +54,10 @@ export class FastApi {
     payload: { responses: number; bots: number; memory_value: number; memory_unit: 'MB' | 'GB' },
   ): Observable<AutoFillResult> {
     return this.http.post<AutoFillResult>(`${FAST_API_URL}/surveys/${surveyId}/autofill`, payload);
+  }
+  autoFillCapacity(bots: number): Observable<AutoFillCapacity> {
+    return this.http.get<AutoFillCapacity>(`${FAST_API_URL}/surveys/autofill-capacity`, {
+      params: { bots },
+    });
   }
 }

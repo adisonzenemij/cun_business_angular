@@ -43,11 +43,12 @@
               <small class="text-body-secondary">Genera respuestas aleatorias con Chromium del servidor.</small>
             </div>
             <div class="d-flex gap-2">
-              <button class="btn btn-outline-primary" type="button" (click)="toggleAutoFill()">
+              <button class="btn btn-outline-primary" type="button" (click)="toggleAutoFill()" [disabled]="autoFilling()">
                 <i class="bi bi-robot me-1"></i>Autocompletar
               </button>
               @if (autoFillVisible()) {
-              <button class="btn btn-primary" type="button" (click)="runAutoFill()" [disabled]="autoFilling()">
+              <button class="btn btn-primary" type="button" (click)="runAutoFill()"
+                [disabled]="autoFilling() || !autoFillMemoryMaxMb()">
                 <i class="bi bi-robot me-1"></i>{{ autoFilling() ? 'Ejecutando...' : 'Ejecutar' }}
               </button>
               }
@@ -64,17 +65,22 @@
             </div>
             <div class="col-12 col-md-4">
               <label class="form-label">Bots simultáneos</label>
-              <input class="form-control" type="number" min="1" max="10" formControlName="bots" />
+              <input class="form-control" type="number" min="1" max="10" formControlName="bots"
+                (input)="refreshAutoFillMemoryCapacity()" />
             </div>
             <div class="col-12 col-md-4">
               <label class="form-label">Memoria por bot</label>
               <div class="input-group">
-                <input class="form-control" type="number" min="1" formControlName="memory_value" />
-                <select class="form-select" style="max-width: 6rem" formControlName="memory_unit">
+                <input class="form-control" type="number" min="1" [attr.max]="autoFillMemoryMaximum()"
+                  formControlName="memory_value" (input)="clampAutoFillMemory()" />
+                <select class="form-select" style="max-width: 6rem" formControlName="memory_unit"
+                  (change)="onAutoFillMemoryUnitChange()">
                   <option value="MB">MB</option>
-                  <option value="GB">GB</option>
+                  <option value="GB" [disabled]="autoFillMemoryMaxMb() < 1024">GB</option>
                 </select>
               </div>
+              <div class="form-text">Máximo permitido: {{ autoFillMemoryMaximum() }} {{ autoFillMemoryUnit() }} por bot,
+                según la memoria disponible del servidor.</div>
             </div>
           </form>
           }

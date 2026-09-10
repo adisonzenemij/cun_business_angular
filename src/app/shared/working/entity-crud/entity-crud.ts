@@ -59,6 +59,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   readonly showValuesModal = signal(false);
   readonly showAutoFillModal = signal(false);
   readonly autoFillAvailableSlots = signal(0);
+  readonly autoFillMemoryMaxMb = signal(0);
   readonly surveyQuestions = signal<Record<string, unknown>[]>([]);
   readonly surveyValues = signal<Record<string, unknown>[]>([]);
   readonly selectedValues = signal<Record<string, unknown>[]>([]);
@@ -170,10 +171,13 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   openAutoFill(): void {
     const survey = this.requireSingleSelection('autocompletar');
     if (!survey) return;
+    this.autoFillForm.enable();
     this.autoFillForm.reset({ responses: 1, bots: 1, memory_value: 512, memory_unit: 'MB' });
     this.autoFillAvailableSlots.set(0);
+    this.autoFillMemoryMaxMb.set(0);
     this.setAutoFillResponseLimit(0);
     this.showAutoFillModal.set(true);
+    this.refreshAutoFillMemoryCapacity();
     this.api.list<Record<string, unknown>>('surveys/available').subscribe({
       next: (surveys) => {
         const current = surveys.find((item) => item['id_universal'] === survey['id_universal']);
@@ -195,7 +199,48 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   closeAutoFill(): void {
     this.showAutoFillModal.set(false);
     this.autoFillAvailableSlots.set(0);
+    this.autoFillMemoryMaxMb.set(0);
+    this.autoFillForm.enable();
     this.autoFillForm.reset({ responses: 1, bots: 1, memory_value: 512, memory_unit: 'MB' });
+  }
+  refreshAutoFillMemoryCapacity(): void {
+    const bots = Math.min(10, Math.max(1, Number(this.autoFillForm.get('bots')?.value) || 1));
+    this.api.autoFillCapacity(bots).subscribe({
+      next: (capacity) => {
+        this.autoFillMemoryMaxMb.set(capacity.max_memory_per_bot_mb);
+        this.clampAutoFillMemory();
+      },
+      error: () => this.autoFillMemoryMaxMb.set(0),
+    });
+  }
+  onAutoFillMemoryUnitChange(): void {
+    this.clampAutoFillMemory();
+  }
+  clampAutoFillMemory(): void {
+    const maximumMb = this.autoFillMemoryMaxMb();
+    if (!maximumMb) return;
+    if (this.autoFillForm.get('memory_unit')?.value === 'GB' && maximumMb < 1024) {
+      this.autoFillForm.patchValue({ memory_unit: 'MB' });
+    }
+    const maximum = this.autoFillMemoryMaximum();
+    const value = Math.max(1, Number(this.autoFillForm.get('memory_value')?.value) || 1);
+    if (value > maximum) this.autoFillForm.patchValue({ memory_value: maximum });
+    this.autoFillForm.get('memory_value')?.setValidators([
+      Validators.required,
+      Validators.min(1),
+      Validators.max(maximum),
+    ]);
+    this.autoFillForm.get('memory_value')?.updateValueAndValidity();
+  }
+  autoFillMemoryMaximum(): number {
+    const maximumMb = this.autoFillMemoryMaxMb();
+    if (!maximumMb) return 1;
+    return this.autoFillForm.get('memory_unit')?.value === 'GB'
+      ? Math.max(1, Math.floor(maximumMb / 1024))
+      : maximumMb;
+  }
+  autoFillMemoryUnit(): 'MB' | 'GB' {
+    return this.autoFillForm.get('memory_unit')?.value === 'GB' ? 'GB' : 'MB';
   }
   runAutoFill(): void {
     const survey = this.requireSingleSelection('autocompletar');
@@ -213,6 +258,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     this.loading.set(true);
+    this.autoFillForm.disable();
     this.api.autoFill(String(survey['id_universal']), {
       responses: Number(values.responses),
       bots: Number(values.bots),
@@ -231,7 +277,10 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
         });
         this.load();
       },
-      error: () => this.failed(),
+      error: () => {
+        this.autoFillForm.enable();
+        this.failed();
+      },
     });
   }
   moveValue(value: Record<string, unknown>, direction: -1 | 1): void {

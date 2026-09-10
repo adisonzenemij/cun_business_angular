@@ -302,7 +302,8 @@
     <form class="modal-content" [formGroup]="autoFillForm" (ngSubmit)="runAutoFill()">
       <div class="modal-header bg-primary text-white">
         <h2 class="modal-title h5 mb-0"><i class="bi bi-robot me-2"></i>Autocompletar</h2>
-        <button class="btn-close btn-close-white" type="button" aria-label="Cerrar" (click)="closeAutoFill()"></button>
+        <button class="btn-close btn-close-white" type="button" aria-label="Cerrar" (click)="closeAutoFill()"
+          [disabled]="loading()"></button>
       </div>
       <div class="modal-body">
         <p class="text-body-secondary">Chromium se ejecutará dentro del servidor y responderá aleatoriamente cada
@@ -322,23 +323,29 @@
         </div>
         <div class="mb-3">
           <label class="form-label" for="autofill-bots">Bots simultáneos</label>
-          <input id="autofill-bots" class="form-control" type="number" min="1" max="10" formControlName="bots" />
+          <input id="autofill-bots" class="form-control" type="number" min="1" max="10" formControlName="bots"
+            (input)="refreshAutoFillMemoryCapacity()" />
         </div>
         <div>
           <label class="form-label" for="autofill-memory">Memoria por bot</label>
           <div class="input-group">
-            <input id="autofill-memory" class="form-control" type="number" min="1" formControlName="memory_value" />
-            <select class="form-select" style="max-width: 7rem" formControlName="memory_unit">
+            <input id="autofill-memory" class="form-control" type="number" min="1" [attr.max]="autoFillMemoryMaximum()"
+              formControlName="memory_value" (input)="clampAutoFillMemory()" />
+            <select class="form-select" style="max-width: 7rem" formControlName="memory_unit"
+              (change)="onAutoFillMemoryUnitChange()">
               <option value="MB">MB</option>
-              <option value="GB">GB</option>
+              <option value="GB" [disabled]="autoFillMemoryMaxMb() < 1024">GB</option>
             </select>
           </div>
+          <div class="form-text">Máximo permitido: {{ autoFillMemoryMaximum() }} {{ autoFillMemoryUnit() }} por bot,
+            según la memoria disponible del servidor.</div>
           <div class="form-text">Se aplica al proceso Chromium mediante su límite de memoria JavaScript.</div>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-outline-secondary" type="button" (click)="closeAutoFill()">Cancelar</button>
-        <button class="btn btn-outline-primary" type="submit" [disabled]="loading() || !autoFillAvailableSlots()">
+        <button class="btn btn-outline-secondary" type="button" (click)="closeAutoFill()" [disabled]="loading()">Cancelar</button>
+        <button class="btn btn-outline-primary" type="submit"
+          [disabled]="loading() || !autoFillAvailableSlots() || !autoFillMemoryMaxMb()">
           <i class="bi bi-robot me-1"></i>{{ loading() ? 'Autocompletando...' : 'Autocompletar' }}
         </button>
       </div>
