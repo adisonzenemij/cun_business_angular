@@ -42,9 +42,16 @@
               <div class="fw-semibold"><i class="bi bi-robot me-2"></i>Autocompletar</div>
               <small class="text-body-secondary">Genera respuestas aleatorias con Chromium del servidor.</small>
             </div>
-            <button class="btn btn-outline-primary" type="button" (click)="toggleAutoFill()">
-              <i class="bi bi-robot me-1"></i>Autocompletar
-            </button>
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-primary" type="button" (click)="toggleAutoFill()">
+                <i class="bi bi-robot me-1"></i>Autocompletar
+              </button>
+              @if (autoFillVisible()) {
+              <button class="btn btn-primary" type="button" (click)="runAutoFill()" [disabled]="autoFilling()">
+                <i class="bi bi-robot me-1"></i>{{ autoFilling() ? 'Ejecutando...' : 'Ejecutar' }}
+              </button>
+              }
+            </div>
           </div>
           @if (autoFillVisible()) {
           <form class="row g-3 mt-1" [formGroup]="autoFillForm" (ngSubmit)="runAutoFill()">
@@ -68,11 +75,6 @@
                   <option value="GB">GB</option>
                 </select>
               </div>
-            </div>
-            <div class="col-12 text-end">
-              <button class="btn btn-primary" type="submit" [disabled]="autoFilling()">
-                <i class="bi bi-robot me-1"></i>{{ autoFilling() ? 'Autocompletando...' : 'Ejecutar' }}
-              </button>
             </div>
           </form>
           }
