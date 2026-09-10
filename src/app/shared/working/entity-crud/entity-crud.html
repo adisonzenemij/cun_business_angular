@@ -249,11 +249,12 @@
                 }
               </select>
             </div>
-            <div class="col-12 col-md-3 d-flex align-items-end pb-2">
-              <label class="form-check mb-0">
-                <input class="form-check-input" type="checkbox" formControlName="fd_required" />
-                <span class="form-check-label">Requerida</span>
-              </label>
+            <div class="col-12 col-md-3">
+              <label class="form-label" for="managed-question-required">Requerido</label>
+              <select id="managed-question-required" class="form-select" formControlName="fd_required">
+                <option [ngValue]="true">Sí</option>
+                <option [ngValue]="false">No</option>
+              </select>
             </div>
             <div class="col-12 text-end">
               @if (editingManagedQuestion()) {
@@ -326,7 +327,7 @@
         @if (managingQuestionValues()) {
         <p class="fw-semibold mb-3">{{ selectedQuestionDescription() }}</p>
         }
-        <div class="d-flex flex-wrap gap-2 mb-3">
+        <div class="d-flex flex-wrap align-items-center column-gap-2 row-gap-2 mb-3">
           <button class="btn btn-outline-warning" type="button" (click)="openValueEdit()"
             [disabled]="!selectedValues().length">
             <i class="bi bi-pencil-square me-1"></i>Editar valor
@@ -336,9 +337,10 @@
             <i class="bi bi-trash me-1"></i>Eliminar seleccionados
           </button>
         </div>
-        <form class="row g-3 border rounded p-3 mb-4" [formGroup]="valueForm" (ngSubmit)="saveValue()">
+        <form class="border rounded p-3 mb-4" [formGroup]="valueForm" (ngSubmit)="saveValue()">
+          <div class="row g-3">
           @if (!managingQuestionValues()) {
-          <div class="col-12 col-md-6">
+          <div class="col-12">
             <label class="form-label">Pregunta</label>
             <select class="form-select" formControlName="pm_0acc84ae"
               (change)="valueForm.patchValue({ fd_order: nextValueOrder() })">
@@ -349,7 +351,7 @@
             </select>
           </div>
           }
-          <div class="col-12" [class.col-md-8]="!managingQuestionValues()" [class.col-md-10]="managingQuestionValues()">
+          <div class="col-12 col-md-10">
             <label class="form-label">Opción</label><input class="form-control" formControlName="fd_option" />
           </div>
           <div class="col-12 col-md-2"><label class="form-label">Orden</label><input class="form-control" type="number"
@@ -364,6 +366,7 @@
               <i class="bi me-1" [class.bi-plus-circle]="!editingValue()" [class.bi-save]="editingValue()"></i>{{
               editingValue() ? 'Actualizar valor' : 'Agregar valor' }}
             </button>
+          </div>
           </div>
         </form>
         @for (version of [valuesTableVersion()]; track version) {
