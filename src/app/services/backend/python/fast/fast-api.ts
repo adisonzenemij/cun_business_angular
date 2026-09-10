@@ -10,6 +10,14 @@ export interface Page<T> {
   total: number;
   items: T[];
 }
+export interface AutoFillResult {
+  requested: number;
+  completed: number;
+  failed: number;
+  bots: number;
+  memory_mb_per_bot: number;
+  failures: string[];
+}
 
 @Injectable({ providedIn: 'root' })
 export class FastApi {
@@ -35,5 +43,11 @@ export class FastApi {
     return this.http.delete<{ deleted: number; preserved: number }>(
       `${FAST_API_URL}/${resource}/clear`,
     );
+  }
+  autoFill(
+    surveyId: string,
+    payload: { responses: number; bots: number; memory_value: number; memory_unit: 'MB' | 'GB' },
+  ): Observable<AutoFillResult> {
+    return this.http.post<AutoFillResult>(`${FAST_API_URL}/surveys/${surveyId}/autofill`, payload);
   }
 }

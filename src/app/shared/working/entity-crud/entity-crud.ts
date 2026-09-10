@@ -35,6 +35,7 @@ export interface CrudConfig {
   operations: { select?: boolean; insert?: boolean; update?: boolean; delete?: boolean };
   passwordChange?: boolean;
   valuesManager?: boolean;
+  autoComplete?: boolean;
 }
 
 @Component({
@@ -56,6 +57,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   readonly showFormModal = signal(false);
   readonly showPasswordModal = signal(false);
   readonly showValuesModal = signal(false);
+  readonly showAutoFillModal = signal(false);
   readonly surveyQuestions = signal<Record<string, unknown>[]>([]);
   readonly surveyValues = signal<Record<string, unknown>[]>([]);
   readonly selectedValues = signal<Record<string, unknown>[]>([]);
@@ -70,6 +72,12 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   readonly passwordForm: UntypedFormGroup = new UntypedFormBuilder().group({
     fd_passd: ['', Validators.required],
     confirmation: ['', Validators.required],
+  });
+  readonly autoFillForm: UntypedFormGroup = new UntypedFormBuilder().group({
+    responses: [1, [Validators.required, Validators.min(1)]],
+    bots: [1, [Validators.required, Validators.min(1), Validators.max(10)]],
+    memory_value: [512, [Validators.required, Validators.min(1)]],
+    memory_unit: ['MB', Validators.required],
   });
   @ViewChild('dataTable') private readonly table?: ElementRef<HTMLTableElement>;
   @ViewChild('valuesTable') private readonly valuesTable?: ElementRef<HTMLTableElement>;
@@ -157,6 +165,60 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     this.editingValue.set(null);
     this.showValuesModal.set(false);
     this.clearSelection();
+  }
+  openAutoFill(): void {
+    const survey = this.requireSingleSelection('autocompletar');
+    if (!survey) return;
+    const limit = Number(survey['fd_count']) || 1;
+    this.autoFillForm.reset({ responses: 1, bots: 1, memory_value: 512, memory_unit: 'MB' });
+    this.autoFillForm.get('responses')?.setValidators([
+      Validators.required,
+      Validators.min(1),
+      Validators.max(limit),
+    ]);
+    this.autoFillForm.get('responses')?.updateValueAndValidity();
+    this.showAutoFillModal.set(true);
+  }
+  closeAutoFill(): void {
+    this.showAutoFillModal.set(false);
+    this.autoFillForm.reset({ responses: 1, bots: 1, memory_value: 512, memory_unit: 'MB' });
+  }
+  runAutoFill(): void {
+    const survey = this.requireSingleSelection('autocompletar');
+    if (!survey) return;
+    if (this.autoFillForm.invalid) {
+      this.autoFillForm.markAllAsTouched();
+      return;
+    }
+    const values = this.autoFillForm.getRawValue() as {
+      responses: number; bots: number; memory_value: number; memory_unit: 'MB' | 'GB';
+    };
+    const limit = Number(survey['fd_count']);
+    if (Number(values.responses) > limit) {
+      this.autoFillForm.get('responses')?.setErrors({ max: true });
+      return;
+    }
+    this.loading.set(true);
+    this.api.autoFill(String(survey['id_universal']), {
+      responses: Number(values.responses),
+      bots: Number(values.bots),
+      memory_value: Number(values.memory_value),
+      memory_unit: values.memory_unit,
+    }).subscribe({
+      next: (result) => {
+        this.loading.set(false);
+        this.closeAutoFill();
+        this.clearSelection();
+        void Swal.fire({
+          icon: result.failed ? 'warning' : 'success',
+          title: result.failed ? 'Autocompletado parcial' : 'Encuesta autocompletada',
+          text: `Completadas: ${result.completed} de ${result.requested}. Bots: ${result.bots}. Memoria por bot: ${result.memory_mb_per_bot} MB.${result.failures.length ? `\n\n${result.failures.join('\n')}` : ''}`,
+          confirmButtonText: 'Aceptar',
+        });
+        this.load();
+      },
+      error: () => this.failed(),
+    });
   }
   moveValue(value: Record<string, unknown>, direction: -1 | 1): void {
     const questionId = value['pm_0acc84ae'];

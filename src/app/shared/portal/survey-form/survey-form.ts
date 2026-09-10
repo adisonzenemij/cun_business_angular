@@ -6,6 +6,9 @@ import {
   Validators,
 } from '@angular/forms';
 import { forkJoin } from 'rxjs';
+import Swal from 'sweetalert2';
+import { AuthSession } from '../../../services/core/auth-session';
+import { FastApi } from '../../../services/backend/python/fast/fast-api';
 import {
   FtA5acf579,
   FtD2e6ded6,
@@ -30,6 +33,8 @@ export class SurveyForm implements OnDestroy {
   private readonly valuesApi = inject(FtD76a0e67);
   private readonly anonymousApi = inject(FtE5520e1e);
   private readonly answersApi = inject(FtA5acf579);
+  private readonly api = inject(FastApi);
+  private readonly authSession = inject(AuthSession);
   private readonly formBuilder = inject(UntypedFormBuilder);
   readonly surveys = signal<Survey[]>([]);
   readonly questions = signal<Question[]>([]);
@@ -38,7 +43,15 @@ export class SurveyForm implements OnDestroy {
   readonly reservation = signal<Anonymous | null>(null);
   readonly loadingDetails = signal(false);
   readonly submitting = signal(false);
+  readonly autoFillVisible = signal(false);
+  readonly autoFilling = signal(false);
   readonly answerForm: UntypedFormGroup = this.formBuilder.group({});
+  readonly autoFillForm: UntypedFormGroup = this.formBuilder.group({
+    responses: [1, [Validators.required, Validators.min(1)]],
+    bots: [1, [Validators.required, Validators.min(1), Validators.max(10)]],
+    memory_value: [512, [Validators.required, Validators.min(1)]],
+    memory_unit: ['MB', Validators.required],
+  });
   readonly message = signal('Cargando encuestas…');
   private reservationRenewal?: ReturnType<typeof setInterval>;
   constructor() {
@@ -63,6 +76,7 @@ export class SurveyForm implements OnDestroy {
   selectSurvey(survey: Survey): void {
     if (this.selectedSurvey()?.id_universal === survey.id_universal) return;
     this.releaseReservation();
+    this.autoFillVisible.set(false);
     this.selectedSurvey.set(survey);
     this.questions.set([]);
     this.values.set([]);
@@ -91,6 +105,62 @@ export class SurveyForm implements OnDestroy {
           this.loadAvailableSurveys();
         },
       });
+  }
+
+  canAutoFill(): boolean {
+    return this.authSession.isAuthenticated();
+  }
+
+  toggleAutoFill(): void {
+    const survey = this.selectedSurvey();
+    if (!survey) return;
+    this.autoFillForm.reset({ responses: 1, bots: 1, memory_value: 512, memory_unit: 'MB' });
+    this.autoFillForm.get('responses')?.setValidators([
+      Validators.required,
+      Validators.min(1),
+      Validators.max(survey.fd_count),
+    ]);
+    this.autoFillForm.get('responses')?.updateValueAndValidity();
+    this.autoFillVisible.update((visible) => !visible);
+  }
+
+  runAutoFill(): void {
+    if (!this.canAutoFill()) return;
+    const survey = this.selectedSurvey();
+    if (!survey || this.autoFillForm.invalid) {
+      this.autoFillForm.markAllAsTouched();
+      return;
+    }
+    const values = this.autoFillForm.getRawValue() as {
+      responses: number; bots: number; memory_value: number; memory_unit: 'MB' | 'GB';
+    };
+    if (Number(values.responses) > survey.fd_count) {
+      this.autoFillForm.get('responses')?.setErrors({ max: true });
+      return;
+    }
+    this.autoFilling.set(true);
+    this.api.autoFill(survey.id_universal, {
+      responses: Number(values.responses),
+      bots: Number(values.bots),
+      memory_value: Number(values.memory_value),
+      memory_unit: values.memory_unit,
+    }).subscribe({
+      next: (result) => {
+        this.autoFilling.set(false);
+        this.autoFillVisible.set(false);
+        void Swal.fire({
+          icon: result.failed ? 'warning' : 'success',
+          title: result.failed ? 'Autocompletado parcial' : 'Encuesta autocompletada',
+          text: `Completadas: ${result.completed} de ${result.requested}. Bots: ${result.bots}. Memoria por bot: ${result.memory_mb_per_bot} MB.${result.failures.length ? `\n\n${result.failures.join('\n')}` : ''}`,
+          confirmButtonText: 'Aceptar',
+        });
+        this.loadAvailableSurveys();
+      },
+      error: () => {
+        this.autoFilling.set(false);
+        void Swal.fire({ icon: 'error', title: 'No fue posible autocompletar la encuesta', confirmButtonText: 'Aceptar' });
+      },
+    });
   }
 
   private loadSurveyDetails(survey: Survey): void {

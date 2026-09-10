@@ -39,6 +39,47 @@
         @if (selectedSurvey(); as survey) {
           <h3 class="h4">{{ survey.fd_name }}</h3>
           <p class="text-body-secondary">Responde todas las preguntas para enviar la encuesta.</p>
+          @if (canAutoFill()) {
+            <div class="border rounded p-3 mb-4">
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div>
+                  <div class="fw-semibold"><i class="bi bi-robot me-2"></i>Autocompletar</div>
+                  <small class="text-body-secondary">Genera respuestas aleatorias con Chromium del servidor.</small>
+                </div>
+                <button class="btn btn-outline-primary" type="button" (click)="toggleAutoFill()">
+                  <i class="bi bi-robot me-1"></i>Autocompletar
+                </button>
+              </div>
+              @if (autoFillVisible()) {
+                <form class="row g-3 mt-1" [formGroup]="autoFillForm" (ngSubmit)="runAutoFill()">
+                  <div class="col-12 col-md-4">
+                    <label class="form-label">Respuestas a generar</label>
+                    <input class="form-control" type="number" min="1" [attr.max]="survey.fd_count" formControlName="responses" />
+                    <div class="form-text">De 1 a {{ survey.fd_count }}.</div>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label class="form-label">Bots simultáneos</label>
+                    <input class="form-control" type="number" min="1" max="10" formControlName="bots" />
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label class="form-label">Memoria por bot</label>
+                    <div class="input-group">
+                      <input class="form-control" type="number" min="1" formControlName="memory_value" />
+                      <select class="form-select" style="max-width: 6rem" formControlName="memory_unit">
+                        <option value="MB">MB</option>
+                        <option value="GB">GB</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-12 text-end">
+                    <button class="btn btn-primary" type="submit" [disabled]="autoFilling()">
+                      <i class="bi bi-robot me-1"></i>{{ autoFilling() ? 'Autocompletando...' : 'Iniciar bots' }}
+                    </button>
+                  </div>
+                </form>
+              }
+            </div>
+          }
           @if (loadingDetails()) {
             <div class="text-center py-5"><span class="spinner-border text-primary"></span></div>
           } @else if (questions().length) {
