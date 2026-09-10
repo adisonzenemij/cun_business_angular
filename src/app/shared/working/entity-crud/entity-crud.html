@@ -211,7 +211,7 @@
 
 @if (showQuestionsModal()) {
 <div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered" role="document">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered" role="document">
     <form class="modal-content" [formGroup]="questionForm" (ngSubmit)="saveQuestion()">
       <div class="modal-header bg-primary text-white">
         <h2 class="modal-title h5 mb-0"><i class="bi bi-question-circle me-2"></i>Preguntas de la encuesta</h2>
@@ -274,7 +274,7 @@
         <div class="table-responsive">
           <table #questionsTable class="table table-striped table-hover align-middle w-100">
             <thead>
-              <tr><th>Orden</th><th>Pregunta</th><th>Requerida</th><th>Tipo</th></tr>
+              <tr><th>Orden</th><th>Pregunta</th><th>Requerida</th><th>Tipo</th><th class="text-end">Reordenar</th></tr>
             </thead>
             <tbody>
               @for (question of managedQuestions(); track question['id_universal']) {
@@ -286,6 +286,14 @@
                 <td>{{ question['fd_ask'] }}</td>
                 <td>{{ question['fd_required'] ? 'Sí' : 'No' }}</td>
                 <td>{{ managedQuestionTypeLabel(question['pm_0d3dc00e']) }}</td>
+                <td class="text-end text-nowrap">
+                  <button class="btn btn-outline-secondary btn-sm me-1" type="button"
+                    (click)="$event.stopPropagation(); moveManagedQuestion(question, -1)"
+                    [disabled]="loading()" title="Subir"><i class="bi bi-arrow-up"></i></button>
+                  <button class="btn btn-outline-secondary btn-sm" type="button"
+                    (click)="$event.stopPropagation(); moveManagedQuestion(question, 1)"
+                    [disabled]="loading()" title="Bajar"><i class="bi bi-arrow-down"></i></button>
+                </td>
               </tr>
               }
             </tbody>

@@ -286,6 +286,24 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   managedQuestionTypeLabel(typeId: unknown): string {
     return String(this.questionTypes().find((type) => type['id_universal'] === typeId)?.['fd_format'] ?? '—');
   }
+  moveManagedQuestion(question: Record<string, unknown>, direction: -1 | 1): void {
+    const ordered = [...this.managedQuestions()]
+      .sort((first, second) => Number(first['fd_order']) - Number(second['fd_order']));
+    const currentIndex = ordered.findIndex((item) => item['id_universal'] === question['id_universal']);
+    const target = ordered[currentIndex + direction];
+    if (!target) return;
+    this.loading.set(true);
+    forkJoin([
+      this.api.update('questions', String(question['id_universal']), { fd_order: target['fd_order'] }),
+      this.api.update('questions', String(target['id_universal']), { fd_order: question['fd_order'] }),
+    ]).subscribe({
+      next: () => {
+        this.loading.set(false);
+        this.refreshManagedQuestions();
+      },
+      error: () => this.failed(),
+    });
+  }
   openManagedQuestionEdit(): void {
     const selected = this.selectedManagedQuestions();
     if (selected.length !== 1) {
