@@ -63,6 +63,12 @@
         </button>
         }
         @if (config().valuesManager) {
+        @if (config().questionsManager) {
+        <button class="btn btn-outline-info" type="button" (click)="openQuestions()"
+          [disabled]="!selectedRecords().length">
+          <i class="bi bi-question-circle me-1"></i>Preguntas
+        </button>
+        }
         <button class="btn btn-outline-info" type="button" (click)="openValues()"
           [disabled]="!selectedRecords().length">
           <i class="bi bi-list-ol me-1"></i>Valores
@@ -195,6 +201,70 @@
         </button>
         <button class="btn btn-outline-info" type="submit">
           <i class="bi bi-key me-1"></i>Contraseña
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+<div class="modal-backdrop fade show"></div>
+}
+
+@if (showQuestionsModal()) {
+<div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered" role="document">
+    <form class="modal-content" [formGroup]="questionForm" (ngSubmit)="saveQuestion()">
+      <div class="modal-header bg-primary text-white">
+        <h2 class="modal-title h5 mb-0"><i class="bi bi-question-circle me-2"></i>Preguntas de la encuesta</h2>
+        <button class="btn-close btn-close-white" type="button" aria-label="Cerrar" (click)="closeQuestionsModal()"
+          [disabled]="loading()"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-body-secondary">Agrega preguntas directamente a la encuesta seleccionada.</p>
+        <div class="border rounded p-3 mb-4">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label" for="managed-question">Pregunta</label>
+              <textarea id="managed-question" class="form-control" rows="3" formControlName="fd_ask"></textarea>
+            </div>
+            <div class="col-12 col-md-3">
+              <label class="form-label" for="managed-question-order">Orden</label>
+              <input id="managed-question-order" class="form-control" type="number" min="1" formControlName="fd_order" />
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="managed-question-type">Tipo</label>
+              <select id="managed-question-type" class="form-select" formControlName="pm_0d3dc00e">
+                <option value="">Seleccione un tipo</option>
+                @for (type of questionTypes(); track type['id_universal']) {
+                <option [value]="type['id_universal']">{{ type['fd_format'] }}</option>
+                }
+              </select>
+            </div>
+            <div class="col-12 col-md-3 d-flex align-items-end pb-2">
+              <label class="form-check mb-0">
+                <input class="form-check-input" type="checkbox" formControlName="fd_required" />
+                <span class="form-check-label">Requerida</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <h3 class="h6">Preguntas registradas</h3>
+        @if (managedQuestions().length) {
+        <ol class="list-group list-group-numbered">
+          @for (question of managedQuestions(); track question['id_universal'] ?? question['fd_order']) {
+          <li class="list-group-item d-flex justify-content-between align-items-start">
+            <span>{{ question['fd_ask'] }}</span><small class="text-body-secondary ms-3">Orden {{ question['fd_order'] }}</small>
+          </li>
+          }
+        </ol>
+        } @else {
+        <p class="text-body-secondary mb-0">Aún no hay preguntas registradas.</p>
+        }
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" type="button" (click)="closeQuestionsModal()"
+          [disabled]="loading()">Cerrar</button>
+        <button class="btn btn-outline-success" type="submit" [disabled]="loading()">
+          <i class="bi bi-plus-circle me-1"></i>{{ loading() ? 'Agregando...' : 'Agregar pregunta' }}
         </button>
       </div>
     </form>

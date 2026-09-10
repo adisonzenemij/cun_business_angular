@@ -34,6 +34,7 @@ export interface CrudConfig {
   fields: CrudField[];
   operations: { select?: boolean; insert?: boolean; update?: boolean; delete?: boolean };
   passwordChange?: boolean;
+  questionsManager?: boolean;
   valuesManager?: boolean;
   autoComplete?: boolean;
 }
@@ -56,6 +57,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   readonly editing = signal(false);
   readonly showFormModal = signal(false);
   readonly showPasswordModal = signal(false);
+  readonly showQuestionsModal = signal(false);
   readonly showValuesModal = signal(false);
   readonly showAutoFillModal = signal(false);
   readonly autoFillAvailableSlots = signal(0);
@@ -64,6 +66,8 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   readonly autoFillValues = signal<Record<string, unknown>[]>([]);
   readonly autoFillAllowedValues = signal<Record<string, string[]>>({});
   readonly surveyQuestions = signal<Record<string, unknown>[]>([]);
+  readonly managedQuestions = signal<Record<string, unknown>[]>([]);
+  readonly questionTypes = signal<Record<string, unknown>[]>([]);
   readonly surveyValues = signal<Record<string, unknown>[]>([]);
   readonly selectedValues = signal<Record<string, unknown>[]>([]);
   readonly editingValue = signal<Record<string, unknown> | null>(null);
@@ -72,6 +76,12 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     fd_option: ['', Validators.required],
     fd_order: ['', Validators.required],
     pm_0acc84ae: ['', Validators.required],
+  });
+  readonly questionForm: UntypedFormGroup = new UntypedFormBuilder().group({
+    fd_ask: ['', Validators.required],
+    fd_order: [1, [Validators.required, Validators.min(1)]],
+    fd_required: [false],
+    pm_0d3dc00e: ['', Validators.required],
   });
   readonly form: UntypedFormGroup = new UntypedFormBuilder().group({ id_universal: [''] });
   readonly passwordForm: UntypedFormGroup = new UntypedFormBuilder().group({
@@ -163,6 +173,86 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     if (!surveyId) return;
     this.showValuesModal.set(true);
     this.loadSurveyValues(surveyId, this.config().resource === 'questions' ? String(selected?.['id_universal']) : undefined);
+  }
+  openQuestions(): void {
+    const survey = this.requireSingleSelection('gestionar las preguntas de');
+    if (!survey) return;
+    const surveyId = String(survey['id_universal']);
+    this.showQuestionsModal.set(true);
+    this.questionForm.reset({ fd_ask: '', fd_order: 1, fd_required: false, pm_0d3dc00e: '' });
+    forkJoin({
+      questions: this.api.list<Record<string, unknown>>('questions'),
+      types: this.api.list<Record<string, unknown>>('types'),
+    }).subscribe({
+      next: ({ questions, types }) => {
+        const managedQuestions = questions
+          .filter((question) => question['pm_4d802b91'] === surveyId)
+          .sort((first, second) => Number(first['fd_order']) - Number(second['fd_order']));
+        this.managedQuestions.set(managedQuestions);
+        this.questionTypes.set(types);
+        this.questionForm.patchValue({ fd_order: this.nextManagedQuestionOrder() });
+      },
+      error: () => this.failed(),
+    });
+  }
+  closeQuestionsModal(): void {
+    this.showQuestionsModal.set(false);
+    this.managedQuestions.set([]);
+    this.questionTypes.set([]);
+    this.questionForm.reset();
+    this.clearSelection();
+  }
+  saveQuestion(): void {
+    const survey = this.requireSingleSelection('agregar una pregunta a');
+    if (!survey || this.questionForm.invalid) {
+      this.questionForm.markAllAsTouched();
+      return;
+    }
+    const values = this.questionForm.getRawValue();
+    this.loading.set(true);
+    this.questionForm.disable();
+    this.api.create('questions', {
+      fd_ask: values.fd_ask,
+      fd_order: Number(values.fd_order),
+      fd_required: Boolean(values.fd_required),
+      pm_0d3dc00e: values.pm_0d3dc00e,
+      pm_4d802b91: String(survey['id_universal']),
+    }).subscribe({
+      next: (createdQuestion) => {
+        const totalQuestions = this.managedQuestions().length + 1;
+        this.api.update('surveys', String(survey['id_universal']), { fd_query: totalQuestions }).subscribe({
+          next: () => {
+            this.loading.set(false);
+            this.questionForm.enable();
+            this.managedQuestions.update((questions) => [
+              ...questions,
+              createdQuestion as Record<string, unknown>,
+            ]);
+            const updatedSurvey = { ...survey, fd_query: totalQuestions };
+            this.selectedRecord.set(updatedSurvey);
+            this.selectedRecords.set([updatedSurvey]);
+            this.rows.update((rows) => rows.map((row) =>
+              row['id_universal'] === survey['id_universal'] ? updatedSurvey : row,
+            ));
+            this.questionForm.reset({
+              fd_ask: '', fd_order: this.nextManagedQuestionOrder(), fd_required: false, pm_0d3dc00e: '',
+            });
+            void Swal.fire({ icon: 'success', title: 'Pregunta agregada', confirmButtonText: 'Aceptar' });
+          },
+          error: () => {
+            this.questionForm.enable();
+            this.failed();
+          },
+        });
+      },
+      error: () => {
+        this.questionForm.enable();
+        this.failed();
+      },
+    });
+  }
+  private nextManagedQuestionOrder(): number {
+    return Math.max(0, ...this.managedQuestions().map((question) => Number(question['fd_order']) || 0)) + 1;
   }
   closeValuesModal(): void {
     this.destroyValuesDataTable();

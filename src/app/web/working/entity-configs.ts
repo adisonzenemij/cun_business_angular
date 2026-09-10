@@ -101,6 +101,7 @@ export const ENTITY_CONFIGS: Record<string, CrudConfig> = {
     resource: 'surveys',
     operations: write,
     autoComplete: true,
+    questionsManager: true,
     valuesManager: true,
     fields: [
       { name: 'fd_count', label: 'Permitido', type: 'number', required: true },
