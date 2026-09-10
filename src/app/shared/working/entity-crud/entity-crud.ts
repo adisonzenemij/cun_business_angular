@@ -58,6 +58,8 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   readonly showValuesModal = signal(false);
   readonly surveyQuestions = signal<Record<string, unknown>[]>([]);
   readonly surveyValues = signal<Record<string, unknown>[]>([]);
+  readonly selectedValues = signal<Record<string, unknown>[]>([]);
+  readonly editingValue = signal<Record<string, unknown> | null>(null);
   readonly valuesTableVersion = signal(0);
   readonly valueForm: UntypedFormGroup = new UntypedFormBuilder().group({
     fd_option: ['', Validators.required],
@@ -151,6 +153,8 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   }
   closeValuesModal(): void {
     this.destroyValuesDataTable();
+    this.selectedValues.set([]);
+    this.editingValue.set(null);
     this.showValuesModal.set(false);
   }
   moveValue(value: Record<string, unknown>, direction: -1 | 1): void {
@@ -185,14 +189,86 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     if (this.valueForm.invalid) { this.valueForm.markAllAsTouched(); return; }
     this.loading.set(true);
     this.api.create('values', this.valueForm.getRawValue()).subscribe({
-      next: () => {
-        const selected = this.selectedRecord();
-        const surveyId = (this.config().resource === 'surveys' ? selected?.['id_universal'] : selected?.['pm_4d802b91']) as string;
-        this.valueForm.patchValue({ fd_option: '', fd_order: this.nextValueOrder(), pm_0acc84ae: this.config().resource === 'questions' ? selected?.['id_universal'] : '' });
-        this.loadSurveyValues(surveyId, this.config().resource === 'questions' ? String(selected?.['id_universal']) : undefined);
-        this.completed('Valor creado.');
-      },
+      next: () => this.finishValueOperation('Valor creado.'),
       error: () => this.failed(),
+    });
+  }
+  saveValue(): void {
+    const editing = this.editingValue();
+    if (!editing) {
+      this.createValue();
+      return;
+    }
+    if (this.valueForm.invalid) { this.valueForm.markAllAsTouched(); return; }
+    this.loading.set(true);
+    this.api.update('values', String(editing['id_universal']), this.valueForm.getRawValue()).subscribe({
+      next: () => this.finishValueOperation('Valor actualizado.'),
+      error: () => this.failed(),
+    });
+  }
+  openValueEdit(): void {
+    const selected = this.selectedValues();
+    if (selected.length !== 1) {
+      const message = selected.length
+        ? 'Solo se puede editar un valor seleccionado a la vez.'
+        : 'Selecciona un valor para editar.';
+      void Swal.fire({ icon: 'info', title: 'Selección requerida', text: message, confirmButtonText: 'Aceptar' });
+      return;
+    }
+    this.editingValue.set(selected[0]);
+    this.valueForm.patchValue(selected[0]);
+  }
+  cancelValueEdit(): void {
+    this.editingValue.set(null);
+    this.selectedValues.set([]);
+    this.resetValueForm();
+  }
+  toggleValueSelection(value: Record<string, unknown>): void {
+    const id = value['id_universal'];
+    const selected = this.selectedValues();
+    this.selectedValues.set(
+      selected.some((item) => item['id_universal'] === id)
+        ? selected.filter((item) => item['id_universal'] !== id)
+        : [...selected, value],
+    );
+  }
+  isValueSelected(value: Record<string, unknown>): boolean {
+    return this.selectedValues().some((item) => item['id_universal'] === value['id_universal']);
+  }
+  removeValues(): void {
+    const selected = this.selectedValues();
+    if (!selected.length) return;
+    void Swal.fire({
+      title: `¿Eliminar ${selected.length} valor${selected.length === 1 ? '' : 'es'}?`,
+      text: 'Se eliminarán los valores seleccionados que no estén siendo utilizados.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc3545',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      this.loading.set(true);
+      forkJoin(selected.map((value) => {
+        const id = String(value['id_universal']);
+        return this.api.delete('values', id).pipe(
+          map(() => ({ id, error: undefined as unknown })),
+          catchError((error) => of({ id, error: error as unknown })),
+        );
+      })).subscribe({
+        next: (outcomes) => {
+          const failed = outcomes.filter((outcome) => outcome.error !== undefined);
+          if (!failed.length) {
+            this.finishValueOperation(`${selected.length} valor${selected.length === 1 ? '' : 'es'} eliminado${selected.length === 1 ? '' : 's'}.`);
+            return;
+          }
+          this.loading.set(false);
+          this.selectedValues.set([]);
+          this.editingValue.set(null);
+          this.refreshValues();
+          this.showBatchDeleteResult(selected.length - failed.length, failed.map(({ error }) => error));
+        },
+      });
     });
   }
   closePasswordModal(): void {
@@ -387,6 +463,8 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   }
   private loadSurveyValues(surveyId: string, questionId?: string): void {
     this.destroyValuesDataTable();
+    this.selectedValues.set([]);
+    this.editingValue.set(null);
     forkJoin({
       questions: this.api.list<Record<string, unknown>>('questions'),
       values: this.api.list<Record<string, unknown>>('values'),
@@ -420,6 +498,37 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   private destroyValuesDataTable(): void {
     this.valuesDataTable?.destroy();
     this.valuesDataTable = undefined;
+  }
+  private refreshValues(): void {
+    const selected = this.selectedRecord();
+    const surveyId = (this.config().resource === 'surveys'
+      ? selected?.['id_universal']
+      : selected?.['pm_4d802b91']) as string | undefined;
+    if (!surveyId) return;
+    this.loadSurveyValues(
+      surveyId,
+      this.config().resource === 'questions' ? String(selected?.['id_universal']) : undefined,
+    );
+  }
+  private resetValueForm(): void {
+    const selected = this.selectedRecord();
+    this.valueForm.reset({
+      fd_option: '',
+      fd_order: this.nextValueOrder(),
+      pm_0acc84ae: this.config().resource === 'questions' ? selected?.['id_universal'] : '',
+    });
+  }
+  private finishValueOperation(message: string): void {
+    this.loading.set(false);
+    this.selectedValues.set([]);
+    this.editingValue.set(null);
+    this.resetValueForm();
+    this.refreshValues();
+    void Swal.fire({
+      icon: 'success',
+      title: message,
+      confirmButtonText: 'Aceptar',
+    });
   }
   nextValueOrder(): number {
     const questionId = this.valueForm.get('pm_0acc84ae')?.value;

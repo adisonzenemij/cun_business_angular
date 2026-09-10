@@ -285,7 +285,15 @@
           @if (managingQuestionValues()) {
             <p class="fw-semibold mb-3">{{ selectedQuestionDescription() }}</p>
           }
-          <form class="row g-3 border rounded p-3 mb-4" [formGroup]="valueForm" (ngSubmit)="createValue()">
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            <button class="btn btn-outline-warning" type="button" (click)="openValueEdit()" [disabled]="!selectedValues().length">
+              <i class="bi bi-pencil-square me-1"></i>Editar valor
+            </button>
+            <button class="btn btn-outline-danger" type="button" (click)="removeValues()" [disabled]="!selectedValues().length">
+              <i class="bi bi-trash me-1"></i>Eliminar seleccionados
+            </button>
+          </div>
+          <form class="row g-3 border rounded p-3 mb-4" [formGroup]="valueForm" (ngSubmit)="saveValue()">
             @if (!managingQuestionValues()) {
               <div class="col-12 col-md-6">
               <label class="form-label">Pregunta</label>
@@ -299,7 +307,14 @@
             }
             <div class="col-12" [class.col-md-8]="!managingQuestionValues()" [class.col-md-10]="managingQuestionValues()"><label class="form-label">Opción</label><input class="form-control" formControlName="fd_option" /></div>
             <div class="col-12 col-md-2"><label class="form-label">Orden</label><input class="form-control" type="number" min="1" formControlName="fd_order" /></div>
-            <div class="col-12 text-end"><button class="btn btn-outline-success" type="submit"><i class="bi bi-plus-circle me-1"></i>Agregar valor</button></div>
+            <div class="col-12 text-end">
+              @if (editingValue()) {
+                <button class="btn btn-outline-secondary me-2" type="button" (click)="cancelValueEdit()">Cancelar edición</button>
+              }
+              <button class="btn" [class.btn-outline-success]="!editingValue()" [class.btn-outline-warning]="editingValue()" type="submit">
+                <i class="bi me-1" [class.bi-plus-circle]="!editingValue()" [class.bi-save]="editingValue()"></i>{{ editingValue() ? 'Actualizar valor' : 'Agregar valor' }}
+              </button>
+            </div>
           </form>
           @for (version of [valuesTableVersion()]; track version) {
             <div class="table-responsive">
@@ -307,13 +322,19 @@
                 <thead><tr>@if (!managingQuestionValues()) { <th>Pregunta</th> }<th>Orden</th><th>Opción</th><th class="text-end">Reordenar</th></tr></thead>
                 <tbody>
                   @for (value of surveyValues(); track value['id_universal']) {
-                    <tr>
+                    <tr
+                      role="button"
+                      (click)="toggleValueSelection(value)"
+                      [class.table-active]="isValueSelected(value)"
+                      [class.crud-row-selected]="isValueSelected(value)"
+                      [attr.aria-selected]="isValueSelected(value)"
+                    >
                       @if (!managingQuestionValues()) { <td>{{ questionLabel(value['pm_0acc84ae']) }}</td> }
                       <td>{{ value['fd_order'] }}</td>
                       <td>{{ value['fd_option'] }}</td>
                       <td class="text-end text-nowrap">
-                        <button class="btn btn-outline-secondary btn-sm me-1" type="button" (click)="moveValue(value, -1)" title="Subir"><i class="bi bi-arrow-up"></i></button>
-                        <button class="btn btn-outline-secondary btn-sm" type="button" (click)="moveValue(value, 1)" title="Bajar"><i class="bi bi-arrow-down"></i></button>
+                        <button class="btn btn-outline-secondary btn-sm me-1" type="button" (click)="$event.stopPropagation(); moveValue(value, -1)" title="Subir"><i class="bi bi-arrow-up"></i></button>
+                        <button class="btn btn-outline-secondary btn-sm" type="button" (click)="$event.stopPropagation(); moveValue(value, 1)" title="Bajar"><i class="bi bi-arrow-down"></i></button>
                       </td>
                     </tr>
                   }
