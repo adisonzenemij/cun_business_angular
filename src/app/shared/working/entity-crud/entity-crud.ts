@@ -557,8 +557,19 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
         });
         this.load();
       },
-      error: () => {
+      error: (error: { status?: number; error?: { detail?: string } }) => {
         this.autoFillForm.enable();
+        if (error.status === 422) {
+          this.loading.set(false);
+          this.openAutoFill();
+          void Swal.fire({
+            icon: 'warning',
+            title: 'Cupos actualizados',
+            text: error.error?.detail ?? 'La cantidad de cupos disponibles cambió.',
+            confirmButtonText: 'Aceptar',
+          });
+          return;
+        }
         this.failed();
       },
     });

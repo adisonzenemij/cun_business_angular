@@ -250,10 +250,17 @@ export class SurveyForm implements OnDestroy {
         });
         this.loadAvailableSurveys();
       },
-      error: () => {
+      error: (error: { status?: number; error?: { detail?: string } }) => {
         this.autoFilling.set(false);
         this.autoFillForm.enable();
-        void Swal.fire({ icon: 'error', title: 'No fue posible autocompletar la encuesta', confirmButtonText: 'Aceptar' });
+        this.loadAvailableSurveys();
+        const detail = error.error?.detail;
+        void Swal.fire({
+          icon: error.status === 422 ? 'warning' : 'error',
+          title: error.status === 422 ? 'Cupos actualizados' : 'No fue posible autocompletar la encuesta',
+          text: detail ?? 'No fue posible autocompletar la encuesta.',
+          confirmButtonText: 'Aceptar',
+        });
       },
     });
   }
