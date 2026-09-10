@@ -220,6 +220,16 @@
       </div>
       <div class="modal-body">
         <p class="text-body-secondary">Agrega preguntas directamente a la encuesta seleccionada.</p>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          <button class="btn btn-outline-warning" type="button" (click)="openManagedQuestionEdit()"
+            [disabled]="!selectedManagedQuestions().length">
+            <i class="bi bi-pencil-square me-1"></i>Editar pregunta
+          </button>
+          <button class="btn btn-outline-danger" type="button" (click)="removeManagedQuestions()"
+            [disabled]="!selectedManagedQuestions().length">
+            <i class="bi bi-trash me-1"></i>Eliminar seleccionadas
+          </button>
+        </div>
         <div class="border rounded p-3 mb-4">
           <div class="row g-3">
             <div class="col-12">
@@ -245,27 +255,47 @@
                 <span class="form-check-label">Requerida</span>
               </label>
             </div>
+            <div class="col-12 text-end">
+              @if (editingManagedQuestion()) {
+              <button class="btn btn-outline-secondary me-2" type="button" (click)="cancelManagedQuestionEdit()"
+                [disabled]="loading()">Cancelar edición</button>
+              }
+              <button class="btn" [class.btn-outline-success]="!editingManagedQuestion()"
+                [class.btn-outline-warning]="editingManagedQuestion()" type="submit" [disabled]="loading()">
+                <i class="bi me-1" [class.bi-plus-circle]="!editingManagedQuestion()"
+                  [class.bi-save]="editingManagedQuestion()"></i>
+                {{ editingManagedQuestion() ? 'Actualizar pregunta' : 'Agregar pregunta' }}
+              </button>
+            </div>
           </div>
         </div>
         <h3 class="h6">Preguntas registradas</h3>
-        @if (managedQuestions().length) {
-        <ol class="list-group list-group-numbered">
-          @for (question of managedQuestions(); track question['id_universal'] ?? question['fd_order']) {
-          <li class="list-group-item d-flex justify-content-between align-items-start">
-            <span>{{ question['fd_ask'] }}</span><small class="text-body-secondary ms-3">Orden {{ question['fd_order'] }}</small>
-          </li>
-          }
-        </ol>
-        } @else {
-        <p class="text-body-secondary mb-0">Aún no hay preguntas registradas.</p>
+        @for (version of [questionsTableVersion()]; track version) {
+        <div class="table-responsive">
+          <table #questionsTable class="table table-striped table-hover align-middle w-100">
+            <thead>
+              <tr><th>Orden</th><th>Pregunta</th><th>Requerida</th><th>Tipo</th></tr>
+            </thead>
+            <tbody>
+              @for (question of managedQuestions(); track question['id_universal']) {
+              <tr role="button" (click)="toggleManagedQuestionSelection(question)"
+                [class.table-active]="isManagedQuestionSelected(question)"
+                [class.crud-row-selected]="isManagedQuestionSelected(question)"
+                [attr.aria-selected]="isManagedQuestionSelected(question)">
+                <td>{{ question['fd_order'] }}</td>
+                <td>{{ question['fd_ask'] }}</td>
+                <td>{{ question['fd_required'] ? 'Sí' : 'No' }}</td>
+                <td>{{ managedQuestionTypeLabel(question['pm_0d3dc00e']) }}</td>
+              </tr>
+              }
+            </tbody>
+          </table>
+        </div>
         }
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline-secondary" type="button" (click)="closeQuestionsModal()"
           [disabled]="loading()">Cerrar</button>
-        <button class="btn btn-outline-success" type="submit" [disabled]="loading()">
-          <i class="bi bi-plus-circle me-1"></i>{{ loading() ? 'Agregando...' : 'Agregar pregunta' }}
-        </button>
       </div>
     </form>
   </div>

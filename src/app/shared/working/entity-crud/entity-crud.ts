@@ -68,6 +68,9 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   readonly surveyQuestions = signal<Record<string, unknown>[]>([]);
   readonly managedQuestions = signal<Record<string, unknown>[]>([]);
   readonly questionTypes = signal<Record<string, unknown>[]>([]);
+  readonly selectedManagedQuestions = signal<Record<string, unknown>[]>([]);
+  readonly editingManagedQuestion = signal<Record<string, unknown> | null>(null);
+  readonly questionsTableVersion = signal(0);
   readonly surveyValues = signal<Record<string, unknown>[]>([]);
   readonly selectedValues = signal<Record<string, unknown>[]>([]);
   readonly editingValue = signal<Record<string, unknown> | null>(null);
@@ -96,8 +99,10 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   });
   @ViewChild('dataTable') private readonly table?: ElementRef<HTMLTableElement>;
   @ViewChild('valuesTable') private readonly valuesTable?: ElementRef<HTMLTableElement>;
+  @ViewChild('questionsTable') private readonly questionsTable?: ElementRef<HTMLTableElement>;
   private dataTable?: { destroy(remove?: boolean): unknown };
   private valuesDataTable?: { destroy(remove?: boolean): unknown };
+  private questionsDataTable?: { destroy(remove?: boolean): unknown };
   private requestVersion = 0;
   constructor(
     private readonly api: FastApi,
@@ -178,6 +183,9 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     const survey = this.requireSingleSelection('gestionar las preguntas de');
     if (!survey) return;
     const surveyId = String(survey['id_universal']);
+    this.destroyQuestionsDataTable();
+    this.selectedManagedQuestions.set([]);
+    this.editingManagedQuestion.set(null);
     this.showQuestionsModal.set(true);
     this.questionForm.reset({ fd_ask: '', fd_order: 1, fd_required: false, pm_0d3dc00e: '' });
     forkJoin({
@@ -191,14 +199,20 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
         this.managedQuestions.set(managedQuestions);
         this.questionTypes.set(types);
         this.questionForm.patchValue({ fd_order: this.nextManagedQuestionOrder() });
+        this.questionsTableVersion.update((version) => version + 1);
+        this.changeDetectorRef.detectChanges();
+        this.initializeQuestionsDataTable();
       },
       error: () => this.failed(),
     });
   }
   closeQuestionsModal(): void {
+    this.destroyQuestionsDataTable();
     this.showQuestionsModal.set(false);
     this.managedQuestions.set([]);
     this.questionTypes.set([]);
+    this.selectedManagedQuestions.set([]);
+    this.editingManagedQuestion.set(null);
     this.questionForm.reset();
     this.clearSelection();
   }
@@ -211,23 +225,26 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     const values = this.questionForm.getRawValue();
     this.loading.set(true);
     this.questionForm.disable();
-    this.api.create('questions', {
+    const editing = this.editingManagedQuestion();
+    const payload = {
       fd_ask: values.fd_ask,
       fd_order: Number(values.fd_order),
       fd_required: Boolean(values.fd_required),
       pm_0d3dc00e: values.pm_0d3dc00e,
       pm_4d802b91: String(survey['id_universal']),
-    }).subscribe({
-      next: (createdQuestion) => {
-        const totalQuestions = this.managedQuestions().length + 1;
+    };
+    const request = editing
+      ? this.api.update('questions', String(editing['id_universal']), payload)
+      : this.api.create('questions', payload);
+    request.subscribe({
+      next: () => {
+        const totalQuestions = editing ? this.managedQuestions().length : this.managedQuestions().length + 1;
         this.api.update('surveys', String(survey['id_universal']), { fd_query: totalQuestions }).subscribe({
           next: () => {
             this.loading.set(false);
             this.questionForm.enable();
-            this.managedQuestions.update((questions) => [
-              ...questions,
-              createdQuestion as Record<string, unknown>,
-            ]);
+            this.editingManagedQuestion.set(null);
+            this.selectedManagedQuestions.set([]);
             const updatedSurvey = { ...survey, fd_query: totalQuestions };
             this.selectedRecord.set(updatedSurvey);
             this.selectedRecords.set([updatedSurvey]);
@@ -237,7 +254,8 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
             this.questionForm.reset({
               fd_ask: '', fd_order: this.nextManagedQuestionOrder(), fd_required: false, pm_0d3dc00e: '',
             });
-            void Swal.fire({ icon: 'success', title: 'Pregunta agregada', confirmButtonText: 'Aceptar' });
+            this.refreshManagedQuestions();
+            void Swal.fire({ icon: 'success', title: editing ? 'Pregunta actualizada' : 'Pregunta agregada', confirmButtonText: 'Aceptar' });
           },
           error: () => {
             this.questionForm.enable();
@@ -253,6 +271,112 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   }
   private nextManagedQuestionOrder(): number {
     return Math.max(0, ...this.managedQuestions().map((question) => Number(question['fd_order']) || 0)) + 1;
+  }
+  toggleManagedQuestionSelection(question: Record<string, unknown>): void {
+    const selected = this.selectedManagedQuestions();
+    this.selectedManagedQuestions.set(
+      selected.some((item) => item['id_universal'] === question['id_universal'])
+        ? selected.filter((item) => item['id_universal'] !== question['id_universal'])
+        : [...selected, question],
+    );
+  }
+  isManagedQuestionSelected(question: Record<string, unknown>): boolean {
+    return this.selectedManagedQuestions().some((item) => item['id_universal'] === question['id_universal']);
+  }
+  managedQuestionTypeLabel(typeId: unknown): string {
+    return String(this.questionTypes().find((type) => type['id_universal'] === typeId)?.['fd_format'] ?? '—');
+  }
+  openManagedQuestionEdit(): void {
+    const selected = this.selectedManagedQuestions();
+    if (selected.length !== 1) {
+      void Swal.fire({
+        icon: 'info', title: 'Selección requerida',
+        text: selected.length ? 'Solo se puede editar una pregunta a la vez.' : 'Selecciona una pregunta para editar.',
+        confirmButtonText: 'Aceptar',
+      });
+      return;
+    }
+    this.editingManagedQuestion.set(selected[0]);
+    this.questionForm.patchValue(selected[0]);
+  }
+  cancelManagedQuestionEdit(): void {
+    this.editingManagedQuestion.set(null);
+    this.selectedManagedQuestions.set([]);
+    this.questionForm.reset({
+      fd_ask: '', fd_order: this.nextManagedQuestionOrder(), fd_required: false, pm_0d3dc00e: '',
+    });
+  }
+  removeManagedQuestions(): void {
+    const selected = this.selectedManagedQuestions();
+    if (!selected.length) return;
+    void Swal.fire({
+      title: `¿Eliminar ${selected.length} pregunta${selected.length === 1 ? '' : 's'}?`,
+      text: 'Solo se eliminarán las preguntas que no estén siendo utilizadas por valores o respuestas.',
+      icon: 'warning', showCancelButton: true, confirmButtonText: 'Eliminar', cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc3545',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      this.loading.set(true);
+      forkJoin(selected.map((question) => this.api.delete('questions', String(question['id_universal'])).pipe(
+        map(() => ({ error: undefined as unknown })),
+        catchError((error) => of({ error: error as unknown })),
+      ))).subscribe({
+        next: (outcomes) => {
+          const failed = outcomes.filter((outcome) => outcome.error !== undefined);
+          const deleted = selected.length - failed.length;
+          const survey = this.selectedRecord();
+          if (!survey || !deleted) {
+            this.loading.set(false);
+            this.selectedManagedQuestions.set([]);
+            this.refreshManagedQuestions();
+            if (failed.length) this.showBatchDeleteResult(0, failed.map(({ error }) => error));
+            return;
+          }
+          const totalQuestions = Math.max(0, this.managedQuestions().length - deleted);
+          this.api.update('surveys', String(survey['id_universal']), { fd_query: totalQuestions }).subscribe({
+            next: () => {
+              this.loading.set(false);
+              const updatedSurvey = { ...survey, fd_query: totalQuestions };
+              this.selectedRecord.set(updatedSurvey);
+              this.selectedRecords.set([updatedSurvey]);
+              this.rows.update((rows) => rows.map((row) =>
+                row['id_universal'] === survey['id_universal'] ? updatedSurvey : row,
+              ));
+              this.selectedManagedQuestions.set([]);
+              this.editingManagedQuestion.set(null);
+              this.refreshManagedQuestions();
+              if (failed.length) this.showBatchDeleteResult(deleted, failed.map(({ error }) => error));
+              else void Swal.fire({ icon: 'success', title: 'Preguntas eliminadas', confirmButtonText: 'Aceptar' });
+            },
+            error: () => this.failed(),
+          });
+        },
+      });
+    });
+  }
+  private refreshManagedQuestions(): void {
+    const surveyId = this.selectedRecord()?.['id_universal'];
+    if (!surveyId) return;
+    this.loadManagedQuestions(String(surveyId));
+  }
+  private loadManagedQuestions(surveyId: string): void {
+    this.destroyQuestionsDataTable();
+    this.api.list<Record<string, unknown>>('questions').subscribe({
+      next: (questions) => {
+        this.managedQuestions.set(
+          questions
+            .filter((question) => question['pm_4d802b91'] === surveyId)
+            .sort((first, second) => Number(first['fd_order']) - Number(second['fd_order'])),
+        );
+        if (!this.editingManagedQuestion()) {
+          this.questionForm.patchValue({ fd_order: this.nextManagedQuestionOrder() });
+        }
+        this.questionsTableVersion.update((version) => version + 1);
+        this.changeDetectorRef.detectChanges();
+        this.initializeQuestionsDataTable();
+      },
+      error: () => this.message.set('No fue posible consultar las preguntas de la encuesta.'),
+    });
   }
   closeValuesModal(): void {
     this.destroyValuesDataTable();
@@ -707,6 +831,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroyDataTable();
     this.destroyValuesDataTable();
+    this.destroyQuestionsDataTable();
   }
   private initializeDataTable(): void {
     if (!this.table || this.dataTable) return;
@@ -757,6 +882,16 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   private destroyValuesDataTable(): void {
     this.valuesDataTable?.destroy();
     this.valuesDataTable = undefined;
+  }
+  private initializeQuestionsDataTable(): void {
+    if (!this.questionsTable || this.questionsDataTable) return;
+    this.questionsDataTable = new DataTable(this.questionsTable.nativeElement, {
+      language: { emptyTable: 'No hay preguntas', search: 'Buscar:', lengthMenu: 'Mostrar _MENU_ registros', info: 'Mostrando _START_ a _END_ de _TOTAL_', paginate: { next: 'Siguiente', previous: 'Anterior' } },
+    });
+  }
+  private destroyQuestionsDataTable(): void {
+    this.questionsDataTable?.destroy();
+    this.questionsDataTable = undefined;
   }
   private refreshValues(): void {
     const selected = this.selectedRecord();
