@@ -37,8 +37,26 @@
 .report-chart { min-height: 320px; width: 100%; }
 .report-empty { min-height: 260px; }
 
+/* Sin encuesta seleccionada, el estado vacío ocupa todo el panel disponible. */
+.report-results-scroll:has(.report-empty) {
+  display: flex;
+}
+.report-results-scroll:has(.report-empty) .report-empty {
+  flex: 1 1 auto;
+  min-height: 100%;
+  display: flex;
+}
+.report-empty .card-body {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
 @media (max-width: 991.98px) {
   .report-page { height: auto; overflow: visible; }
   .report-content, .report-results-scroll { overflow: visible; }
   .report-surveys { max-height: 18rem; }
+  .report-results-scroll:has(.report-empty) .report-empty { min-height: 260px; }
 }
