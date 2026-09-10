@@ -265,7 +265,10 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       this.loading.set(true);
       this.api
         .delete(this.config().resource, id)
-        .subscribe({ next: () => this.completed('Registro eliminado'), error: () => this.failed() });
+        .subscribe({
+          next: () => this.completed('Registro eliminado'),
+          error: (error) => this.handleDeleteError(error),
+        });
     });
   }
   clear(): void {
@@ -476,6 +479,36 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       confirmButtonText: 'Aceptar',
     });
     this.load();
+  }
+  private handleDeleteError(error: unknown): void {
+    const detail = (error as {
+      error?: { detail?: { message?: unknown; modules?: unknown } };
+    }).error?.detail;
+    const modules = Array.isArray(detail?.modules)
+      ? detail.modules.filter(
+        (module): module is { module: string; records: number } =>
+          typeof module === 'object' && module !== null
+          && typeof (module as { module?: unknown }).module === 'string'
+          && typeof (module as { records?: unknown }).records === 'number',
+      )
+      : [];
+
+    if (!modules.length) {
+      this.failed();
+      return;
+    }
+
+    this.loading.set(false);
+    this.message.set('');
+    const usage = modules
+      .map(({ module, records }) => `${module}: ${records} registro${records === 1 ? '' : 's'}`)
+      .join('\n');
+    void Swal.fire({
+      icon: 'info',
+      title: 'No se puede eliminar el registro',
+      text: `${String(detail?.message ?? 'El registro está siendo utilizado.')}\n\nDebes quitar la asociación antes de eliminarlo.\n\nMódulos donde se utiliza:\n${usage}`,
+      confirmButtonText: 'Aceptar',
+    });
   }
   private failed(): void {
     this.message.set('La operación no pudo completarse. Revisa los datos y permisos.');
