@@ -18,7 +18,7 @@ import {
 import { FastApi } from '../../../services/backend/python/fast/fast-api';
 import DataTable from 'datatables.net-bs5';
 import Swal from 'sweetalert2';
-import { forkJoin, map } from 'rxjs';
+import { catchError, forkJoin, map, of } from 'rxjs';
 
 export interface CrudField {
   name: string;
@@ -49,6 +49,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   readonly tableVersion = signal(0);
   readonly relationOptions = signal<Record<string, Record<string, unknown>[]>>({});
   readonly selectedRecord = signal<Record<string, unknown> | null>(null);
+  readonly selectedRecords = signal<Record<string, unknown>[]>([]);
   readonly loading = signal(false);
   readonly message = signal('');
   readonly editing = signal(false);
@@ -101,6 +102,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       next: (rows) => {
         this.rows.set(Array.isArray(rows) ? rows : []);
         this.selectedRecord.set(null);
+        this.selectedRecords.set([]);
         this.loadTableRelations(requestVersion);
       },
       error: () => {
@@ -122,7 +124,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     this.showFormModal.set(true);
   }
   openEdit(): void {
-    if (!this.selectedRecord()) return;
+    if (!this.requireSingleSelection('editar')) return;
     this.editing.set(true);
     this.form.get('id_universal')?.disable();
     this.loadRelationOptions();
@@ -133,12 +135,13 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     this.clearSelection();
   }
   openPassword(): void {
-    if (!this.selectedRecord()) return;
+    if (!this.requireSingleSelection('cambiar la contraseña de')) return;
     this.passwordForm.reset();
     this.showPasswordModal.set(true);
   }
   openValues(): void {
-    const selected = this.selectedRecord();
+    const selected = this.requireSingleSelection('gestionar los valores de');
+    if (!selected) return;
     const surveyId = (this.config().resource === 'surveys'
       ? selected?.['id_universal']
       : selected?.['pm_4d802b91']) as string | undefined;
@@ -240,18 +243,14 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     });
   }
   remove(): void {
-    if (!this.selectedRecord()) {
+    const selected = this.selectedRecords();
+    if (!selected.length) {
       this.message.set('Selecciona un registro para eliminar.');
       return;
     }
-    const id = this.form.controls['id_universal'].value;
-    if (!id) {
-      this.message.set('Indica el ID universal para eliminar.');
-      return;
-    }
     void Swal.fire({
-      title: '¿Eliminar registro?',
-      text: `Esta acción eliminará el registro de ${this.config().title}.`,
+      title: `¿Eliminar ${selected.length} registro${selected.length === 1 ? '' : 's'}?`,
+      text: `Esta acción eliminará los registros seleccionados de ${this.config().title}.`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Eliminar',
@@ -259,16 +258,31 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       confirmButtonColor: '#dc3545',
     }).then((result) => {
       if (!result.isConfirmed) {
-        this.clearSelection();
         return;
       }
       this.loading.set(true);
-      this.api
-        .delete(this.config().resource, id)
-        .subscribe({
-          next: () => this.completed('Registro eliminado'),
-          error: (error) => this.handleDeleteError(error),
-        });
+      forkJoin(
+        selected.map((row) => {
+          const id = String(row['id_universal']);
+          return this.api.delete(this.config().resource, id).pipe(
+            map(() => ({ id, error: undefined as unknown })),
+            catchError((error) => of({ id, error: error as unknown })),
+          );
+        }),
+      ).subscribe({
+        next: (outcomes) => {
+          const failed = outcomes.filter((outcome) => outcome.error !== undefined);
+          if (!failed.length) {
+            this.completed(`${selected.length} registro${selected.length === 1 ? '' : 's'} eliminado${selected.length === 1 ? '' : 's'}`);
+            return;
+          }
+          this.loading.set(false);
+          this.selectedRecord.set(null);
+          this.selectedRecords.set([]);
+          this.showBatchDeleteResult(selected.length - failed.length, failed.map(({ error }) => error));
+          this.load();
+        },
+      });
     });
   }
   clear(): void {
@@ -286,6 +300,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       this.api.clear(this.config().resource).subscribe({
         next: ({ deleted, preserved }) => {
           this.selectedRecord.set(null);
+          this.selectedRecords.set([]);
           this.message.set('');
           this.loading.set(false);
           void Swal.fire({
@@ -301,15 +316,26 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     });
   }
   toggleSelection(row: Record<string, unknown>): void {
-    if (this.selectedRecord()?.['id_universal'] === row['id_universal']) {
-      this.clearSelection();
-      return;
-    }
-    this.form.patchValue(row);
-    this.selectedRecord.set(row);
+    const id = row['id_universal'];
+    const selected = this.selectedRecords();
+    const isSelected = selected.some((item) => item['id_universal'] === id);
+    const next = isSelected
+      ? selected.filter((item) => item['id_universal'] !== id)
+      : [...selected, row];
+    this.selectedRecords.set(next);
+    const singleRecord = next.length === 1 ? next[0] : null;
+    this.selectedRecord.set(singleRecord);
+    if (singleRecord) this.form.patchValue(singleRecord);
+    else this.form.reset({ id_universal: '' });
+  }
+  isSelected(row: Record<string, unknown>): boolean {
+    return this.selectedRecords().some(
+      (item) => item['id_universal'] === row['id_universal'],
+    );
   }
   private clearSelection(): void {
     this.selectedRecord.set(null);
+    this.selectedRecords.set([]);
     this.form.get('id_universal')?.enable();
     this.form.reset({ id_universal: '' });
   }
@@ -470,6 +496,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     this.closeFormModal();
     this.closePasswordModal();
     this.selectedRecord.set(null);
+    this.selectedRecords.set([]);
     this.message.set('');
     this.loading.set(false);
     void Swal.fire({
@@ -507,6 +534,40 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       icon: 'info',
       title: 'No se puede eliminar el registro',
       text: `${String(detail?.message ?? 'El registro está siendo utilizado.')}\n\nDebes quitar la asociación antes de eliminarlo.\n\nMódulos donde se utiliza:\n${usage}`,
+      confirmButtonText: 'Aceptar',
+    });
+  }
+  private requireSingleSelection(action: string): Record<string, unknown> | null {
+    const selected = this.selectedRecords();
+    if (selected.length === 1) return selected[0];
+    const message = selected.length
+      ? `Solo se puede ${action} un registro seleccionado a la vez.`
+      : `Selecciona un registro para ${action}.`;
+    this.message.set(message);
+    void Swal.fire({ icon: 'info', title: 'Selección requerida', text: message, confirmButtonText: 'Aceptar' });
+    return null;
+  }
+  private showBatchDeleteResult(deleted: number, errors: unknown[]): void {
+    const relatedModules = errors.flatMap((error) => {
+      const detail = (error as {
+        error?: { detail?: { modules?: unknown } };
+      }).error?.detail;
+      return Array.isArray(detail?.modules)
+        ? detail.modules.filter(
+          (module): module is { module: string; records: number } =>
+            typeof module === 'object' && module !== null
+            && typeof (module as { module?: unknown }).module === 'string'
+            && typeof (module as { records?: unknown }).records === 'number',
+        )
+        : [];
+    });
+    const usage = relatedModules.length
+      ? `\n\nMódulos que bloquean la eliminación:\n${relatedModules.map(({ module, records }) => `${module}: ${records} registro${records === 1 ? '' : 's'}`).join('\n')}`
+      : '';
+    void Swal.fire({
+      icon: deleted ? 'warning' : 'info',
+      title: deleted ? 'Eliminación parcial' : 'No se pudieron eliminar los registros',
+      text: `Eliminados: ${deleted}. No eliminados: ${errors.length}.${usage}\n\nQuita las asociaciones de los registros bloqueados antes de intentarlo nuevamente.`,
       confirmButtonText: 'Aceptar',
     });
   }

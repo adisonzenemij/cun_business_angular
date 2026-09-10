@@ -57,7 +57,7 @@
             class="btn btn-outline-warning"
             type="button"
             (click)="openEdit()"
-            [disabled]="!selectedRecord()"
+            [disabled]="!selectedRecords().length"
           >
             <i class="bi bi-pencil-square me-1"></i>Actualizar
           </button>
@@ -67,7 +67,7 @@
             class="btn btn-outline-danger"
             type="button"
             (click)="remove()"
-            [disabled]="!selectedRecord()"
+            [disabled]="!selectedRecords().length"
           >
             <i class="bi bi-trash me-1"></i>Eliminar
           </button>
@@ -85,7 +85,7 @@
             class="btn btn-outline-info"
             type="button"
             (click)="openPassword()"
-            [disabled]="!selectedRecord()"
+            [disabled]="!selectedRecords().length"
           >
             <i class="bi bi-key me-1"></i>Contraseña
           </button>
@@ -95,7 +95,7 @@
             class="btn btn-outline-info"
             type="button"
             (click)="openValues()"
-            [disabled]="!selectedRecord()"
+            [disabled]="!selectedRecords().length"
           >
             <i class="bi bi-list-ol me-1"></i>Valores
           </button>
@@ -121,11 +121,9 @@
                 <tr
                   role="button"
                   (click)="toggleSelection(row)"
-                  [class.table-active]="selectedRecord()?.['id_universal'] === row['id_universal']"
-                  [class.crud-row-selected]="
-                    selectedRecord()?.['id_universal'] === row['id_universal']
-                  "
-                  [attr.aria-selected]="selectedRecord()?.['id_universal'] === row['id_universal']"
+                  [class.table-active]="isSelected(row)"
+                  [class.crud-row-selected]="isSelected(row)"
+                  [attr.aria-selected]="isSelected(row)"
                 >
                   @for (field of tableFields(); track field.name) {
                     <td>{{ displayValue(row, field) }}</td>
