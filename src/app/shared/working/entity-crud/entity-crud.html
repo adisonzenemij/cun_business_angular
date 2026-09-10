@@ -1,8 +1,6 @@
 <section class="container-fluid py-4">
   <div class="card crud-card shadow-sm border">
-    <div
-      class="card-header bg-primary text-white d-flex justify-content-between align-items-center"
-    >
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
       <h1 class="h5 mb-0"><i class="bi bi-database me-2"></i>{{ config().title }}</h1>
       <button class="btn btn-light btn-sm" type="button" (click)="load()" [disabled]="loading()">
         <i class="bi bi-arrow-clockwise me-1"></i>Refrescar
@@ -11,137 +9,98 @@
     <div class="card-body">
       <form class="row g-3 d-none" [formGroup]="form">
         <div class="col-12 col-md-6">
-          <label class="form-label">ID universal</label
-          ><input
-            class="form-control"
-            formControlName="id_universal"
-            placeholder="Para actualizar o eliminar"
-          />
+          <label class="form-label">ID universal</label><input class="form-control" formControlName="id_universal"
+            placeholder="Para actualizar o eliminar" />
         </div>
         @for (field of config().fields; track field.name) {
-          <div class="col-12 col-md-6">
-            <label class="form-label">{{ field.label }}</label
-            ><input
-              class="form-control"
-              [type]="field.type ?? 'text'"
-              [formControlName]="field.name"
-            />
-          </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label">{{ field.label }}</label><input class="form-control" [type]="field.type ?? 'text'"
+            [formControlName]="field.name" />
+        </div>
         }
         <div class="col-12 d-flex flex-wrap gap-2">
           @if (config().operations.insert) {
-            <button class="btn btn-outline-success" type="button" (click)="submit('insert')">
-              <i class="bi bi-plus-circle me-1"></i>Crear
-            </button>
+          <button class="btn btn-outline-success" type="button" (click)="submit('insert')">
+            <i class="bi bi-plus-circle me-1"></i>Crear
+          </button>
           }
           @if (config().operations.update) {
-            <button class="btn btn-outline-warning" type="button" (click)="submit('update')">
-              <i class="bi bi-save me-1"></i>Actualizar
-            </button>
+          <button class="btn btn-outline-warning" type="button" (click)="submit('update')">
+            <i class="bi bi-save me-1"></i>Actualizar
+          </button>
           }
           @if (config().operations.delete) {
-            <button class="btn btn-outline-danger" type="button" (click)="remove()">
-              <i class="bi bi-trash me-1"></i>Eliminar
-            </button>
+          <button class="btn btn-outline-danger" type="button" (click)="remove()">
+            <i class="bi bi-trash me-1"></i>Eliminar
+          </button>
           }
         </div>
       </form>
       <div class="d-flex flex-wrap gap-2">
         @if (config().operations.insert) {
-          <button class="btn btn-outline-success" type="button" (click)="openCreate()">
-            <i class="bi bi-plus-circle me-1"></i>Crear
-          </button>
+        <button class="btn btn-outline-success" type="button" (click)="openCreate()">
+          <i class="bi bi-plus-circle me-1"></i>Crear
+        </button>
         }
         @if (config().operations.update) {
-          <button
-            class="btn btn-outline-warning"
-            type="button"
-            (click)="openEdit()"
-            [disabled]="!selectedRecords().length"
-          >
-            <i class="bi bi-pencil-square me-1"></i>Actualizar
-          </button>
+        <button class="btn btn-outline-warning" type="button" (click)="openEdit()"
+          [disabled]="!selectedRecords().length">
+          <i class="bi bi-pencil-square me-1"></i>Actualizar
+        </button>
         }
         @if (config().operations.delete) {
-          <button
-            class="btn btn-outline-danger"
-            type="button"
-            (click)="remove()"
-            [disabled]="!selectedRecords().length"
-          >
-            <i class="bi bi-trash me-1"></i>Eliminar
-          </button>
-          <button
-            class="btn btn-outline-danger"
-            type="button"
-            (click)="clear()"
-            [disabled]="loading()"
-          >
-            <i class="bi bi-trash3 me-1"></i>Vaciar
-          </button>
+        <button class="btn btn-outline-danger" type="button" (click)="remove()" [disabled]="!selectedRecords().length">
+          <i class="bi bi-trash me-1"></i>Eliminar
+        </button>
+        <button class="btn btn-outline-danger" type="button" (click)="clear()" [disabled]="loading()">
+          <i class="bi bi-trash3 me-1"></i>Vaciar
+        </button>
         }
         @if (config().passwordChange) {
-          <button
-            class="btn btn-outline-info"
-            type="button"
-            (click)="openPassword()"
-            [disabled]="!selectedRecords().length"
-          >
-            <i class="bi bi-key me-1"></i>Contraseña
-          </button>
+        <button class="btn btn-outline-info" type="button" (click)="openPassword()"
+          [disabled]="!selectedRecords().length">
+          <i class="bi bi-key me-1"></i>Contraseña
+        </button>
         }
         @if (config().valuesManager) {
-          <button
-            class="btn btn-outline-info"
-            type="button"
-            (click)="openValues()"
-            [disabled]="!selectedRecords().length"
-          >
-            <i class="bi bi-list-ol me-1"></i>Valores
-          </button>
+        <button class="btn btn-outline-info" type="button" (click)="openValues()"
+          [disabled]="!selectedRecords().length">
+          <i class="bi bi-list-ol me-1"></i>Valores
+        </button>
         }
         @if (config().autoComplete) {
-          <button
-            class="btn btn-outline-primary"
-            type="button"
-            (click)="openAutoFill()"
-            [disabled]="!selectedRecords().length"
-          >
-            <i class="bi bi-robot me-1"></i>Autocompletar
-          </button>
+        <button class="btn btn-outline-primary" type="button" (click)="openAutoFill()"
+          [disabled]="!selectedRecords().length">
+          <i class="bi bi-robot me-1"></i>Autocompletar
+        </button>
         }
       </div>
       @if (message()) {
-        <div class="alert alert-info mt-3 mb-0">
-          <i class="bi bi-info-circle me-2"></i>{{ message() }}
-        </div>
+      <div class="alert alert-info mt-3 mb-0">
+        <i class="bi bi-info-circle me-2"></i>{{ message() }}
+      </div>
       }
       <div class="table-responsive mt-4">
         @for (version of [tableVersion()]; track version) {
-          <table #dataTable class="table table-striped table-hover align-middle w-100">
-            <thead>
-              <tr>
-                @for (field of tableFields(); track field.name) {
-                  <th>{{ field.label }}</th>
-                }
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of rows(); track row['id_universal']) {
-                <tr
-                  role="button"
-                  (click)="toggleSelection(row)"
-                  [class.table-active]="isSelected(row)"
-                  [class.crud-row-selected]="isSelected(row)"
-                  [attr.aria-selected]="isSelected(row)"
-                >
-                  @for (field of tableFields(); track field.name) {
-                    <td>{{ displayValue(row, field) }}</td>
-                  }
-                </tr>
+        <table #dataTable class="table table-striped table-hover align-middle w-100">
+          <thead>
+            <tr>
+              @for (field of tableFields(); track field.name) {
+              <th>{{ field.label }}</th>
               }
-            </tbody>
-          </table>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of rows(); track row['id_universal']) {
+            <tr role="button" (click)="toggleSelection(row)" [class.table-active]="isSelected(row)"
+              [class.crud-row-selected]="isSelected(row)" [attr.aria-selected]="isSelected(row)">
+              @for (field of tableFields(); track field.name) {
+              <td>{{ displayValue(row, field) }}</td>
+              }
+            </tr>
+            }
+          </tbody>
+        </table>
         }
       </div>
     </div>
@@ -149,256 +108,242 @@
 </section>
 
 @if (showFormModal()) {
-  <div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true">
-    <div
-      class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered"
-      role="document"
-    >
-      <form
-        class="modal-content"
-        [formGroup]="form"
-        (ngSubmit)="submit(editing() ? 'update' : 'insert')"
-      >
-        <div class="modal-header bg-primary text-white">
-          <h2 class="modal-title h5 mb-0">
-            <i
-              class="bi me-2"
-              [class.bi-pencil-square]="editing()"
-              [class.bi-plus-circle]="!editing()"
-            ></i>
-            {{ editing() ? 'Actualizar' : 'Crear' }} {{ config().title }}
-          </h2>
-          <button
-            class="btn-close btn-close-white"
-            type="button"
-            aria-label="Cerrar"
-            (click)="closeFormModal()"
-          ></button>
-        </div>
-        <div class="modal-body">
-          @if (editing()) {
-            <input type="hidden" formControlName="id_universal" />
-          }
-          <div class="row">
-            @for (field of config().fields; track field.name) {
-              @if (!editing() || field.name !== 'fd_passd' || !config().passwordChange) {
-                <div class="col-12 mb-3">
-                  <label class="form-label" [for]="field.name">{{ field.label }}</label>
-                  @if (field.relation) {
-                    <select class="form-select" [id]="field.name" [formControlName]="field.name">
-                      <option value="">Seleccione una opción</option>
-                      @for (
-                        option of relationOptions()[field.name] ?? [];
-                        track option['id_universal']
-                      ) {
-                        <option [value]="option['id_universal']">
-                          {{ relationOptionLabel(field, option) }}
-                        </option>
-                      }
-                    </select>
-                  } @else if (field.type === 'boolean') {
-                    <select class="form-select" [id]="field.name" [formControlName]="field.name">
-                      <option [ngValue]="true">Sí</option>
-                      <option [ngValue]="false">No</option>
-                    </select>
-                  } @else {
-                    <input
-                      class="form-control"
-                      [id]="field.name"
-                      [type]="field.type ?? 'text'"
-                      [formControlName]="field.name"
-                    />
-                  }
-                </div>
+<div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered" role="document">
+    <form class="modal-content" [formGroup]="form" (ngSubmit)="submit(editing() ? 'update' : 'insert')">
+      <div class="modal-header bg-primary text-white">
+        <h2 class="modal-title h5 mb-0">
+          <i class="bi me-2" [class.bi-pencil-square]="editing()" [class.bi-plus-circle]="!editing()"></i>
+          {{ editing() ? 'Actualizar' : 'Crear' }} {{ config().title }}
+        </h2>
+        <button class="btn-close btn-close-white" type="button" aria-label="Cerrar" (click)="closeFormModal()"></button>
+      </div>
+      <div class="modal-body">
+        @if (editing()) {
+        <input type="hidden" formControlName="id_universal" />
+        }
+        <div class="row">
+          @for (field of config().fields; track field.name) {
+          @if (!editing() || field.name !== 'fd_passd' || !config().passwordChange) {
+          <div class="col-12 mb-3">
+            <label class="form-label" [for]="field.name">{{ field.label }}</label>
+            @if (field.relation) {
+            <select class="form-select" [id]="field.name" [formControlName]="field.name">
+              <option value="">Seleccione una opción</option>
+              @for (
+              option of relationOptions()[field.name] ?? [];
+              track option['id_universal']
+              ) {
+              <option [value]="option['id_universal']">
+                {{ relationOptionLabel(field, option) }}
+              </option>
               }
+            </select>
+            } @else if (field.type === 'boolean') {
+            <select class="form-select" [id]="field.name" [formControlName]="field.name">
+              <option [ngValue]="true">Sí</option>
+              <option [ngValue]="false">No</option>
+            </select>
+            } @else {
+            <input class="form-control" [id]="field.name" [type]="field.type ?? 'text'"
+              [formControlName]="field.name" />
             }
           </div>
+          }
+          }
         </div>
-        <div class="modal-footer">
-          <button class="btn btn-outline-secondary" type="button" (click)="closeFormModal()">
-            Cancelar
-          </button>
-          <button
-            class="btn"
-            [class.btn-outline-success]="!editing()"
-            [class.btn-outline-warning]="editing()"
-            type="submit"
-          >
-            <i class="bi bi-save me-1"></i>{{ editing() ? 'Actualizar' : 'Crear' }}
-          </button>
-        </div>
-      </form>
-    </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" type="button" (click)="closeFormModal()">
+          Cancelar
+        </button>
+        <button class="btn" [class.btn-outline-success]="!editing()" [class.btn-outline-warning]="editing()"
+          type="submit">
+          <i class="bi bi-save me-1"></i>{{ editing() ? 'Actualizar' : 'Crear' }}
+        </button>
+      </div>
+    </form>
   </div>
-  <div class="modal-backdrop fade show"></div>
+</div>
+<div class="modal-backdrop fade show"></div>
 }
 
 @if (showPasswordModal()) {
-  <div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-      <form class="modal-content" [formGroup]="passwordForm" (ngSubmit)="submitPassword()">
-        <div class="modal-header bg-primary text-white">
-          <h2 class="modal-title h5 mb-0"><i class="bi bi-key me-2"></i>Contraseña</h2>
-          <button
-            class="btn-close btn-close-white"
-            type="button"
-            aria-label="Cerrar"
-            (click)="closePasswordModal()"
-          ></button>
+<div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <form class="modal-content" [formGroup]="passwordForm" (ngSubmit)="submitPassword()">
+      <div class="modal-header bg-primary text-white">
+        <h2 class="modal-title h5 mb-0"><i class="bi bi-key me-2"></i>Contraseña</h2>
+        <button class="btn-close btn-close-white" type="button" aria-label="Cerrar"
+          (click)="closePasswordModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label" for="new-password">Contraseña</label>
+          <input id="new-password" class="form-control" type="password" formControlName="fd_passd"
+            autocomplete="new-password" />
         </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label" for="new-password">Contraseña</label>
-            <input
-              id="new-password"
-              class="form-control"
-              type="password"
-              formControlName="fd_passd"
-              autocomplete="new-password"
-            />
-          </div>
-          <div class="mb-0">
-            <label class="form-label" for="confirm-password">Confirmación</label>
-            <input
-              id="confirm-password"
-              class="form-control"
-              type="password"
-              formControlName="confirmation"
-              autocomplete="new-password"
-            />
-          </div>
+        <div class="mb-0">
+          <label class="form-label" for="confirm-password">Confirmación</label>
+          <input id="confirm-password" class="form-control" type="password" formControlName="confirmation"
+            autocomplete="new-password" />
         </div>
-        <div class="modal-footer">
-          <button class="btn btn-outline-secondary" type="button" (click)="closePasswordModal()">
-            Cancelar
-          </button>
-          <button class="btn btn-outline-info" type="submit">
-            <i class="bi bi-key me-1"></i>Contraseña
-          </button>
-        </div>
-      </form>
-    </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" type="button" (click)="closePasswordModal()">
+          Cancelar
+        </button>
+        <button class="btn btn-outline-info" type="submit">
+          <i class="bi bi-key me-1"></i>Contraseña
+        </button>
+      </div>
+    </form>
   </div>
-  <div class="modal-backdrop fade show"></div>
+</div>
+<div class="modal-backdrop fade show"></div>
 }
 
 @if (showValuesModal()) {
-  <div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered" role="document">
-      <div class="modal-content">
-        <div class="modal-header bg-primary text-white">
-          <h2 class="modal-title h5 mb-0"><i class="bi bi-list-ol me-2"></i>{{ managingQuestionValues() ? 'Valores de la pregunta' : 'Valores de la encuesta' }}</h2>
-          <button class="btn-close btn-close-white" type="button" aria-label="Cerrar" (click)="closeValuesModal()"></button>
+<div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h2 class="modal-title h5 mb-0"><i class="bi bi-list-ol me-2"></i>{{ managingQuestionValues() ? 'Valores de la
+          pregunta' : 'Valores de la encuesta' }}</h2>
+        <button class="btn-close btn-close-white" type="button" aria-label="Cerrar"
+          (click)="closeValuesModal()"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-body-secondary">Use las flechas para cambiar el orden de las opciones de cada pregunta.</p>
+        @if (managingQuestionValues()) {
+        <p class="fw-semibold mb-3">{{ selectedQuestionDescription() }}</p>
+        }
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          <button class="btn btn-outline-warning" type="button" (click)="openValueEdit()"
+            [disabled]="!selectedValues().length">
+            <i class="bi bi-pencil-square me-1"></i>Editar valor
+          </button>
+          <button class="btn btn-outline-danger" type="button" (click)="removeValues()"
+            [disabled]="!selectedValues().length">
+            <i class="bi bi-trash me-1"></i>Eliminar seleccionados
+          </button>
         </div>
-        <div class="modal-body">
-          <p class="text-body-secondary">Use las flechas para cambiar el orden de las opciones de cada pregunta.</p>
-          @if (managingQuestionValues()) {
-            <p class="fw-semibold mb-3">{{ selectedQuestionDescription() }}</p>
+        <form class="row g-3 border rounded p-3 mb-4" [formGroup]="valueForm" (ngSubmit)="saveValue()">
+          @if (!managingQuestionValues()) {
+          <div class="col-12 col-md-6">
+            <label class="form-label">Pregunta</label>
+            <select class="form-select" formControlName="pm_0acc84ae"
+              (change)="valueForm.patchValue({ fd_order: nextValueOrder() })">
+              <option value="">Seleccione una pregunta</option>
+              @for (question of surveyQuestions(); track question['id_universal']) {
+              <option [value]="question['id_universal']">{{ question['fd_order'] }}. {{ question['fd_ask'] }}</option>
+              }
+            </select>
+          </div>
           }
-          <div class="d-flex flex-wrap gap-2 mb-3">
-            <button class="btn btn-outline-warning" type="button" (click)="openValueEdit()" [disabled]="!selectedValues().length">
-              <i class="bi bi-pencil-square me-1"></i>Editar valor
-            </button>
-            <button class="btn btn-outline-danger" type="button" (click)="removeValues()" [disabled]="!selectedValues().length">
-              <i class="bi bi-trash me-1"></i>Eliminar seleccionados
+          <div class="col-12" [class.col-md-8]="!managingQuestionValues()" [class.col-md-10]="managingQuestionValues()">
+            <label class="form-label">Opción</label><input class="form-control" formControlName="fd_option" /></div>
+          <div class="col-12 col-md-2"><label class="form-label">Orden</label><input class="form-control" type="number"
+              min="1" formControlName="fd_order" /></div>
+          <div class="col-12 text-end">
+            @if (editingValue()) {
+            <button class="btn btn-outline-secondary me-2" type="button" (click)="cancelValueEdit()">Cancelar
+              edición</button>
+            }
+            <button class="btn" [class.btn-outline-success]="!editingValue()"
+              [class.btn-outline-warning]="editingValue()" type="submit">
+              <i class="bi me-1" [class.bi-plus-circle]="!editingValue()" [class.bi-save]="editingValue()"></i>{{
+              editingValue() ? 'Actualizar valor' : 'Agregar valor' }}
             </button>
           </div>
-          <form class="row g-3 border rounded p-3 mb-4" [formGroup]="valueForm" (ngSubmit)="saveValue()">
-            @if (!managingQuestionValues()) {
-              <div class="col-12 col-md-6">
-              <label class="form-label">Pregunta</label>
-              <select class="form-select" formControlName="pm_0acc84ae" (change)="valueForm.patchValue({ fd_order: nextValueOrder() })">
-                <option value="">Seleccione una pregunta</option>
-                @for (question of surveyQuestions(); track question['id_universal']) {
-                  <option [value]="question['id_universal']">{{ question['fd_order'] }}. {{ question['fd_ask'] }}</option>
-                }
-              </select>
-              </div>
-            }
-            <div class="col-12" [class.col-md-8]="!managingQuestionValues()" [class.col-md-10]="managingQuestionValues()"><label class="form-label">Opción</label><input class="form-control" formControlName="fd_option" /></div>
-            <div class="col-12 col-md-2"><label class="form-label">Orden</label><input class="form-control" type="number" min="1" formControlName="fd_order" /></div>
-            <div class="col-12 text-end">
-              @if (editingValue()) {
-                <button class="btn btn-outline-secondary me-2" type="button" (click)="cancelValueEdit()">Cancelar edición</button>
+        </form>
+        @for (version of [valuesTableVersion()]; track version) {
+        <div class="table-responsive">
+          <table #valuesTable class="table table-striped table-hover align-middle w-100">
+            <thead>
+              <tr>@if (!managingQuestionValues()) { <th>Pregunta</th> }<th>Orden</th>
+                <th>Opción</th>
+                <th class="text-end">Reordenar</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (value of surveyValues(); track value['id_universal']) {
+              <tr role="button" (click)="toggleValueSelection(value)" [class.table-active]="isValueSelected(value)"
+                [class.crud-row-selected]="isValueSelected(value)" [attr.aria-selected]="isValueSelected(value)">
+                @if (!managingQuestionValues()) { <td>{{ questionLabel(value['pm_0acc84ae']) }}</td> }
+                <td>{{ value['fd_order'] }}</td>
+                <td>{{ value['fd_option'] }}</td>
+                <td class="text-end text-nowrap">
+                  <button class="btn btn-outline-secondary btn-sm me-1" type="button"
+                    (click)="$event.stopPropagation(); moveValue(value, -1)" title="Subir"><i
+                      class="bi bi-arrow-up"></i></button>
+                  <button class="btn btn-outline-secondary btn-sm" type="button"
+                    (click)="$event.stopPropagation(); moveValue(value, 1)" title="Bajar"><i
+                      class="bi bi-arrow-down"></i></button>
+                </td>
+              </tr>
               }
-              <button class="btn" [class.btn-outline-success]="!editingValue()" [class.btn-outline-warning]="editingValue()" type="submit">
-                <i class="bi me-1" [class.bi-plus-circle]="!editingValue()" [class.bi-save]="editingValue()"></i>{{ editingValue() ? 'Actualizar valor' : 'Agregar valor' }}
-              </button>
-            </div>
-          </form>
-          @for (version of [valuesTableVersion()]; track version) {
-            <div class="table-responsive">
-              <table #valuesTable class="table table-striped table-hover align-middle w-100">
-                <thead><tr>@if (!managingQuestionValues()) { <th>Pregunta</th> }<th>Orden</th><th>Opción</th><th class="text-end">Reordenar</th></tr></thead>
-                <tbody>
-                  @for (value of surveyValues(); track value['id_universal']) {
-                    <tr
-                      role="button"
-                      (click)="toggleValueSelection(value)"
-                      [class.table-active]="isValueSelected(value)"
-                      [class.crud-row-selected]="isValueSelected(value)"
-                      [attr.aria-selected]="isValueSelected(value)"
-                    >
-                      @if (!managingQuestionValues()) { <td>{{ questionLabel(value['pm_0acc84ae']) }}</td> }
-                      <td>{{ value['fd_order'] }}</td>
-                      <td>{{ value['fd_option'] }}</td>
-                      <td class="text-end text-nowrap">
-                        <button class="btn btn-outline-secondary btn-sm me-1" type="button" (click)="$event.stopPropagation(); moveValue(value, -1)" title="Subir"><i class="bi bi-arrow-up"></i></button>
-                        <button class="btn btn-outline-secondary btn-sm" type="button" (click)="$event.stopPropagation(); moveValue(value, 1)" title="Bajar"><i class="bi bi-arrow-down"></i></button>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          }
+            </tbody>
+          </table>
         </div>
-        <div class="modal-footer"><button class="btn btn-outline-secondary" type="button" (click)="closeValuesModal()">Cerrar</button></div>
+        }
       </div>
+      <div class="modal-footer"><button class="btn btn-outline-secondary" type="button"
+          (click)="closeValuesModal()">Cerrar</button></div>
     </div>
   </div>
-  <div class="modal-backdrop fade show"></div>
+</div>
+<div class="modal-backdrop fade show"></div>
 }
 
 @if (showAutoFillModal()) {
-  <div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-      <form class="modal-content" [formGroup]="autoFillForm" (ngSubmit)="runAutoFill()">
-        <div class="modal-header bg-primary text-white">
-          <h2 class="modal-title h5 mb-0"><i class="bi bi-robot me-2"></i>Autocompletar encuesta</h2>
-          <button class="btn-close btn-close-white" type="button" aria-label="Cerrar" (click)="closeAutoFill()"></button>
-        </div>
-        <div class="modal-body">
-          <p class="text-body-secondary">Chromium se ejecutará dentro del servidor y responderá aleatoriamente cada pregunta.</p>
-          <div class="mb-3">
-            <label class="form-label" for="autofill-responses">Respuestas a generar</label>
-            <input id="autofill-responses" class="form-control" type="number" min="1" [attr.max]="selectedRecord()?.['fd_count']" formControlName="responses" />
-            <div class="form-text">Entre 1 y {{ selectedRecord()?.['fd_count'] }} (límite configurado de la encuesta).</div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label" for="autofill-bots">Bots simultáneos</label>
-            <input id="autofill-bots" class="form-control" type="number" min="1" max="10" formControlName="bots" />
-          </div>
-          <div>
-            <label class="form-label" for="autofill-memory">Memoria por bot</label>
-            <div class="input-group">
-              <input id="autofill-memory" class="form-control" type="number" min="1" formControlName="memory_value" />
-              <select class="form-select" style="max-width: 7rem" formControlName="memory_unit">
-                <option value="MB">MB</option>
-                <option value="GB">GB</option>
-              </select>
-            </div>
-            <div class="form-text">Se aplica al proceso Chromium mediante su límite de memoria JavaScript.</div>
+<div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <form class="modal-content" [formGroup]="autoFillForm" (ngSubmit)="runAutoFill()">
+      <div class="modal-header bg-primary text-white">
+        <h2 class="modal-title h5 mb-0"><i class="bi bi-robot me-2"></i>Autocompletar</h2>
+        <button class="btn-close btn-close-white" type="button" aria-label="Cerrar" (click)="closeAutoFill()"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-body-secondary">Chromium se ejecutará dentro del servidor y responderá aleatoriamente cada
+          pregunta.</p>
+        <div class="mb-3">
+          <label class="form-label" for="autofill-responses">Respuestas a generar</label>
+          <input id="autofill-responses" class="form-control" type="number" min="1"
+            [attr.max]="autoFillAvailableSlots()" formControlName="responses" />
+          <div class="form-text">
+            @if (autoFillAvailableSlots()) {
+            De 1 a {{ autoFillAvailableSlots() }}. Cupos disponibles: {{ autoFillAvailableSlots() }} de {{
+            selectedRecord()?.['fd_count'] }}.
+            } @else {
+            No hay cupos disponibles para autocompletar esta encuesta.
+            }
           </div>
         </div>
-        <div class="modal-footer">
-          <button class="btn btn-outline-secondary" type="button" (click)="closeAutoFill()">Cancelar</button>
-          <button class="btn btn-outline-primary" type="submit" [disabled]="loading()">
-            <i class="bi bi-robot me-1"></i>{{ loading() ? 'Autocompletando...' : 'Autocompletar' }}
-          </button>
+        <div class="mb-3">
+          <label class="form-label" for="autofill-bots">Bots simultáneos</label>
+          <input id="autofill-bots" class="form-control" type="number" min="1" max="10" formControlName="bots" />
         </div>
-      </form>
-    </div>
+        <div>
+          <label class="form-label" for="autofill-memory">Memoria por bot</label>
+          <div class="input-group">
+            <input id="autofill-memory" class="form-control" type="number" min="1" formControlName="memory_value" />
+            <select class="form-select" style="max-width: 7rem" formControlName="memory_unit">
+              <option value="MB">MB</option>
+              <option value="GB">GB</option>
+            </select>
+          </div>
+          <div class="form-text">Se aplica al proceso Chromium mediante su límite de memoria JavaScript.</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" type="button" (click)="closeAutoFill()">Cancelar</button>
+        <button class="btn btn-outline-primary" type="submit" [disabled]="loading() || !autoFillAvailableSlots()">
+          <i class="bi bi-robot me-1"></i>{{ loading() ? 'Autocompletando...' : 'Autocompletar' }}
+        </button>
+      </div>
+    </form>
   </div>
-  <div class="modal-backdrop fade show"></div>
+</div>
+<div class="modal-backdrop fade show"></div>
 }

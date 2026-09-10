@@ -58,6 +58,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   readonly showPasswordModal = signal(false);
   readonly showValuesModal = signal(false);
   readonly showAutoFillModal = signal(false);
+  readonly autoFillAvailableSlots = signal(0);
   readonly surveyQuestions = signal<Record<string, unknown>[]>([]);
   readonly surveyValues = signal<Record<string, unknown>[]>([]);
   readonly selectedValues = signal<Record<string, unknown>[]>([]);
@@ -169,18 +170,31 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   openAutoFill(): void {
     const survey = this.requireSingleSelection('autocompletar');
     if (!survey) return;
-    const limit = Number(survey['fd_count']) || 1;
     this.autoFillForm.reset({ responses: 1, bots: 1, memory_value: 512, memory_unit: 'MB' });
+    this.autoFillAvailableSlots.set(0);
+    this.setAutoFillResponseLimit(0);
+    this.showAutoFillModal.set(true);
+    this.api.list<Record<string, unknown>>('surveys/available').subscribe({
+      next: (surveys) => {
+        const current = surveys.find((item) => item['id_universal'] === survey['id_universal']);
+        const availableSlots = Math.max(0, Number(current?.['fd_available_slots']) || 0);
+        this.autoFillAvailableSlots.set(availableSlots);
+        this.setAutoFillResponseLimit(availableSlots);
+      },
+      error: () => this.failed(),
+    });
+  }
+  private setAutoFillResponseLimit(limit: number): void {
     this.autoFillForm.get('responses')?.setValidators([
       Validators.required,
       Validators.min(1),
       Validators.max(limit),
     ]);
     this.autoFillForm.get('responses')?.updateValueAndValidity();
-    this.showAutoFillModal.set(true);
   }
   closeAutoFill(): void {
     this.showAutoFillModal.set(false);
+    this.autoFillAvailableSlots.set(0);
     this.autoFillForm.reset({ responses: 1, bots: 1, memory_value: 512, memory_unit: 'MB' });
   }
   runAutoFill(): void {
@@ -193,7 +207,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     const values = this.autoFillForm.getRawValue() as {
       responses: number; bots: number; memory_value: number; memory_unit: 'MB' | 'GB';
     };
-    const limit = Number(survey['fd_count']);
+    const limit = this.autoFillAvailableSlots();
     if (Number(values.responses) > limit) {
       this.autoFillForm.get('responses')?.setErrors({ max: true });
       return;
