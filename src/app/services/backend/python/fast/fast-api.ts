@@ -51,7 +51,13 @@ export class FastApi {
   }
   autoFill(
     surveyId: string,
-    payload: { responses: number; bots: number; memory_value: number; memory_unit: 'MB' | 'GB' },
+    payload: {
+      responses: number;
+      bots: number;
+      memory_value: number;
+      memory_unit: 'MB' | 'GB';
+      allowed_values: Record<string, string[]>;
+    },
   ): Observable<AutoFillResult> {
     return this.http.post<AutoFillResult>(`${FAST_API_URL}/surveys/${surveyId}/autofill`, payload);
   }

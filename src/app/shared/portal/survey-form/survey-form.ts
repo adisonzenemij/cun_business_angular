@@ -46,6 +46,7 @@ export class SurveyForm implements OnDestroy {
   readonly autoFillVisible = signal(false);
   readonly autoFilling = signal(false);
   readonly autoFillMemoryMaxMb = signal(0);
+  readonly autoFillAllowedValues = signal<Record<string, string[]>>({});
   readonly answerForm: UntypedFormGroup = this.formBuilder.group({});
   readonly autoFillForm: UntypedFormGroup = this.formBuilder.group({
     responses: [1, [Validators.required, Validators.min(1)]],
@@ -125,6 +126,7 @@ export class SurveyForm implements OnDestroy {
     if (!survey || this.autoFilling()) return;
     this.autoFillForm.enable();
     this.autoFillForm.reset({ responses: 1, bots: 1, memory_value: 512, memory_unit: 'MB' });
+    this.autoFillAllowedValues.set({});
     this.autoFillForm.get('responses')?.setValidators([
       Validators.required,
       Validators.min(1),
@@ -179,6 +181,22 @@ export class SurveyForm implements OnDestroy {
     return this.autoFillForm.get('memory_unit')?.value === 'GB' ? 'GB' : 'MB';
   }
 
+  isAutoFillValueAllowed(questionId: string, valueId: string): boolean {
+    return this.autoFillAllowedValues()[questionId]?.includes(valueId) ?? false;
+  }
+
+  toggleAutoFillValue(questionId: string, valueId: string, checked: boolean): void {
+    this.autoFillAllowedValues.update((current) => {
+      const next = { ...current };
+      const values = new Set(next[questionId] ?? []);
+      if (checked) values.add(valueId);
+      else values.delete(valueId);
+      if (values.size) next[questionId] = [...values];
+      else delete next[questionId];
+      return next;
+    });
+  }
+
   runAutoFill(): void {
     if (!this.canAutoFill()) return;
     const survey = this.selectedSurvey();
@@ -200,6 +218,7 @@ export class SurveyForm implements OnDestroy {
       bots: Number(values.bots),
       memory_value: Number(values.memory_value),
       memory_unit: values.memory_unit,
+      allowed_values: this.autoFillAllowedValues(),
     }).subscribe({
       next: (result) => {
         this.autoFilling.set(false);

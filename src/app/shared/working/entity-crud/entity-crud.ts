@@ -60,6 +60,9 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   readonly showAutoFillModal = signal(false);
   readonly autoFillAvailableSlots = signal(0);
   readonly autoFillMemoryMaxMb = signal(0);
+  readonly autoFillQuestions = signal<Record<string, unknown>[]>([]);
+  readonly autoFillValues = signal<Record<string, unknown>[]>([]);
+  readonly autoFillAllowedValues = signal<Record<string, string[]>>({});
   readonly surveyQuestions = signal<Record<string, unknown>[]>([]);
   readonly surveyValues = signal<Record<string, unknown>[]>([]);
   readonly selectedValues = signal<Record<string, unknown>[]>([]);
@@ -175,15 +178,32 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     this.autoFillForm.reset({ responses: 1, bots: 1, memory_value: 512, memory_unit: 'MB' });
     this.autoFillAvailableSlots.set(0);
     this.autoFillMemoryMaxMb.set(0);
+    this.autoFillQuestions.set([]);
+    this.autoFillValues.set([]);
+    this.autoFillAllowedValues.set({});
     this.setAutoFillResponseLimit(0);
     this.showAutoFillModal.set(true);
     this.refreshAutoFillMemoryCapacity();
-    this.api.list<Record<string, unknown>>('surveys/available').subscribe({
-      next: (surveys) => {
+    forkJoin({
+      surveys: this.api.list<Record<string, unknown>>('surveys/available'),
+      questions: this.api.list<Record<string, unknown>>('questions'),
+      values: this.api.list<Record<string, unknown>>('values'),
+    }).subscribe({
+      next: ({ surveys, questions, values }) => {
         const current = surveys.find((item) => item['id_universal'] === survey['id_universal']);
         const availableSlots = Math.max(0, Number(current?.['fd_available_slots']) || 0);
         this.autoFillAvailableSlots.set(availableSlots);
         this.setAutoFillResponseLimit(availableSlots);
+        const surveyQuestions = questions
+          .filter((question) => question['pm_4d802b91'] === survey['id_universal'])
+          .sort((first, second) => Number(first['fd_order']) - Number(second['fd_order']));
+        const questionIds = new Set(surveyQuestions.map((question) => String(question['id_universal'])));
+        this.autoFillQuestions.set(surveyQuestions);
+        this.autoFillValues.set(
+          values
+            .filter((value) => questionIds.has(String(value['pm_0acc84ae'])))
+            .sort((first, second) => Number(first['fd_order']) - Number(second['fd_order'])),
+        );
       },
       error: () => this.failed(),
     });
@@ -200,6 +220,9 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     this.showAutoFillModal.set(false);
     this.autoFillAvailableSlots.set(0);
     this.autoFillMemoryMaxMb.set(0);
+    this.autoFillQuestions.set([]);
+    this.autoFillValues.set([]);
+    this.autoFillAllowedValues.set({});
     this.autoFillForm.enable();
     this.autoFillForm.reset({ responses: 1, bots: 1, memory_value: 512, memory_unit: 'MB' });
   }
@@ -242,6 +265,25 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   autoFillMemoryUnit(): 'MB' | 'GB' {
     return this.autoFillForm.get('memory_unit')?.value === 'GB' ? 'GB' : 'MB';
   }
+  autoFillValuesFor(questionId: unknown): Record<string, unknown>[] {
+    return this.autoFillValues().filter((value) => value['pm_0acc84ae'] === questionId);
+  }
+  isAutoFillValueAllowed(questionId: unknown, valueId: unknown): boolean {
+    return this.autoFillAllowedValues()[String(questionId)]?.includes(String(valueId)) ?? false;
+  }
+  toggleAutoFillValue(questionId: unknown, valueId: unknown, checked: boolean): void {
+    const key = String(questionId);
+    const option = String(valueId);
+    this.autoFillAllowedValues.update((current) => {
+      const next = { ...current };
+      const values = new Set(next[key] ?? []);
+      if (checked) values.add(option);
+      else values.delete(option);
+      if (values.size) next[key] = [...values];
+      else delete next[key];
+      return next;
+    });
+  }
   runAutoFill(): void {
     const survey = this.requireSingleSelection('autocompletar');
     if (!survey) return;
@@ -264,6 +306,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       bots: Number(values.bots),
       memory_value: Number(values.memory_value),
       memory_unit: values.memory_unit,
+      allowed_values: this.autoFillAllowedValues(),
     }).subscribe({
       next: (result) => {
         this.loading.set(false);
