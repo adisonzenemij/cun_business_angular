@@ -5,10 +5,12 @@ import 'highcharts/esm/modules/export-data';
 import { forkJoin } from 'rxjs';
 import {
   Answer,
+  Anonymous,
   FtA5acf579,
   FtD2e6ded6,
   FtD5fb87de,
   FtD76a0e67,
+  FtE5520e1e,
   Question,
   Survey,
   Value,
@@ -33,6 +35,7 @@ export class WgReport implements OnDestroy {
   private readonly questionsApi = inject(FtD2e6ded6);
   private readonly valuesApi = inject(FtD76a0e67);
   private readonly answersApi = inject(FtA5acf579);
+  private readonly anonymousApi = inject(FtE5520e1e);
   private readonly theme = inject(Theme);
   private charts: Highcharts.Chart[] = [];
   private chartRenderTimer?: ReturnType<typeof setTimeout>;
@@ -44,6 +47,7 @@ export class WgReport implements OnDestroy {
   readonly questions = signal<Question[]>([]);
   readonly values = signal<Value[]>([]);
   readonly answers = signal<Answer[]>([]);
+  readonly anonymous = signal<Anonymous[]>([]);
   readonly selectedSurvey = signal<Survey | null>(null);
 
   constructor() {
@@ -73,6 +77,21 @@ export class WgReport implements OnDestroy {
       });
   }
 
+  completedSurveyCount(survey: Survey | null): number {
+    if (!survey) return 0;
+    const participantIds = new Set(
+      this.anonymous()
+        .filter((participant) => participant.pm_4d802b91 === survey.id_universal)
+        .map((participant) => participant.id_universal),
+    );
+    const answeredParticipants = new Set(
+      this.answers()
+        .filter((answer) => participantIds.has(answer.pm_1a4a8cd7))
+        .map((answer) => answer.pm_1a4a8cd7),
+    );
+    return answeredParticipants.size;
+  }
+
   load(): void {
     this.loading.set(true);
     this.error.set('');
@@ -81,12 +100,14 @@ export class WgReport implements OnDestroy {
       questions: this.questionsApi.list(),
       values: this.valuesApi.list(),
       answers: this.answersApi.list(),
+      anonymous: this.anonymousApi.list(),
     }).subscribe({
-      next: ({ surveys, questions, values, answers }) => {
+      next: ({ surveys, questions, values, answers, anonymous }) => {
         this.surveys.set(surveys.sort((a, b) => a.fd_name.localeCompare(b.fd_name)));
         this.questions.set(questions);
         this.values.set(values);
         this.answers.set(answers);
+        this.anonymous.set(anonymous);
         const selected = this.selectedSurvey();
         this.selectedSurvey.set(
           selected ? surveys.find((survey) => survey.id_universal === selected.id_universal) ?? null : null,

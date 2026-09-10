@@ -41,8 +41,9 @@
         <div class="report-results w-100">
           @if (selectedSurvey()) {
           <div class="card report-survey-title mb-3">
-            <header class="card-header bg-primary text-white">
+            <header class="card-header bg-primary text-white d-flex justify-content-between align-items-center gap-3">
               <h2 class="h6 mb-0"><i class="bi bi-clipboard-data me-2"></i>{{ selectedSurvey()?.fd_name }}</h2>
+              <span class="badge text-bg-light text-primary text-nowrap">Encuestas: {{ completedSurveyCount(selectedSurvey()) }} de {{ selectedSurvey()?.fd_count }}</span>
             </header>
           </div>
           }
