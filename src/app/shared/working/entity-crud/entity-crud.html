@@ -423,7 +423,7 @@
         <div class="mb-3">
           <label class="form-label" for="autofill-responses">Respuestas a generar</label>
           <input id="autofill-responses" class="form-control" type="number" min="1"
-            [attr.max]="autoFillAvailableSlots()" formControlName="responses" />
+            [attr.max]="autoFillAvailableSlots()" formControlName="responses" (change)="validateAutoFillResponses()" />
           <div class="form-text">
             @if (autoFillAvailableSlots()) {
             De 1 a {{ autoFillAvailableSlots() }}. Cupos disponibles: {{ autoFillAvailableSlots() }} de {{
@@ -453,33 +453,12 @@
             según disponiblidad del servidor.</div>
           <div class="form-text">Se aplica al proceso Chromium mediante su límite de memoria JavaScript.</div>
         </div>
-        <div class="mt-3">
-          <details class="border rounded p-3">
-            <summary class="fw-semibold">Personalizar opciones de respuesta (opcional)</summary>
-            <p class="form-text mb-3">Marca las opciones que podrá usar el bot en cada pregunta. Sin marcas, usará
-              todas las opciones aleatoriamente. Por ejemplo, marca 4 y 5 para priorizar esas respuestas.</p>
-            @for (question of autoFillQuestions(); track question['id_universal']) {
-            <div class="border-top pt-2 mt-2">
-              <div class="fw-semibold mb-1">{{ question['fd_order'] }}. {{ question['fd_ask'] }}</div>
-              <div class="d-flex flex-wrap gap-3">
-                @for (value of autoFillValuesFor(question['id_universal']); track value['id_universal']) {
-                <label class="form-check mb-0">
-                  <input class="form-check-input" type="checkbox"
-                    [checked]="isAutoFillValueAllowed(question['id_universal'], value['id_universal'])"
-                    [disabled]="loading()"
-                    (change)="toggleAutoFillValue(question['id_universal'], value['id_universal'], $any($event.target).checked)" />
-                  <span class="form-check-label">{{ value['fd_option'] }}</span>
-                </label>
-                }
-              </div>
-            </div>
-            }
-          </details>
-        </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline-secondary" type="button" (click)="closeAutoFill()"
           [disabled]="loading()">Cancelar</button>
+        <button class="btn btn-outline-secondary" type="button" (click)="openAutoFillConfiguration()"
+          [disabled]="loading()"><i class="bi bi-gear me-1"></i>Configuración</button>
         <button class="btn btn-outline-primary" type="submit"
           [disabled]="loading() || !autoFillAvailableSlots() || !autoFillMemoryMaxMb()">
           <i class="bi bi-robot me-1"></i>{{ loading() ? 'Autocompletando...' : 'Autocompletar' }}
@@ -489,4 +468,41 @@
   </div>
 </div>
 <div class="modal-backdrop fade show"></div>
+}
+
+@if (showAutoFillConfigurationModal()) {
+<div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" style="z-index: 1060">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h2 class="modal-title h5 mb-0"><i class="bi bi-gear me-2"></i>Configuración de respuestas</h2>
+        <button class="btn-close btn-close-white" type="button" aria-label="Cerrar"
+          (click)="closeAutoFillConfiguration()"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-body-secondary">Marca las opciones que podrá usar el bot en cada pregunta. Si no marcas una
+          opción para una pregunta, el bot usará todas sus opciones aleatoriamente.</p>
+        @for (question of autoFillQuestions(); track question['id_universal']) {
+        <div class="border-top pt-3 mt-3">
+          <div class="fw-semibold mb-2">{{ question['fd_order'] }}. {{ question['fd_ask'] }}</div>
+          <div class="d-flex flex-wrap gap-3">
+            @for (value of autoFillValuesFor(question['id_universal']); track value['id_universal']) {
+            <label class="form-check mb-0">
+              <input class="form-check-input" type="checkbox"
+                [checked]="isAutoFillValueAllowed(question['id_universal'], value['id_universal'])"
+                (change)="toggleAutoFillValue(question['id_universal'], value['id_universal'], $any($event.target).checked)" />
+              <span class="form-check-label">{{ value['fd_option'] }}</span>
+            </label>
+            }
+          </div>
+        </div>
+        }
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-primary" type="button" (click)="closeAutoFillConfiguration()">Listo</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade show" style="z-index: 1055"></div>
 }

@@ -44,6 +44,7 @@ export class SurveyForm implements OnDestroy {
   readonly loadingDetails = signal(false);
   readonly submitting = signal(false);
   readonly autoFillVisible = signal(false);
+  readonly autoFillConfigurationVisible = signal(false);
   readonly autoFilling = signal(false);
   readonly autoFillMemoryMaxMb = signal(0);
   readonly autoFillAllowedValues = signal<Record<string, string[]>>({});
@@ -79,6 +80,7 @@ export class SurveyForm implements OnDestroy {
     if (this.selectedSurvey()?.id_universal === survey.id_universal) return;
     this.releaseReservation();
     this.autoFillVisible.set(false);
+    this.autoFillConfigurationVisible.set(false);
     this.selectedSurvey.set(survey);
     this.questions.set([]);
     this.values.set([]);
@@ -127,6 +129,7 @@ export class SurveyForm implements OnDestroy {
     this.autoFillForm.enable();
     this.autoFillForm.reset({ responses: 1, bots: 1, memory_value: 512, memory_unit: 'MB' });
     this.autoFillAllowedValues.set({});
+    this.autoFillConfigurationVisible.set(false);
     this.autoFillForm.get('responses')?.setValidators([
       Validators.required,
       Validators.min(1),
@@ -185,6 +188,14 @@ export class SurveyForm implements OnDestroy {
     return this.autoFillAllowedValues()[questionId]?.includes(valueId) ?? false;
   }
 
+  openAutoFillConfiguration(): void {
+    if (!this.autoFilling()) this.autoFillConfigurationVisible.set(true);
+  }
+
+  closeAutoFillConfiguration(): void {
+    this.autoFillConfigurationVisible.set(false);
+  }
+
   toggleAutoFillValue(questionId: string, valueId: string, checked: boolean): void {
     this.autoFillAllowedValues.update((current) => {
       const next = { ...current };
@@ -200,17 +211,15 @@ export class SurveyForm implements OnDestroy {
   runAutoFill(): void {
     if (!this.canAutoFill()) return;
     const survey = this.selectedSurvey();
-    if (!survey || this.autoFillForm.invalid) {
+    if (!survey) return;
+    if (!this.validateAutoFillResponses(survey)) return;
+    if (this.autoFillForm.invalid) {
       this.autoFillForm.markAllAsTouched();
       return;
     }
     const values = this.autoFillForm.getRawValue() as {
       responses: number; bots: number; memory_value: number; memory_unit: 'MB' | 'GB';
     };
-    if (Number(values.responses) > this.availableSlots(survey)) {
-      this.autoFillForm.get('responses')?.setErrors({ max: true });
-      return;
-    }
     this.autoFilling.set(true);
     this.autoFillForm.disable();
     this.api.autoFill(survey.id_universal, {
@@ -237,6 +246,21 @@ export class SurveyForm implements OnDestroy {
         void Swal.fire({ icon: 'error', title: 'No fue posible autocompletar la encuesta', confirmButtonText: 'Aceptar' });
       },
     });
+  }
+
+  validateAutoFillResponses(survey = this.selectedSurvey()): boolean {
+    if (!survey) return false;
+    const requested = Number(this.autoFillForm.get('responses')?.value) || 0;
+    const available = this.availableSlots(survey);
+    if (requested <= available) return true;
+    this.autoFillForm.get('responses')?.setErrors({ max: true });
+    void Swal.fire({
+      icon: 'warning',
+      title: 'Cantidad no disponible',
+      text: `Solicitaste ${requested} encuestas, pero solo quedan ${available} cupos disponibles.`,
+      confirmButtonText: 'Aceptar',
+    });
+    return false;
   }
 
   private loadSurveyDetails(survey: Survey): void {

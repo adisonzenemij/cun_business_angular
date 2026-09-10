@@ -60,6 +60,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   readonly showQuestionsModal = signal(false);
   readonly showValuesModal = signal(false);
   readonly showAutoFillModal = signal(false);
+  readonly showAutoFillConfigurationModal = signal(false);
   readonly autoFillAvailableSlots = signal(0);
   readonly autoFillMemoryMaxMb = signal(0);
   readonly autoFillQuestions = signal<Record<string, unknown>[]>([]);
@@ -413,6 +414,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     this.autoFillQuestions.set([]);
     this.autoFillValues.set([]);
     this.autoFillAllowedValues.set({});
+    this.showAutoFillConfigurationModal.set(false);
     this.setAutoFillResponseLimit(0);
     this.showAutoFillModal.set(true);
     this.refreshAutoFillMemoryCapacity();
@@ -449,6 +451,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     this.autoFillForm.get('responses')?.updateValueAndValidity();
   }
   closeAutoFill(): void {
+    this.showAutoFillConfigurationModal.set(false);
     this.showAutoFillModal.set(false);
     this.autoFillAvailableSlots.set(0);
     this.autoFillMemoryMaxMb.set(0);
@@ -516,9 +519,16 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       return next;
     });
   }
+  openAutoFillConfiguration(): void {
+    if (!this.loading()) this.showAutoFillConfigurationModal.set(true);
+  }
+  closeAutoFillConfiguration(): void {
+    this.showAutoFillConfigurationModal.set(false);
+  }
   runAutoFill(): void {
     const survey = this.requireSingleSelection('autocompletar');
     if (!survey) return;
+    if (!this.validateAutoFillResponses()) return;
     if (this.autoFillForm.invalid) {
       this.autoFillForm.markAllAsTouched();
       return;
@@ -526,11 +536,6 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     const values = this.autoFillForm.getRawValue() as {
       responses: number; bots: number; memory_value: number; memory_unit: 'MB' | 'GB';
     };
-    const limit = this.autoFillAvailableSlots();
-    if (Number(values.responses) > limit) {
-      this.autoFillForm.get('responses')?.setErrors({ max: true });
-      return;
-    }
     this.loading.set(true);
     this.autoFillForm.disable();
     this.api.autoFill(String(survey['id_universal']), {
@@ -557,6 +562,19 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
         this.failed();
       },
     });
+  }
+  validateAutoFillResponses(): boolean {
+    const requested = Number(this.autoFillForm.get('responses')?.value) || 0;
+    const available = this.autoFillAvailableSlots();
+    if (requested <= available) return true;
+    this.autoFillForm.get('responses')?.setErrors({ max: true });
+    void Swal.fire({
+      icon: 'warning',
+      title: 'Cantidad no disponible',
+      text: `Solicitaste ${requested} encuestas, pero solo quedan ${available} cupos disponibles.`,
+      confirmButtonText: 'Aceptar',
+    });
+    return false;
   }
   moveValue(value: Record<string, unknown>, direction: -1 | 1): void {
     const questionId = value['pm_0acc84ae'];
