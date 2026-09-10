@@ -32,6 +32,7 @@ export interface Survey {
   fd_since: string;
   fd_until: string;
   pm_8e417bb2: string;
+  fd_available_slots?: number;
 }
 export interface Question {
   id_universal: string;

@@ -54,8 +54,8 @@
                 <form class="row g-3 mt-1" [formGroup]="autoFillForm" (ngSubmit)="runAutoFill()">
                   <div class="col-12 col-md-4">
                     <label class="form-label">Respuestas a generar</label>
-                    <input class="form-control" type="number" min="1" [attr.max]="survey.fd_count" formControlName="responses" />
-                    <div class="form-text">De 1 a {{ survey.fd_count }}.</div>
+                    <input class="form-control" type="number" min="1" [attr.max]="availableSlots(survey)" formControlName="responses" />
+                    <div class="form-text">De 1 a {{ availableSlots(survey) }}. Cupos disponibles: {{ availableSlots(survey) }} de {{ survey.fd_count }}.</div>
                   </div>
                   <div class="col-12 col-md-4">
                     <label class="form-label">Bots simultáneos</label>

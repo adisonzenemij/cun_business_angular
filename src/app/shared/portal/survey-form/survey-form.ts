@@ -94,6 +94,10 @@ export class SurveyForm implements OnDestroy {
       .subscribe({
         next: (reservation) => {
           this.reservation.set(reservation);
+          this.selectedSurvey.set({
+            ...survey,
+            fd_available_slots: Math.max(0, this.availableSlots(survey) - 1),
+          });
           this.message.set('');
           this.startReservationRenewal();
           this.loadSurveyDetails(survey);
@@ -111,6 +115,10 @@ export class SurveyForm implements OnDestroy {
     return this.authSession.isAuthenticated();
   }
 
+  availableSlots(survey: Survey): number {
+    return Math.max(0, survey.fd_available_slots ?? survey.fd_count);
+  }
+
   toggleAutoFill(): void {
     const survey = this.selectedSurvey();
     if (!survey) return;
@@ -118,7 +126,7 @@ export class SurveyForm implements OnDestroy {
     this.autoFillForm.get('responses')?.setValidators([
       Validators.required,
       Validators.min(1),
-      Validators.max(survey.fd_count),
+      Validators.max(this.availableSlots(survey)),
     ]);
     this.autoFillForm.get('responses')?.updateValueAndValidity();
     this.autoFillVisible.update((visible) => !visible);
@@ -134,7 +142,7 @@ export class SurveyForm implements OnDestroy {
     const values = this.autoFillForm.getRawValue() as {
       responses: number; bots: number; memory_value: number; memory_unit: 'MB' | 'GB';
     };
-    if (Number(values.responses) > survey.fd_count) {
+    if (Number(values.responses) > this.availableSlots(survey)) {
       this.autoFillForm.get('responses')?.setErrors({ max: true });
       return;
     }
