@@ -232,6 +232,16 @@ export class SurveyForm implements OnDestroy {
       next: (result) => {
         this.autoFilling.set(false);
         this.autoFillVisible.set(false);
+        // Actualiza de inmediato el contador mostrado; la recarga posterior lo
+        // confirma con el valor real del servidor.
+        this.selectedSurvey.update((current) =>
+          current?.id_universal === survey.id_universal
+            ? {
+                ...current,
+                fd_available_slots: Math.max(0, this.availableSlots(current) - result.completed),
+              }
+            : current,
+        );
         void Swal.fire({
           icon: result.failed ? 'warning' : 'success',
           title: result.failed ? 'Autocompletado parcial' : 'Encuesta autocompletada',
@@ -324,7 +334,14 @@ export class SurveyForm implements OnDestroy {
 
   private loadAvailableSurveys(): void {
     this.surveysApi.listAvailable().subscribe({
-      next: (surveys) => this.surveys.set(surveys),
+      next: (surveys) => {
+        this.surveys.set(surveys);
+        const selected = this.selectedSurvey();
+        const refreshed = selected && surveys.find((survey) => survey.id_universal === selected.id_universal);
+        // Si aún hay cupos, usa el conteo recién calculado por el backend. Si
+        // llegó a cero, conserva el valor local actualizado para mostrarlo.
+        if (refreshed) this.selectedSurvey.set(refreshed);
+      },
     });
   }
 
