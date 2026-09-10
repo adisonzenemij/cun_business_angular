@@ -1,6 +1,6 @@
 export const environment = {
-  apiUrl: 'http://127.0.0.1:4159',
-  // apiUrl: 'https://cun-dis38.engcode.app',
+  // apiUrl: 'http://127.0.0.1:4159',
+  apiUrl: 'https://c4653888cea6.engcode.app',
   production: true,
   name: 'prod',
 };
