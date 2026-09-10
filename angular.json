@@ -64,6 +64,44 @@
                 }
               ]
             },
+            "local": {
+              "outputPath": "dist/d36851fed952_local",
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "15MB"
+                }
+              ],
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.local.ts"
+                }
+              ]
+            },
+            "docker": {
+              "outputPath": "dist/d36851fed952_docker",
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "15MB"
+                }
+              ],
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.docker.ts"
+                }
+              ]
+            },
             "staging": {
               "outputPath": "dist/d36851fed952_stag",
               "budgets": [
@@ -97,6 +135,12 @@
             },
             "development": {
               "buildTarget": "d36851fed952:build:development"
+            },
+            "local": {
+              "buildTarget": "d36851fed952:build:local"
+            },
+            "docker": {
+              "buildTarget": "d36851fed952:build:docker"
             },
             "staging": {
               "buildTarget": "d36851fed952:build:staging"
