@@ -268,6 +268,35 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
         .subscribe({ next: () => this.completed('Registro eliminado'), error: () => this.failed() });
     });
   }
+  clear(): void {
+    void Swal.fire({
+      title: '¿Vaciar módulo?',
+      text: `Se eliminarán los registros de ${this.config().title} que no estén siendo utilizados. Los registros relacionados se conservarán.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Vaciar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc3545',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      this.loading.set(true);
+      this.api.clear(this.config().resource).subscribe({
+        next: ({ deleted, preserved }) => {
+          this.selectedRecord.set(null);
+          this.message.set('');
+          this.loading.set(false);
+          void Swal.fire({
+            icon: deleted ? 'success' : 'info',
+            title: deleted ? 'Módulo vaciado' : 'No hay registros para eliminar',
+            text: `Eliminados: ${deleted}. Conservados por estar en uso: ${preserved}.`,
+            confirmButtonText: 'Aceptar',
+          });
+          this.load();
+        },
+        error: () => this.failed(),
+      });
+    });
+  }
   toggleSelection(row: Record<string, unknown>): void {
     if (this.selectedRecord()?.['id_universal'] === row['id_universal']) {
       this.clearSelection();

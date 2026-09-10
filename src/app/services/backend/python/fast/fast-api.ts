@@ -31,4 +31,9 @@ export class FastApi {
   delete(resource: string, id: string): Observable<void> {
     return this.http.delete<void>(`${FAST_API_URL}/${resource}/${id}`);
   }
+  clear(resource: string): Observable<{ deleted: number; preserved: number }> {
+    return this.http.delete<{ deleted: number; preserved: number }>(
+      `${FAST_API_URL}/${resource}/clear`,
+    );
+  }
 }
