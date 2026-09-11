@@ -54,6 +54,10 @@ export const routes: Routes = [
         loadComponent: () => import('./web/working/wg-society/wg-society').then((module) => module.WgSociety),
       },
       {
+        path: 'rues',
+        loadComponent: () => import('./web/working/wg-rues/wg-rues').then((module) => module.WgRues),
+      },
+      {
         path: 'report',
         loadComponent: () => import('./web/working/wg-report/wg-report').then((module) => module.WgReport),
       },
