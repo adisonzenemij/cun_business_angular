@@ -131,6 +131,21 @@ export class WgSociety implements OnDestroy {
     this.error.set('');
   }
 
+  clear(): void {
+    this.chartRenderVersion++;
+    this.destroyDetailChart();
+    this.overviewRenderVersion++;
+    this.destroyOverviewCharts();
+    this.selectedId.set('');
+    this.consultation.set(null);
+    this.activeDetail.set(null);
+    this.columnsDetail.set(null);
+    this.chartFieldsDetail.set(null);
+    this.layoutOpen.set(false);
+    this.error.set('');
+    this.activeCutoffs.set({ financieros: '', situacion_financiera: '', resultado_integral: '' });
+  }
+
   openDetail(key: DetailKey): void { this.situationChartType.set('lineas'); this.chartSeriesTab.update((tabs) => ({ ...tabs, [key]: 'unificado' })); this.activeDetail.set(key); }
   closeDetail(): void { this.columnsDetail.set(null); this.chartFieldsDetail.set(null); this.layoutOpen.set(false); this.activeDetail.set(null); this.chartRenderVersion++; this.destroyDetailChart(); }
   refreshDetailChart(): void { this.scheduleDetailChart(); }

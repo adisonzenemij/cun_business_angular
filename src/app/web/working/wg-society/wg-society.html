@@ -9,14 +9,17 @@
     <div class="card-body row g-3 align-items-end">
       <div class="col-12 col-md-8 col-lg-10"><label class="form-label" for="society">Empresa</label>
         <select id="society" class="form-select" [ngModel]="selectedId()" (ngModelChange)="changeSociety($event)"
-          [disabled]="loading()">
+          [disabled]="loading() || consulting() || !!consultation()">
           <option value="">Ninguno</option>
           @for (society of societies(); track society.id_universal) { <option [value]="society.id_universal">{{
             society.fd_company }} — {{ society.fd_document }}</option> }
         </select>
       </div>
       <div class="col-12 col-md-auto"><button class="btn btn-primary" type="button" (click)="consult()"
-          [disabled]="!selectedId() || consulting()">@if (consulting()) { Consultando... } @else { Consultar }</button>
+          [disabled]="!selectedId() || consulting() || !!consultation()">@if (consulting()) { <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Consultando... } @else { Consultar }</button>
+      </div>
+      <div class="col-12 col-md-auto"><button class="btn btn-outline-secondary" type="button" (click)="clear()"
+          [disabled]="consulting() || (!selectedId() && !consultation())"><i class="bi bi-eraser me-1"></i>Limpiar</button>
       </div>
     </div>
   </section>

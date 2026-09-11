@@ -26,6 +26,28 @@
   border-color: var(--bs-border-color);
 }
 
+.selector-card .card-body {
+  align-items: flex-end;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: .75rem;
+  margin: 0;
+}
+
+.selector-card .card-body > div:first-child {
+  flex: 1 1 auto;
+  padding: 0;
+  width: auto;
+}
+
+.selector-card .card-body > div:not(:first-child) {
+  flex: 0 0 auto;
+  padding: 0;
+  width: auto;
+}
+
+.selector-card .btn { min-width: 9.25rem; white-space: nowrap; }
+
 .data-card h2 {
   font-size: 1.1rem;
   margin: 0;
