@@ -9,7 +9,14 @@ export interface CorsOrigin {
 export interface User {
   id_universal: string;
   fd_login: string;
+  tg_9a7bbe6f?: string | null;
 }
+export interface JwtPermit { id_universal: string; fd_name: string; }
+export interface TableModule { id_universal: string; fd_client: string; fd_prefix: string; fd_product: string; }
+export interface TableResource { id_universal: string; fd_client: string; fd_entity: string; fd_name: string; sd_select: string; sd_insert: string; sd_update: string; sd_delete: string; ms_8b6bd18a: string; }
+export interface RoleData { id_universal: string; fd_name: string; }
+export interface RoleAccess { id_universal: string; fd_name: string; }
+export interface RolePermit { id_universal: string; ms_2e794a8f: string; tg_2f997592: string; tg_9a7bbe6f: string; }
 export interface Anonymous {
   id_universal: string;
   fd_random: string;
@@ -82,6 +89,12 @@ export class FtE144c860 extends Resource<CorsOrigin> {
     super('cors-origins');
   }
 }
+@Injectable({ providedIn: 'root' }) export class FtD8d07776 extends Resource<JwtPermit> { constructor() { super('jwt-permits'); } }
+@Injectable({ providedIn: 'root' }) export class FtA1fecd50 extends Resource<TableModule> { constructor() { super('table-modules'); } }
+@Injectable({ providedIn: 'root' }) export class FtE9cb64fd extends Resource<TableResource> { constructor() { super('table-resources'); } }
+@Injectable({ providedIn: 'root' }) export class FtB602ef28 extends Resource<RoleData> { constructor() { super('role-data'); } }
+@Injectable({ providedIn: 'root' }) export class FtD02ee146 extends Resource<RoleAccess> { constructor() { super('role-access'); } }
+@Injectable({ providedIn: 'root' }) export class FtA8dc1924 extends Resource<RolePermit> { constructor() { super('role-permits'); } }
 @Injectable({ providedIn: 'root' })
 export class FtB64883b6 extends Resource<User> {
   constructor() {

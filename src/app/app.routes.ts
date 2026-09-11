@@ -17,6 +17,12 @@ import { MdD5fb87de } from './web/working/md-d5fb87de/md-d5fb87de';
 import { MdD2e6ded6 } from './web/working/md-d2e6ded6/md-d2e6ded6';
 import { MdD76a0e67 } from './web/working/md-d76a0e67/md-d76a0e67';
 import { MdA5acf579 } from './web/working/md-a5acf579/md-a5acf579';
+import { MdD8d07776 } from './web/working/md-d8d07776/md-d8d07776';
+import { MdA1fecd50 } from './web/working/md-a1fecd50/md-a1fecd50';
+import { MdE9cb64fd } from './web/working/md-e9cb64fd/md-e9cb64fd';
+import { MdB602ef28 } from './web/working/md-b602ef28/md-b602ef28';
+import { MdD02ee146 } from './web/working/md-d02ee146/md-d02ee146';
+import { MdA8dc1924 } from './web/working/md-a8dc1924/md-a8dc1924';
 import { authGuard } from './guards/auth.guard';
 import { loginGuard } from './guards/login.guard';
 
@@ -60,6 +66,12 @@ export const routes: Routes = [
       { path: 'd2e6ded6', component: MdD2e6ded6 },
       { path: 'd76a0e67', component: MdD76a0e67 },
       { path: 'a5acf579', component: MdA5acf579 },
+      { path: 'd8d07776', component: MdD8d07776 },
+      { path: 'a1fecd50', component: MdA1fecd50 },
+      { path: 'e9cb64fd', component: MdE9cb64fd },
+      { path: 'b602ef28', component: MdB602ef28 },
+      { path: 'd02ee146', component: MdD02ee146 },
+      { path: 'a8dc1924', component: MdA8dc1924 },
     ],
   },
   { path: '**', redirectTo: 'portal/home' },
