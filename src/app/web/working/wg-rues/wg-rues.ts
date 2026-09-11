@@ -312,7 +312,10 @@ export class WgRues implements OnDestroy {
       // La consulta puede haberse limpiado mientras se descargaba el mapa.
       if (!document.getElementById(containerId) || !this.owners()) return;
       this.destroyOwnerChart(containerId);
-      const { dark, style, gridColor } = this.chartTheme();
+      const { dark, style } = this.chartTheme();
+      const mapColor = dark ? '#343a40' : '#d9e5f2';
+      const mapHoverColor = dark ? '#495057' : '#bfd7ee';
+      const mapBorderColor = dark ? '#6c757d' : '#93b7d6';
       const data = this.chamberMapPoints();
       const active = data.filter((point) => point.active > 0).map((point) => ({ ...point, z: point.active }));
       const cancelled = data.filter((point) => point.cancelled > 0).map((point) => ({ ...point, z: point.cancelled }));
@@ -328,12 +331,17 @@ export class WgRues implements OnDestroy {
           useHTML: true,
           formatter() {
             const point = this.options as unknown as ChamberMapPoint;
+            if (!point.city) return false;
             return `<b>${point.name}</b><br>${point.city}<br>Activas: <b>${point.active}</b><br>Canceladas: <b>${point.cancelled}</b>`;
           },
         },
         legend: { enabled: true, itemStyle: style },
         series: [
-          { type: 'map', name: 'Colombia', mapData, nullColor: dark ? '#343a40' : '#e9ecef', borderColor: gridColor, enableMouseTracking: false, showInLegend: false },
+          {
+            type: 'map', name: 'Colombia', mapData, color: mapColor, nullColor: mapColor,
+            borderColor: mapBorderColor, borderWidth: 1, enableMouseTracking: true, showInLegend: false,
+            states: { hover: { color: mapHoverColor, borderColor: mapBorderColor, brightness: 0 } },
+          },
           { type: 'mapbubble', name: 'Activas', color: '#20c997', minSize: 9, maxSize: '12%', data: active },
           { type: 'mapbubble', name: 'Canceladas', color: '#dc3545', minSize: 9, maxSize: '12%', data: cancelled },
         ],
