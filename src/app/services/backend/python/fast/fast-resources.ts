@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { FAST_API_URL, FastApi } from './fast-api';
 
@@ -17,6 +17,7 @@ export interface TableResource { id_universal: string; fd_client: string; fd_ent
 export interface RoleData { id_universal: string; fd_name: string; }
 export interface RoleAccess { id_universal: string; fd_name: string; }
 export interface RolePermit { id_universal: string; ms_2e794a8f: string; tg_2f997592: string; tg_9a7bbe6f: string; }
+export interface NavigationModule extends TableModule { resources: (TableResource & { route: string; icon: string })[]; }
 export interface Anonymous {
   id_universal: string;
   fd_random: string;
@@ -80,6 +81,34 @@ class Resource<T extends { id_universal: string }> {
   }
   delete(id: string): Observable<void> {
     return this.api.delete(this.path, id);
+  }
+}
+
+const navigation = new Map<string, { route: string; icon: string }>([
+  ['d8d07776', { route: 'd8d07776', icon: 'bi-key' }], ['e144c860', { route: 'e144c860', icon: 'bi-globe' }], ['a7b95fe8', { route: 'a7b95fe8', icon: 'bi-list-ul' }], ['a1fecd50', { route: 'a1fecd50', icon: 'bi-collection' }], ['e9cb64fd', { route: 'e9cb64fd', icon: 'bi-diagram-3' }], ['b602ef28', { route: 'b602ef28', icon: 'bi-person-badge' }], ['d02ee146', { route: 'd02ee146', icon: 'bi-shield-check' }], ['a8dc1924', { route: 'a8dc1924', icon: 'bi-person-lock' }], ['b64883b6', { route: 'b64883b6', icon: 'bi-people' }], ['d35a393b', { route: 'd35a393b', icon: 'bi-hdd-network' }], ['8ebaa791', { route: '8ebaa791', icon: 'bi-diagram-3' }], ['a1cc27fb', { route: 'a1cc27fb', icon: 'bi-buildings' }], ['e5520e1e', { route: 'e5520e1e', icon: 'bi-person' }], ['a6aedeb5', { route: 'a6aedeb5', icon: 'bi-shield-check' }], ['a3b378b4', { route: 'a3b378b4', icon: 'bi-ui-checks' }], ['d5fb87de', { route: 'd5fb87de', icon: 'bi-clipboard-data' }], ['d2e6ded6', { route: 'd2e6ded6', icon: 'bi-question-circle' }], ['d76a0e67', { route: 'd76a0e67', icon: 'bi-list-check' }], ['a5acf579', { route: 'a5acf579', icon: 'bi-chat-left-text' }],
+]);
+
+@Injectable({ providedIn: 'root' })
+export class MetadataCatalog {
+  private readonly api = inject(FastApi);
+  readonly modules = signal<NavigationModule[]>([]);
+  load(): void {
+    this.api.http.get<TableModule[]>(`${FAST_API_URL}/table-modules/`).subscribe((modules) => {
+      this.api.http.get<TableResource[]>(`${FAST_API_URL}/table-resources/`).subscribe((resources) => {
+        this.modules.set(
+          modules
+            .map((module) => ({
+              ...module,
+              resources: resources
+                .filter((resource) => resource.ms_8b6bd18a === module.id_universal)
+                .map((resource) => ({ ...resource, ...(navigation.get(resource.fd_client) ?? { route: '', icon: 'bi-circle' }) }))
+                .filter((resource) => !!resource.route)
+                .sort((left, right) => left.fd_name.localeCompare(right.fd_name, 'es')),
+            }))
+            .sort((left, right) => left.fd_product.localeCompare(right.fd_product, 'es')),
+        );
+      });
+    });
   }
 }
 

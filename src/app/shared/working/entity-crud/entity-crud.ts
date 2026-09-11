@@ -8,7 +8,9 @@ import {
   ViewChild,
   input,
   signal,
+  inject,
 } from '@angular/core';
+import { Router } from '@angular/router';
 import {
   ReactiveFormsModule,
   UntypedFormBuilder,
@@ -16,6 +18,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { FastApi } from '../../../services/backend/python/fast/fast-api';
+import { MetadataCatalog } from '../../../services/backend/python/fast/fast-resources';
 import DataTable from 'datatables.net-bs5';
 import Swal from 'sweetalert2';
 import { catchError, forkJoin, map, of } from 'rxjs';
@@ -46,7 +49,14 @@ export interface CrudConfig {
   styleUrl: './entity-crud.css',
 })
 export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
+  private readonly router = inject(Router);
+  private readonly metadata = inject(MetadataCatalog);
   readonly config = input.required<CrudConfig>();
+  title(): string {
+    const route = this.router.url.split('/').pop();
+    return this.metadata.modules().flatMap((module) => module.resources)
+      .find((resource) => resource.route === route)?.fd_name ?? this.config().title;
+  }
   readonly rows = signal<Record<string, unknown>[]>([]);
   readonly tableVersion = signal(0);
   readonly relationOptions = signal<Record<string, Record<string, unknown>[]>>({});
@@ -146,6 +156,11 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   openCreate(): void {
     this.editing.set(false);
     this.form.get('id_universal')?.enable();
+    if (this.config().passwordChange) {
+      this.form.get('fd_passd')?.enable();
+      this.form.get('fd_passd')?.setValidators(Validators.required);
+      this.form.get('fd_passd')?.updateValueAndValidity();
+    }
     const defaults: Record<string, unknown> = { id_universal: '' };
     for (const field of this.config().fields) {
       defaults[field.name] = field.type === 'boolean' ? false : '';
@@ -158,6 +173,12 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     if (!this.requireSingleSelection('editar')) return;
     this.editing.set(true);
     this.form.get('id_universal')?.disable();
+    if (this.config().passwordChange) {
+      // The password is changed through its dedicated modal; it must not make
+      // a role/login update invalid while the control is hidden.
+      this.form.get('fd_passd')?.clearValidators();
+      this.form.get('fd_passd')?.updateValueAndValidity();
+    }
     this.loadRelationOptions();
     this.showFormModal.set(true);
   }

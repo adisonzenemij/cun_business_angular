@@ -3,28 +3,12 @@
   <div class="px-3 py-3 border-bottom"><span class="text-uppercase text-body-secondary small fw-semibold">Módulos</span></div>
   <nav class="nav nav-pills flex-column gap-1 p-2">
     <a class="nav-link" routerLink="/working/dashboard" routerLinkActive="active"><i class="bi bi-speedometer2 me-2"></i>Panel de Control</a>
-    <span class="text-uppercase text-body-secondary small fw-semibold mt-3 px-2">Seguridad</span>
-    <a class="nav-link" routerLink="/working/e144c860" routerLinkActive="active"><i class="bi bi-globe me-2"></i>Orígenes</a>
-    <a class="nav-link" routerLink="/working/a7b95fe8" routerLinkActive="active"><i class="bi bi-list-ul me-2"></i>Métodos</a>
-    <a class="nav-link" routerLink="/working/d8d07776" routerLinkActive="active"><i class="bi bi-key me-2"></i>Permisos JWT</a>
-    <span class="text-uppercase text-body-secondary small fw-semibold mt-3 px-2">Meta Datos</span>
-    <a class="nav-link" routerLink="/working/a1fecd50" routerLinkActive="active"><i class="bi bi-collection me-2"></i>Módulos</a>
-    <a class="nav-link" routerLink="/working/e9cb64fd" routerLinkActive="active"><i class="bi bi-diagram-3 me-2"></i>Recursos</a>
-    <span class="text-uppercase text-body-secondary small fw-semibold mt-3 px-2">Tecnología</span>
-    <a class="nav-link" routerLink="/working/b602ef28" routerLinkActive="active"><i class="bi bi-person-badge me-2"></i>Roles de datos</a>
-    <a class="nav-link" routerLink="/working/d02ee146" routerLinkActive="active"><i class="bi bi-shield-check me-2"></i>Roles de acceso</a>
-    <a class="nav-link" routerLink="/working/a8dc1924" routerLinkActive="active"><i class="bi bi-person-lock me-2"></i>Permisos por rol</a>
-    <a class="nav-link" routerLink="/working/b64883b6" routerLinkActive="active"><i class="bi bi-people me-2"></i>Usuarios</a>
-    <span class="text-uppercase text-body-secondary small fw-semibold mt-3 px-2">Plataforma</span>
-    <a class="nav-link" routerLink="/working/a6aedeb5" routerLinkActive="active"><i class="bi bi-shield-check me-2"></i>Alcances</a>
-    <a class="nav-link" routerLink="/working/a3b378b4" routerLinkActive="active"><i class="bi bi-ui-checks me-2"></i>Tipos</a>
-    <a class="nav-link" routerLink="/working/d5fb87de" routerLinkActive="active"><i class="bi bi-clipboard-data me-2"></i>Encuestas</a>
-    <a class="nav-link" routerLink="/working/d2e6ded6" routerLinkActive="active"><i class="bi bi-question-circle me-2"></i>Preguntas</a>
-    <a class="nav-link" routerLink="/working/d76a0e67" routerLinkActive="active"><i class="bi bi-list-check me-2"></i>Valores</a>
-    <a class="nav-link" routerLink="/working/a5acf579" routerLinkActive="active"><i class="bi bi-chat-left-text me-2"></i>Respuestas</a>
-    <a class="nav-link" routerLink="/working/d35a393b" routerLinkActive="active"><i class="bi bi-hdd-network me-2"></i>Servicios</a>
-    <a class="nav-link" routerLink="/working/8ebaa791" routerLinkActive="active"><i class="bi bi-diagram-3 me-2"></i>Recursos</a>
-    <a class="nav-link" routerLink="/working/a1cc27fb" routerLinkActive="active"><i class="bi bi-buildings me-2"></i>Sociedades</a>
+    @for (module of catalog.modules(); track module.id_universal) {
+      <span class="text-uppercase text-body-secondary small fw-semibold mt-3 px-2">{{ module.fd_product }}</span>
+      @for (resource of module.resources; track resource.id_universal) {
+        <a class="nav-link" [routerLink]="'/working/' + resource.route" routerLinkActive="active"><i class="bi me-2" [class]="'bi me-2 ' + resource.icon"></i>{{ resource.fd_name }}</a>
+      }
+    }
   </nav>
 </aside>
 }

@@ -1,7 +1,7 @@
 <section class="container-fluid py-4">
   <div class="card crud-card shadow-sm border">
     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-      <h1 class="h5 mb-0"><i class="bi bi-database me-2"></i>{{ config().title }}</h1>
+      <h1 class="h5 mb-0"><i class="bi bi-database me-2"></i>{{ title() }}</h1>
       <button class="btn btn-light btn-sm" type="button" (click)="load()" [disabled]="loading()">
         <i class="bi bi-arrow-clockwise me-1"></i>Refrescar
       </button>
@@ -120,7 +120,7 @@
       <div class="modal-header bg-primary text-white">
         <h2 class="modal-title h5 mb-0">
           <i class="bi me-2" [class.bi-pencil-square]="editing()" [class.bi-plus-circle]="!editing()"></i>
-          {{ editing() ? 'Actualizar' : 'Crear' }} {{ config().title }}
+          {{ editing() ? 'Actualizar' : 'Crear' }} {{ title() }}
         </h2>
         <button class="btn-close btn-close-white" type="button" aria-label="Cerrar" (click)="closeFormModal()"></button>
       </div>
