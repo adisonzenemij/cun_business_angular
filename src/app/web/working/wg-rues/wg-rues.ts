@@ -62,6 +62,19 @@ export class WgRues implements OnDestroy {
     this.selectedId.set(value); this.result.set(null); this.destroyOwnersDataTable(); this.destroyOwnerCharts(); this.owners.set(null); this.selectedOwner.set(null); this.error.set(''); this.ownersError.set('');
   }
 
+  clear(): void {
+    this.destroyOwnersDataTable();
+    this.destroyOwnerCharts();
+    this.selectedId.set('');
+    this.result.set(null);
+    this.owners.set(null);
+    this.selectedOwner.set(null);
+    this.error.set('');
+    this.ownersError.set('');
+    this.ownersColumnsOpen.set(false);
+    this.ownersColumnsSearch.set('');
+  }
+
   consult(): void {
     const societyId = this.selectedId();
     if (!societyId) return;

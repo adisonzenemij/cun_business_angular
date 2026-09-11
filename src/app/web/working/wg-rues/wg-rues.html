@@ -5,14 +5,15 @@
   <section class="card mt-4">
     <div class="card-body">
       <label class="form-label" for="rues-society">Empresa</label>
-      <div class="d-flex gap-3 align-items-end">
-        <select id="rues-society" class="form-select" [ngModel]="selectedId()" (ngModelChange)="changeSociety($event)" [disabled]="loading()">
+      <div class="d-flex gap-3 align-items-end rues-company-selector">
+        <select id="rues-society" class="form-select" [ngModel]="selectedId()" (ngModelChange)="changeSociety($event)" [disabled]="loading() || consulting() || !!result()">
           <option value="">{{ loading() ? 'Cargando empresas…' : 'Seleccione una empresa' }}</option>
           @for (society of societies(); track society.id_universal) { <option [value]="society.id_universal">{{ society.fd_company }} — {{ society.fd_document }}</option> }
         </select>
-        <button class="btn btn-primary" type="button" (click)="consult()" [disabled]="!selectedId() || consulting()">
+        <button class="btn btn-primary rues-consult-button" type="button" (click)="consult()" [disabled]="!selectedId() || consulting() || !!result()">
           @if (consulting()) { <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Consultando… } @else { Consultar }
         </button>
+        <button class="btn btn-outline-secondary rues-clear-button" type="button" (click)="clear()" [disabled]="consulting() || (!selectedId() && !result())"><i class="bi bi-eraser me-1"></i>Limpiar</button>
       </div>
     </div>
   </section>
