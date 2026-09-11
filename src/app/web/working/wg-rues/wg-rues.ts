@@ -340,7 +340,10 @@ export class WgRues implements OnDestroy {
           {
             type: 'map', name: 'Colombia', mapData, color: mapColor, nullColor: mapColor,
             borderColor: mapBorderColor, borderWidth: 1, enableMouseTracking: true, showInLegend: false,
-            states: { hover: { color: mapHoverColor, borderColor: mapBorderColor, brightness: 0 } },
+            states: {
+              hover: { color: mapHoverColor, borderColor: mapBorderColor, brightness: 0 },
+              inactive: { opacity: 1 },
+            },
           },
           { type: 'mapbubble', name: 'Activas', color: '#20c997', minSize: 9, maxSize: '12%', data: active },
           { type: 'mapbubble', name: 'Canceladas', color: '#dc3545', minSize: 9, maxSize: '12%', data: cancelled },
