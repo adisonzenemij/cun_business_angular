@@ -68,7 +68,12 @@ body {
 .highcharts-data-table thead th {
   color: var(--bs-emphasis-color);
   background: var(--bs-tertiary-bg);
-  font-weight: 600;
+  font-weight: 600 !important;
+}
+
+.highcharts-data-table tbody th,
+.highcharts-data-table tbody td:first-child {
+  font-weight: 400 !important;
 }
 
 /* Highcharts crea las filas de categoría como <th>; en RUES son datos,
