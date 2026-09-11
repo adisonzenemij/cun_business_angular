@@ -101,7 +101,7 @@ export class WgSociety implements OnDestroy {
         this.societies.set(societies.sort((a, b) => a.fd_company.localeCompare(b.fd_company)));
         this.loading.set(false);
       },
-      error: () => { this.error.set('No fue posible cargar las sociedades.'); this.loading.set(false); },
+      error: () => { this.error.set('No fue posible cargar las empresas.'); this.loading.set(false); },
     });
   }
 
@@ -120,7 +120,7 @@ export class WgSociety implements OnDestroy {
         });
         this.consulting.set(false);
       },
-      error: (error) => { this.error.set(error.error?.detail ?? 'No fue posible consultar la sociedad.'); this.consulting.set(false); },
+      error: (error) => { this.error.set(error.error?.detail ?? 'No fue posible consultar la empresa.'); this.consulting.set(false); },
     });
   }
 
@@ -164,12 +164,13 @@ export class WgSociety implements OnDestroy {
   }
   overviewIndicators(): OverviewMetric[] {
     const cutoff = this.cutoffs('financieros')[0];
-    const source = cutoff ? this.consultation()?.financieros[cutoff]?.hits?.hits?.[0]?._source : undefined;
+    const financial = cutoff ? this.consultation()?.financieros[cutoff]?.hits?.hits?.[0]?._source : undefined;
+    const income = this.path(financial, 'resultadoIntegral.ingreso');
     return [
-      { label: 'Prueba Ácida', description: 'Último año', value: this.formatTimes(this.path(source, 'indicadores.pruebaAcida') ?? this.path(source, 'indicadores.prueba_acida')), icon: 'bi-droplet-half', color: 'text-success' },
-      { label: 'Endeudamiento', description: 'Último año', value: this.formatPercent(this.path(source, 'indicadores.endeudamiento') ?? this.path(source, 'indicadores.nivelEndeudamiento')), icon: 'bi-bank2', color: 'text-primary' },
-      { label: 'ROA', description: 'Último año', value: this.formatPercent(this.path(source, 'indicadores.roa')), icon: 'bi-graph-up-arrow', color: 'text-success' },
-      { label: 'ROE', description: 'Último año', value: this.formatPercent(this.path(source, 'indicadores.roe')), icon: 'bi-percent', color: 'text-success' },
+      { label: 'Endeudamiento', description: 'Último año', value: this.formatPercent(this.path(financial, 'indicadores.endeudamiento') ?? this.path(financial, 'indicadores.nivelEndeudamiento')), icon: 'bi-bank2', color: 'text-primary' },
+      { label: 'ROA', description: 'Último año', value: this.formatPercent(this.path(financial, 'indicadores.roa')), icon: 'bi-graph-up-arrow', color: 'text-success' },
+      { label: 'ROE', description: 'Último año', value: this.formatPercent(this.path(financial, 'indicadores.roe')), icon: 'bi-percent', color: 'text-success' },
+      { label: 'ROS', description: 'Último año', value: this.formatPercent(this.ratio(this.path(financial, 'resultadoIntegral.gananciaPerdida'), income)), icon: 'bi-activity', color: 'text-info' },
     ];
   }
   exportVistaCsv(): void {
@@ -538,7 +539,6 @@ export class WgSociety implements OnDestroy {
   private text(value: unknown): string { return value === null || value === undefined || value === '' ? '—' : String(value); }
   private formatCurrency(value: unknown): string { return value === null || value === undefined ? '—' : new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(this.number(value)); }
   private formatPercent(value: unknown): string { return value === null || value === undefined ? '—' : new Intl.NumberFormat('es-CO', { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(this.number(value)); }
-  private formatTimes(value: unknown): string { return value === null || value === undefined ? '—' : `${new Intl.NumberFormat('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(this.number(value))} veces`; }
 
   private financialLabel(field: string): string {
     const labels: Record<string, string> = {

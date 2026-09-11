@@ -2,12 +2,12 @@
   <header class="page-header">
     <div>
       <h1>Informes Financieros</h1>
-      <p>Consulta la información pública registrada para una sociedad.</p>
+      <p>Consulta la información pública registrada para x empresa.</p>
     </div>
   </header>
   <section class="card selector-card">
     <div class="card-body row g-3 align-items-end">
-      <div class="col-12 col-md-8 col-lg-10"><label class="form-label" for="society">Sociedad</label>
+      <div class="col-12 col-md-8 col-lg-10"><label class="form-label" for="society">Empresa</label>
         <select id="society" class="form-select" [ngModel]="selectedId()" (ngModelChange)="changeSociety($event)"
           [disabled]="loading()">
           <option value="">Ninguno</option>
@@ -86,16 +86,22 @@
   <section class="card financial-overview-card mt-4">
     <div class="card-header d-flex align-items-center justify-content-between gap-2">
       <h3 class="h6 mb-0">Estructura Financiera - Fecha de Corte {{ overviewCutoff() }}</h3>
-      <button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshOverviewStructure()"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button>
+      <button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshOverviewStructure()"><i
+          class="bi bi-arrow-clockwise me-1"></i>Refrescar</button>
     </div>
-    <div class="card-body"><div id="financial-structure-chart" class="financial-overview-chart"></div></div>
+    <div class="card-body">
+      <div id="financial-structure-chart" class="financial-overview-chart"></div>
+    </div>
   </section>
   <section class="card financial-overview-card mt-4">
     <div class="card-header d-flex align-items-center justify-content-between gap-2">
       <h3 class="h6 mb-0">Resultado Integral - Fecha de Corte {{ overviewCutoff() }}</h3>
-      <button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshOverviewResults()"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button>
+      <button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshOverviewResults()"><i
+          class="bi bi-arrow-clockwise me-1"></i>Refrescar</button>
     </div>
-    <div class="card-body"><div id="financial-results-chart" class="financial-overview-chart"></div></div>
+    <div class="card-body">
+      <div id="financial-results-chart" class="financial-overview-chart"></div>
+    </div>
   </section>
   <section class="financial-summary mt-4" aria-label="Indicadores del corte más reciente">
     <div class="d-flex align-items-center justify-content-between mb-3">
