@@ -2,7 +2,7 @@ import { Component, ElementRef, OnDestroy, ViewChild, inject, signal } from '@an
 import { FormsModule } from '@angular/forms';
 import { FAST_API_URL, FastApi } from '../../../services/backend/python/fast/fast-api';
 import DataTable from 'datatables.net-bs5';
-import Highcharts from 'highcharts/esm/highcharts';
+import Highcharts from 'highcharts/esm/highmaps';
 import 'highcharts/esm/modules/exporting';
 import 'highcharts/esm/modules/export-data';
 import * as XLSX from 'xlsx';
@@ -11,6 +11,8 @@ interface Society { id_universal: string; fd_company: string; fd_document: strin
 type RuesRow = Record<string, unknown>;
 interface RuesResponse { rows?: RuesRow[]; records?: number; codigo_error?: string; mensaje_error?: string; }
 interface RuesReference { codigo_camara: string; matricula: string; }
+interface ChamberLocation { city: string; lat: number; lon: number; }
+interface ChamberMapPoint extends ChamberLocation { name: string; active: number; cancelled: number; z: number; }
 
 const DEFAULT_OWNER_FIELDS = [
   'categoria_matricula', 'desc_estado_matricula', 'matricula', 'nombre_camara',
@@ -21,6 +23,28 @@ const OWNER_FIELD_LABELS: Record<string, string> = {
   categoria_matricula: 'Categoria', desc_estado_matricula: 'Estado', matricula: 'Matricula',
   nombre_camara: 'Camara de Comercio', razon_social: 'Razon Social', fecha_matricula: 'Fecha Matricula',
   fecha_renovacion: 'Fecha Renovacion', ultimo_ano_renovado: 'Ultimo Año Renovado',
+};
+
+/* Sedes de las cámaras que RUES retorna en esta consulta. */
+const CHAMBER_LOCATIONS: Record<string, ChamberLocation> = {
+  BOGOTA: { city: 'Bogotá D.C.', lat: 4.711, lon: -74.0721 },
+  'MEDELLIN PARA ANTIOQUIA': { city: 'Medellín', lat: 6.2518, lon: -75.5636 },
+  FACATATIVA: { city: 'Facatativá', lat: 4.813, lon: -74.354 },
+  CALI: { city: 'Cali', lat: 3.4516, lon: -76.532 },
+  CAUCA: { city: 'Popayán', lat: 2.4448, lon: -76.6147 },
+  CHINCHINA: { city: 'Chinchiná', lat: 4.9825, lon: -75.6036 },
+  IBAGUE: { city: 'Ibagué', lat: 4.4389, lon: -75.2322 },
+  BARRANQUILLA: { city: 'Barranquilla', lat: 10.9685, lon: -74.7813 },
+  BUCARAMANGA: { city: 'Bucaramanga', lat: 7.1193, lon: -73.1198 },
+  IPIALES: { city: 'Ipiales', lat: 0.828, lon: -77.639 },
+  PEREIRA: { city: 'Pereira', lat: 4.8143, lon: -75.6961 },
+  'ABURRA SUR': { city: 'Envigado', lat: 6.1706, lon: -75.5877 },
+  PASTO: { city: 'Pasto', lat: 1.2136, lon: -77.2811 },
+  VILLAVICENCIO: { city: 'Villavicencio', lat: 4.142, lon: -73.6266 },
+  CARTAGENA: { city: 'Cartagena', lat: 10.391, lon: -75.4794 },
+  CUCUTA: { city: 'Cúcuta', lat: 7.8891, lon: -72.5078 },
+  GIRARDOT: { city: 'Girardot', lat: 4.303, lon: -74.796 },
+  HUILA: { city: 'Neiva', lat: 2.9273, lon: -75.2819 },
 };
 
 @Component({
@@ -35,6 +59,7 @@ export class WgRues implements OnDestroy {
   private ownersDataTable?: { destroy(remove?: boolean): unknown };
   private readonly ownerCharts = new Map<string, Highcharts.Chart>();
   private readonly ownerChartDataTables = new Map<string, { destroy(remove?: boolean): unknown }>();
+  private colombiaMapPromise?: Promise<unknown>;
   readonly societies = signal<Society[]>([]);
   readonly selectedId = signal('');
   readonly loading = signal(true);
@@ -164,6 +189,8 @@ export class WgRues implements OnDestroy {
   refreshCancelledChart(): void { this.renderOwnerBarChart('rues-cancelled-chart', 'Matrículas canceladas por cámara de comercio', 'CANCELADA', '#dc3545'); }
   refreshStatusChart(): void { this.renderOwnerPieChart('rues-status-chart', 'Cantidad por estado', 'desc_estado_matricula'); }
   refreshCategoryChart(): void { this.renderOwnerPieChart('rues-category-chart', 'Cantidad por categoría', 'categoria_matricula'); }
+  refreshChamberStatusChart(): void { this.renderChamberStatusChart(); }
+  refreshChamberMap(): void { void this.renderChamberMap(); }
 
   private ownerReference(row: RuesRow): RuesReference | null {
     const match = /ConsultarDetalleRM\(['"]?(\d+)['"]?\)/i.exec(String(row['enlace'] ?? ''));
@@ -203,6 +230,8 @@ export class WgRues implements OnDestroy {
     this.renderOwnerBarChart('rues-cancelled-chart', 'Matrículas canceladas por cámara de comercio', 'CANCELADA', '#dc3545');
     this.renderOwnerPieChart('rues-status-chart', 'Cantidad por estado', 'desc_estado_matricula');
     this.renderOwnerPieChart('rues-category-chart', 'Cantidad por categoría', 'categoria_matricula');
+    this.renderChamberStatusChart();
+    void this.renderChamberMap();
   }
 
   private renderOwnerBarChart(containerId: string, title: string, status: string, color: string): void {
@@ -249,6 +278,72 @@ export class WgRues implements OnDestroy {
     this.bindChartDataTable(containerId, chart);
   }
 
+  private renderChamberStatusChart(): void {
+    const containerId = 'rues-chamber-status-chart';
+    const element = document.getElementById(containerId);
+    if (!element) return;
+    const { dark, style } = this.chartTheme();
+    const data = [
+      { name: 'Activas', y: this.countByChamber('ACTIVA').length, color: '#20c997' },
+      { name: 'Canceladas', y: this.countByChamber('CANCELADA').length, color: '#dc3545' },
+    ];
+    this.destroyOwnerChart(containerId);
+    const chart = Highcharts.chart(element, {
+      chart: { type: 'pie', backgroundColor: 'transparent', height: 360 },
+      title: { text: undefined, style },
+      lang: { chartTitle: '', exportData: { categoryHeader: 'Estado' } },
+      credits: { enabled: false },
+      exporting: this.chartExporting(dark), navigation: this.chartNavigation(dark),
+      tooltip: { pointFormat: '<b>{point.y}</b> cámara(s) de comercio ({point.percentage:.1f}%)' },
+      plotOptions: { pie: { innerSize: '55%', borderRadius: 6, borderWidth: 2, dataLabels: { enabled: true, format: '{point.name}: {point.y}', style: { ...style, textOutline: 'none' } } } },
+      series: [{ type: 'pie', name: 'Cámaras de comercio', data }],
+    });
+    this.ownerCharts.set(containerId, chart);
+    this.bindChartDataTable(containerId, chart);
+  }
+
+  private async renderChamberMap(): Promise<void> {
+    const containerId = 'rues-chamber-map';
+    const element = document.getElementById(containerId);
+    if (!element) return;
+    this.destroyOwnerChart(containerId);
+    try {
+      const topology = await this.colombiaMap();
+      // La consulta puede haberse limpiado mientras se descargaba el mapa.
+      if (!document.getElementById(containerId) || !this.owners()) return;
+      this.destroyOwnerChart(containerId);
+      const { dark, style, gridColor } = this.chartTheme();
+      const data = this.chamberMapPoints();
+      const active = data.filter((point) => point.active > 0).map((point) => ({ ...point, z: point.active }));
+      const cancelled = data.filter((point) => point.cancelled > 0).map((point) => ({ ...point, z: point.cancelled }));
+      const mapData = Highcharts.geojson(topology as Highcharts.GeoJSON);
+      const chart = Highcharts.mapChart({
+        chart: { renderTo: containerId, backgroundColor: 'transparent', height: 360 },
+        title: { text: undefined, style },
+        credits: { enabled: false },
+        exporting: this.chartExporting(dark), navigation: this.chartNavigation(dark),
+        mapNavigation: { enabled: true, buttonOptions: { verticalAlign: 'bottom' } },
+        mapView: { padding: 12 },
+        tooltip: {
+          useHTML: true,
+          formatter() {
+            const point = this.options as unknown as ChamberMapPoint;
+            return `<b>${point.name}</b><br>${point.city}<br>Activas: <b>${point.active}</b><br>Canceladas: <b>${point.cancelled}</b>`;
+          },
+        },
+        legend: { enabled: true, itemStyle: style },
+        series: [
+          { type: 'map', name: 'Colombia', mapData, nullColor: dark ? '#343a40' : '#e9ecef', borderColor: gridColor, enableMouseTracking: false, showInLegend: false },
+          { type: 'mapbubble', name: 'Activas', color: '#20c997', minSize: 9, maxSize: '12%', data: active },
+          { type: 'mapbubble', name: 'Canceladas', color: '#dc3545', minSize: 9, maxSize: '12%', data: cancelled },
+        ],
+      });
+      this.ownerCharts.set(containerId, chart);
+    } catch {
+      // No se bloquea la consulta de RUES si el activo local no puede cargarse.
+    }
+  }
+
   private chartTheme(): { dark: boolean; style: Highcharts.CSSObject; gridColor: string } {
     const dark = document.documentElement.dataset['bsTheme'] === 'dark';
     return {
@@ -283,6 +378,34 @@ export class WgRues implements OnDestroy {
       counts.set(value, (counts.get(value) ?? 0) + 1);
     });
     return [...counts.entries()].sort((first, second) => second[1] - first[1] || first[0].localeCompare(second[0]));
+  }
+
+  private chamberMapPoints(): ChamberMapPoint[] {
+    const counts = new Map<string, { name: string; active: number; cancelled: number }>();
+    this.rows(this.owners()).forEach((row) => {
+      const name = this.value(row['nombre_camara']);
+      const key = this.chamberKey(name);
+      const current = counts.get(key) ?? { name, active: 0, cancelled: 0 };
+      if (String(row['desc_estado_matricula'] ?? '').trim().toLocaleUpperCase() === 'ACTIVA') current.active++;
+      if (String(row['desc_estado_matricula'] ?? '').trim().toLocaleUpperCase() === 'CANCELADA') current.cancelled++;
+      counts.set(key, current);
+    });
+    return [...counts.entries()].flatMap(([key, count]) => {
+      const location = CHAMBER_LOCATIONS[key];
+      return location ? [{ ...location, ...count, z: count.active + count.cancelled }] : [];
+    });
+  }
+
+  private chamberKey(name: string): string {
+    return name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLocaleUpperCase();
+  }
+
+  private colombiaMap(): Promise<unknown> {
+    this.colombiaMapPromise ??= fetch('/maps/colombia.topo.json').then((response) => {
+      if (!response.ok) throw new Error('No fue posible cargar el mapa de Colombia.');
+      return response.json();
+    });
+    return this.colombiaMapPromise;
   }
 
   private destroyOwnerCharts(): void {
