@@ -125,7 +125,7 @@ body {
   grid-row: 2;
   margin: 1rem 0 0 !important;
   max-width: none !important;
-  overflow-x: auto;
+  overflow-x: hidden;
   width: 100% !important;
 }
 
@@ -135,6 +135,10 @@ body {
   max-width: none !important;
   min-width: 100% !important;
   width: 100% !important;
+}
+
+.chart-with-series-tabs > .highcharts-data-table .dt-container {
+  overflow-x: hidden;
 }
 
 /* La tabla comparativa de las donas conserva una lectura contable, sin bandas. */
