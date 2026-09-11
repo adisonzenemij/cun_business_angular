@@ -31,8 +31,9 @@ export class WgSociety implements OnDestroy {
   private detailChart?: Highcharts.Chart;
   private chartTimer?: ReturnType<typeof setTimeout>;
   private chartRenderVersion = 0;
-  private overviewBarsChart?: Highcharts.Chart;
-  private overviewPieChart?: Highcharts.Chart;
+  private overviewStructureChart?: Highcharts.Chart;
+  private overviewResultsChart?: Highcharts.Chart;
+  private overviewIndicatorsChart?: Highcharts.Chart;
   private overviewTimer?: ReturnType<typeof setTimeout>;
   private overviewRenderVersion = 0;
 
@@ -134,8 +135,9 @@ export class WgSociety implements OnDestroy {
   openDetail(key: DetailKey): void { this.situationChartType.set('lineas'); this.chartSeriesTab.update((tabs) => ({ ...tabs, [key]: 'unificado' })); this.activeDetail.set(key); }
   closeDetail(): void { this.columnsDetail.set(null); this.chartFieldsDetail.set(null); this.layoutOpen.set(false); this.activeDetail.set(null); this.chartRenderVersion++; this.destroyDetailChart(); }
   refreshDetailChart(): void { this.scheduleDetailChart(); }
-  refreshOverviewBars(): void { this.scheduleOverviewCharts('bars'); }
-  refreshOverviewPie(): void { this.scheduleOverviewCharts('pie'); }
+  refreshOverviewStructure(): void { this.scheduleOverviewCharts('structure'); }
+  refreshOverviewResults(): void { this.scheduleOverviewCharts('results'); }
+  refreshOverviewIndicators(): void { this.scheduleOverviewCharts('indicators'); }
   selectSituationChartType(type: SituationChartType): void { this.situationChartType.set(type); }
   selectChartSeriesTab(key: DetailKey, field: string): void { this.chartSeriesTab.update((tabs) => ({ ...tabs, [key]: field })); }
   activeChartSeriesTab(key: DetailKey): string { return this.chartSeriesTab()[key]; }
@@ -345,90 +347,95 @@ export class WgSociety implements OnDestroy {
     })), 0);
   }
 
-  private scheduleOverviewCharts(target: 'all' | 'bars' | 'pie' = 'all'): void {
+  private scheduleOverviewCharts(target: 'all' | 'structure' | 'results' | 'indicators' = 'all'): void {
     if (this.overviewTimer) clearTimeout(this.overviewTimer);
     const version = ++this.overviewRenderVersion;
     this.overviewTimer = setTimeout(() => requestAnimationFrame(() => {
       if (version !== this.overviewRenderVersion) return;
       this.renderOverviewCharts(target);
-      if (target !== 'pie') this.overviewBarsChart?.reflow();
-      if (target !== 'bars') this.overviewPieChart?.reflow();
+      if (target === 'all' || target === 'structure') this.overviewStructureChart?.reflow();
+      if (target === 'all' || target === 'results') this.overviewResultsChart?.reflow();
+      if (target === 'all' || target === 'indicators') this.overviewIndicatorsChart?.reflow();
     }), 0);
   }
 
   private destroyOverviewCharts(): void {
-    for (const chart of [this.overviewBarsChart, this.overviewPieChart]) {
+    for (const chart of [this.overviewStructureChart, this.overviewResultsChart, this.overviewIndicatorsChart]) {
       if (chart?.container && chart.renderer) chart.destroy();
     }
-    this.overviewBarsChart = undefined;
-    this.overviewPieChart = undefined;
+    this.overviewStructureChart = undefined;
+    this.overviewResultsChart = undefined;
+    this.overviewIndicatorsChart = undefined;
   }
 
-  private renderOverviewCharts(target: 'all' | 'bars' | 'pie' = 'all'): void {
-    if (target !== 'pie') {
-      this.overviewBarsChart?.destroy();
-      this.overviewBarsChart = undefined;
-    }
-    if (target !== 'bars') {
-      this.overviewPieChart?.destroy();
-      this.overviewPieChart = undefined;
-    }
+  private renderOverviewCharts(target: 'all' | 'structure' | 'results' | 'indicators' = 'all'): void {
     const consultation = this.consultation();
-    const barsContainer = document.getElementById('financial-overview-bars');
-    const pieContainer = document.getElementById('financial-overview-pie');
-    if (!consultation
-      || (target !== 'pie' && (!barsContainer || !barsContainer.clientWidth))
-      || (target !== 'bars' && (!pieContainer || !pieContainer.clientWidth))) return;
-    const latestCutoff = this.cutoffsFrom(consultation.financieros)[0];
-    if (!latestCutoff) return;
+    const cutoff = this.cutoffsFrom(consultation?.financieros ?? {})[0];
+    if (!consultation || !cutoff) return;
     const dark = document.documentElement.dataset['bsTheme'] === 'dark';
     const style: Highcharts.CSSObject = { color: dark ? '#f8f9fa' : '#212529', fontWeight: '400' };
     const compact = new Intl.NumberFormat('es-CO', { notation: 'compact', maximumFractionDigits: 1 });
-    const metrics = [
-      { name: 'Ingresos', field: 'resultadoIntegral.ingreso', color: '#0d6efd' },
-      { name: 'Utilidad Neta', field: 'resultadoIntegral.gananciaPerdida', color: '#20c997' },
-      { name: 'Activos', field: 'situacionFinanciera.activo', color: '#ffc107' },
-    ];
-    const source = consultation.financieros[latestCutoff]?.hits?.hits?.[0]?._source;
-    if (target !== 'pie' && barsContainer) this.overviewBarsChart = Highcharts.chart(barsContainer, {
-      chart: { type: 'column', backgroundColor: 'transparent' },
-      title: { text: undefined },
-      credits: { enabled: false },
+    const financial = consultation.financieros[cutoff]?.hits?.hits?.[0]?._source;
+    const situation = consultation.situacion_financiera[cutoff]?.hits?.hits?.[0]?._source;
+    const results = consultation.resultado_integral[cutoff]?.hits?.hits?.[0]?._source;
+    const chartOptions = {
+      chart: { type: 'column' as const, backgroundColor: 'transparent' }, title: { text: undefined }, credits: { enabled: false },
       exporting: this.chartExporting(dark), navigation: this.chartNavigation(dark), accessibility: { enabled: false },
-      xAxis: { categories: [latestCutoff], labels: { style } },
-      yAxis: { title: { text: 'Pesos colombianos', style }, labels: { style, formatter() { return compact.format(this.value as number); } } },
-      legend: { itemStyle: style, itemHoverStyle: style },
-      tooltip: { valuePrefix: '$ ', valueDecimals: 0 },
+      legend: { itemStyle: style, itemHoverStyle: style }, tooltip: { valuePrefix: '$ ', valueDecimals: 0 },
+      yAxis: { title: { text: 'Pesos colombianos', style }, labels: { style, formatter(this: Highcharts.AxisLabelsFormatterContextObject): string { return compact.format(Number(this.value)); } } },
       plotOptions: { column: { borderWidth: 0, borderRadius: 3, groupPadding: .12 } },
-      series: metrics.map((metric) => ({
-        type: 'column', name: metric.name, color: metric.color,
-        data: [this.number(this.path(source, metric.field))],
-      })),
-    });
-    if (target !== 'bars' && pieContainer) this.overviewPieChart = Highcharts.chart(pieContainer, {
-      chart: { type: 'pie', backgroundColor: 'transparent' },
-      title: { text: undefined },
-      credits: { enabled: false },
-      exporting: this.chartExporting(dark), navigation: this.chartNavigation(dark), accessibility: { enabled: false },
-      legend: { itemStyle: style, itemHoverStyle: style },
-      tooltip: { pointFormat: '<b>{point.y:.2f}%</b>' },
-      plotOptions: { pie: { innerSize: '45%', borderWidth: 2, dataLabels: { enabled: true, format: '{point.name}: {point.y:.2f}%', style: { ...style, textOutline: 'none' } } } },
-      series: [{
-        type: 'pie', name: 'Margen Bruto',
-        data: this.cutoffsFrom(consultation.financieros).map((cutoff, index) => {
-          const cutoffSource = consultation.financieros[cutoff]?.hits?.hits?.[0]?._source;
-          const margin = this.ratio(
-            this.path(cutoffSource, 'resultadoIntegral.utilidad'),
-            this.path(cutoffSource, 'resultadoIntegral.ingreso'),
-          );
-          return {
-            name: cutoff,
-            y: Math.max(0, (margin ?? 0) * 100),
-            color: ['#0d6efd', '#20c997', '#ffc107', '#6f42c1'][index % 4],
-          };
-        }),
-      }],
-    });
+    };
+    if (target === 'all' || target === 'structure') {
+      this.overviewStructureChart?.destroy();
+      const container = document.getElementById('financial-structure-chart');
+      if (container?.clientWidth) this.overviewStructureChart = Highcharts.chart(container, {
+        ...chartOptions, xAxis: { categories: ['Estructura financiera'], labels: { style } },
+        series: [
+          { type: 'column', name: 'Activos', color: '#0d6efd', data: [this.number(this.path(situation, 'resultado.activos.activoTotal.valorCorte'))] },
+          { type: 'column', name: 'Pasivos', color: '#dc3545', data: [this.number(this.path(situation, 'resultado.pasivos.pasivoTotal.valorCorte'))] },
+          { type: 'column', name: 'Patrimonio', color: '#20c997', data: [this.number(this.path(situation, 'resultado.patrimonio.patrimonioTotal.valorCorte'))] },
+        ],
+      });
+    }
+    if (target === 'all' || target === 'results') {
+      this.overviewResultsChart?.destroy();
+      const container = document.getElementById('financial-results-chart');
+      if (container?.clientWidth) this.overviewResultsChart = Highcharts.chart(container, {
+        ...chartOptions, xAxis: { categories: ['Resultado integral'], labels: { style } },
+        series: [
+          { type: 'column', name: 'Ingresos', color: '#0d6efd', data: [this.number(this.path(results, 'resultado.registros.ingresosActividadesOrdinarias.corte'))] },
+          { type: 'column', name: 'Costo de ventas', color: '#ffc107', data: [this.number(this.path(results, 'resultado.registros.costoVentas.corte'))] },
+          { type: 'column', name: 'Utilidad Neta', color: '#20c997', data: [this.number(this.path(results, 'resultado.registros.gananciaPerdida.corte'))] },
+        ],
+      });
+    }
+    if (target === 'all' || target === 'indicators') {
+      this.overviewIndicatorsChart?.destroy();
+      const container = document.getElementById('financial-indicators-chart');
+      const income = this.path(financial, 'resultadoIntegral.ingreso');
+      if (container?.clientWidth) this.overviewIndicatorsChart = Highcharts.chart(container, {
+        chart: { type: 'column', backgroundColor: 'transparent' }, title: { text: undefined }, credits: { enabled: false },
+        exporting: this.chartExporting(dark), navigation: this.chartNavigation(dark), accessibility: { enabled: false },
+        xAxis: { categories: ['ROA', 'ROE', 'ROS', 'Margen Bruto'], labels: { style } },
+        yAxis: {
+          title: { text: 'Porcentaje', style },
+          labels: {
+            style,
+            formatter(this: Highcharts.AxisLabelsFormatterContextObject): string {
+              return `${Number(this.value).toLocaleString('es-CO', { maximumFractionDigits: 2 })}%`;
+            },
+          },
+        },
+        legend: { enabled: false }, tooltip: { valueSuffix: '%', valueDecimals: 2 },
+        plotOptions: { column: { borderWidth: 0, borderRadius: 3 } },
+        series: [{ type: 'column', name: 'Indicador', color: '#6f42c1', data: [
+          this.number(this.path(financial, 'indicadores.roa')) * 100,
+          this.number(this.path(financial, 'indicadores.roe')) * 100,
+          this.number(this.ratio(this.path(financial, 'resultadoIntegral.gananciaPerdida'), income)) * 100,
+          this.number(this.ratio(this.path(financial, 'resultadoIntegral.utilidad'), income)) * 100,
+        ] }],
+      });
+    }
   }
 
   private destroyDetailChart(): void {
@@ -513,7 +520,7 @@ export class WgSociety implements OnDestroy {
       navigation: this.chartNavigation(dark),
       accessibility: { enabled: false },
       xAxis: { categories: cutoffs, labels: { style } },
-      yAxis: { title: { text: 'Pesos colombianos', style }, labels: { style, formatter() { return compact.format(this.value as number); } } },
+      yAxis: { title: { text: 'Pesos colombianos', style }, labels: { style, formatter(this: Highcharts.AxisLabelsFormatterContextObject): string { return compact.format(Number(this.value)); } } },
       legend: { itemStyle: style, itemHoverStyle: style },
       tooltip: { valuePrefix: '$ ', valueDecimals: 0 },
       plotOptions: cartesianType === 'line'

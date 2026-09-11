@@ -53,23 +53,6 @@
             </tr> }</tbody>
         </table>
       </div>
-      <!-- Overview charts are rendered below the Vista 360 card. -->
-      <!--
-      <div class="row g-4 mt-1">
-        <section class="col-12 col-lg-6">
-          <article class="card financial-overview-card h-100">
-            <div class="card-header"><h3 class="h6 mb-0">Comparativo financiero por fecha de corte</h3></div>
-            <div class="card-body"><div id="financial-overview-bars" class="financial-overview-chart"></div></div>
-          </article>
-        </section>
-        <section class="col-12 col-lg-6">
-          <article class="card financial-overview-card h-100">
-            <div class="card-header"><h3 class="h6 mb-0">Distribución Financiera - Fecha de Corte {{ overviewCutoff() }}</h3></div>
-            <div class="card-body"><div id="financial-overview-pie" class="financial-overview-chart"></div></div>
-          </article>
-        </section>
-      </div>
-      -->
       } @else { <p class="text-body-secondary mb-0">No se encontraron registros de Vista 360.</p> }
     </div>
   </section>
@@ -100,32 +83,27 @@
       }
     </div>
   </section>
-  <div class="row g-4 mt-4">
-    <section class="col-12 col-lg-6">
-      <article class="card financial-overview-card h-100">
-        <div class="card-header d-flex align-items-center justify-content-between gap-2">
-          <h3 class="h6 mb-0">Reporte Financiero - Fecha de Corte {{ overviewCutoff() }}</h3>
-          <button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshOverviewBars()"><i
-              class="bi bi-arrow-clockwise me-1"></i>Refrescar</button>
-        </div>
-        <div class="card-body">
-          <div id="financial-overview-bars" class="financial-overview-chart"></div>
-        </div>
-      </article>
-    </section>
-    <section class="col-12 col-lg-6">
-      <article class="card financial-overview-card h-100">
-        <div class="card-header d-flex align-items-center justify-content-between gap-2">
-          <h3 class="h6 mb-0">Margen Bruto por Fecha de Corte</h3>
-          <button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshOverviewPie()"><i
-              class="bi bi-arrow-clockwise me-1"></i>Refrescar</button>
-        </div>
-        <div class="card-body">
-          <div id="financial-overview-pie" class="financial-overview-chart"></div>
-        </div>
-      </article>
-    </section>
-  </div>
+  <section class="card financial-overview-card mt-4">
+    <div class="card-header d-flex align-items-center justify-content-between gap-2">
+      <h3 class="h6 mb-0">Estructura Financiera - Fecha de Corte {{ overviewCutoff() }}</h3>
+      <button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshOverviewStructure()"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button>
+    </div>
+    <div class="card-body"><div id="financial-structure-chart" class="financial-overview-chart"></div></div>
+  </section>
+  <section class="card financial-overview-card mt-4">
+    <div class="card-header d-flex align-items-center justify-content-between gap-2">
+      <h3 class="h6 mb-0">Resultado Integral - Fecha de Corte {{ overviewCutoff() }}</h3>
+      <button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshOverviewResults()"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button>
+    </div>
+    <div class="card-body"><div id="financial-results-chart" class="financial-overview-chart"></div></div>
+  </section>
+  <section class="card financial-overview-card mt-4">
+    <div class="card-header d-flex align-items-center justify-content-between gap-2">
+      <h3 class="h6 mb-0">Indicadores de Rentabilidad - Fecha de Corte {{ overviewCutoff() }}</h3>
+      <button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshOverviewIndicators()"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button>
+    </div>
+    <div class="card-body"><div id="financial-indicators-chart" class="financial-overview-chart"></div></div>
+  </section>
   }
   }
 </section>
