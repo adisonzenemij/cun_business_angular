@@ -18,6 +18,7 @@ export interface RoleData { id_universal: string; fd_name: string; }
 export interface RoleAccess { id_universal: string; fd_name: string; }
 export interface RolePermit { id_universal: string; ms_2e794a8f: string; tg_2f997592: string; tg_9a7bbe6f: string; }
 export interface NavigationModule extends TableModule { resources: (TableResource & { route: string; icon: string })[]; }
+interface CurrentPermission { client: string; access: string; }
 export interface Anonymous {
   id_universal: string;
   fd_random: string;
@@ -92,8 +93,11 @@ const navigation = new Map<string, { route: string; icon: string }>([
 export class MetadataCatalog {
   private readonly api = inject(FastApi);
   readonly modules = signal<NavigationModule[]>([]);
+  readonly allowedClients = signal<Set<string>>(new Set());
   load(): void {
-    this.api.http.get<TableModule[]>(`${FAST_API_URL}/table-modules/`).subscribe((modules) => {
+    this.api.http.get<{ permissions: CurrentPermission[] }>(`${FAST_API_URL}/auth/permissions`).subscribe((permissionResult) => {
+      this.allowedClients.set(new Set(permissionResult.permissions.filter((item) => item.access === 'Permitido').map((item) => item.client)));
+      this.api.http.get<TableModule[]>(`${FAST_API_URL}/table-modules/`).subscribe((modules) => {
       this.api.http.get<TableResource[]>(`${FAST_API_URL}/table-resources/`).subscribe((resources) => {
         this.modules.set(
           modules
@@ -102,12 +106,13 @@ export class MetadataCatalog {
               resources: resources
                 .filter((resource) => resource.ms_8b6bd18a === module.id_universal)
                 .map((resource) => ({ ...resource, ...(navigation.get(resource.fd_client) ?? { route: '', icon: 'bi-circle' }) }))
-                .filter((resource) => !!resource.route)
+                .filter((resource) => !!resource.route && this.allowedClients().has(resource.fd_client))
                 .sort((left, right) => left.fd_name.localeCompare(right.fd_name, 'es')),
             }))
             .sort((left, right) => left.fd_product.localeCompare(right.fd_product, 'es')),
         );
       });
+    });
     });
   }
 }

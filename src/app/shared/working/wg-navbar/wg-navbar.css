@@ -11,3 +11,15 @@
   font-weight: 600;
   padding-inline: .65rem;
 }
+
+.role-permission-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.role-permission-table th,
+.role-permission-table td {
+  width: 50%;
+  text-align: center;
+  vertical-align: middle;
+}

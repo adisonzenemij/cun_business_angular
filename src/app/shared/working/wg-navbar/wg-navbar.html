@@ -4,15 +4,18 @@
       <i class="bi bi-list"></i>
     </button>
     <a class="navbar-brand" routerLink="/working/dashboard">Gestión</a>
-    <a class="nav-link text-white ms-2 report-link" routerLink="/working/report" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Reportes</a>
-    <a class="nav-link text-white ms-2 report-link" routerLink="/working/society" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Informes Financieros</a>
+    <a class="nav-link text-white ms-2 report-link" routerLink="/working/report" routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }">Reportes</a>
+    <a class="nav-link text-white ms-2 report-link" routerLink="/working/society" routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: true }">Informes Financieros</a>
     <div class="ms-auto d-flex gap-2 align-items-center">
-      <button class="btn btn-outline-light" type="button" (click)="openPermissions()"><i class="bi bi-person-badge me-1"></i>{{ roleName() ?? 'Rol' }}</button>
+      <button class="btn btn-outline-light" type="button" (click)="openPermissions()"><i
+          class="bi bi-person-badge me-1"></i>{{ roleName() ?? 'Rol' }}</button>
       <span class="navbar-text border border-light rounded px-2">{{ session.userName() }}</span>
       @if (sessionTimer.remainingTime(); as remainingTime) {
-        <span class="navbar-text border border-light rounded px-2">
-          <i class="bi bi-clock me-1"></i>{{ remainingTime }}
-        </span>
+      <span class="navbar-text border border-light rounded px-2">
+        <i class="bi bi-clock me-1"></i>{{ remainingTime }}
+      </span>
       }
       <app-theme-toggle></app-theme-toggle>
       <a class="btn btn-outline-light" routerLink="/portal/home">Portal</a>
@@ -21,5 +24,35 @@
   </div>
 </nav>
 @if (showPermissions()) {
-<div class="modal d-block" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered"><div class="modal-content"><div class="modal-header bg-primary text-white"><h2 class="h5 mb-0">Permisos del rol: {{ roleName() ?? 'Sin rol' }}</h2><button class="btn-close btn-close-white" type="button" (click)="showPermissions.set(false)"></button></div><div class="modal-body">@for (module of permissionModules(); track module.name) {<section class="card mb-3"><header class="card-header fw-semibold">{{ module.name }}</header><div class="card-body p-0"><table class="table table-striped mb-0"><thead><tr><th>Recurso</th><th>Acceso</th></tr></thead><tbody>@for (permission of module.permissions; track permission.resource) {<tr><td>{{ permission.resource }}</td><td><span class="badge" [class.text-bg-success]="permission.access === 'Permitido'" [class.text-bg-danger]="permission.access === 'Denegado'">{{ permission.access }}</span></td></tr>}</tbody></table></div></section>} @empty {<p class="text-center text-body-secondary mb-0">No hay permisos configurados.</p>}</div><div class="modal-footer"><button class="btn btn-outline-secondary" type="button" (click)="showPermissions.set(false)">Cerrar</button></div></div></div></div><div class="modal-backdrop fade show"></div>
+<div class="modal d-block" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h2 class="h5 mb-0">Permisos del Rol: {{ roleName() ?? 'Sin rol' }}</h2><button
+          class="btn-close btn-close-white" type="button" (click)="showPermissions.set(false)"></button>
+      </div>
+      <div class="modal-body">@for (module of permissionModules(); track module.name) {<section class="card mb-3">
+          <header class="card-header fw-semibold">{{ module.name }}</header>
+          <div class="card-body p-0">
+          <table class="table table-striped mb-0 role-permission-table">
+              <thead>
+                <tr>
+                  <th>Recurso</th>
+                  <th>Acceso</th>
+                </tr>
+              </thead>
+              <tbody>@for (permission of module.permissions; track permission.resource) {<tr>
+                  <td>{{ permission.resource }}</td>
+                  <td><span class="badge" [class.text-bg-success]="permission.access === 'Permitido'"
+                      [class.text-bg-danger]="permission.access === 'Denegado'">{{ permission.access }}</span></td>
+                </tr>}</tbody>
+            </table>
+          </div>
+        </section>} @empty {<p class="text-center text-body-secondary mb-0">No hay permisos configurados.</p>}</div>
+      <div class="modal-footer"><button class="btn btn-outline-secondary" type="button"
+          (click)="showPermissions.set(false)">Cerrar</button></div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade show"></div>
 }
