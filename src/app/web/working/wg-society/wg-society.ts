@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import Highcharts from 'highcharts/esm/highcharts';
 import 'highcharts/esm/modules/exporting';
 import 'highcharts/esm/modules/export-data';
+import * as XLSX from 'xlsx';
 import { FAST_API_URL, FastApi } from '../../../services/backend/python/fast/fast-api';
 import { Theme } from '../../../services/core/theme';
 
@@ -136,6 +137,38 @@ export class WgSociety implements OnDestroy {
 
   vistaRecords(): SearchHit[] { return this.consultation()?.vista_360.hits?.hits ?? []; }
   vistaFields(): string[] { return [...new Set(this.vistaRecords().flatMap((record) => Object.keys(record._source)))]; }
+  exportVistaCsv(): void {
+    const { headers, records } = this.vistaExportData();
+    const escape = (value: string) => `"${value.replaceAll('"', '""')}"`;
+    const csv = [headers, ...records].map((record) => record.map((value) => escape(value)).join(';')).join('\r\n');
+    this.downloadVista(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }), 'csv');
+  }
+  exportVistaExcel(): void {
+    const { headers, records } = this.vistaExportData();
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...records]);
+    worksheet['!cols'] = headers.map((header, index) => ({
+      wch: Math.min(60, Math.max(header.length + 2, ...records.map((record) => record[index].length + 2))),
+    }));
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Vista 360');
+    XLSX.writeFile(workbook, `${crypto.randomUUID()}.xlsx`, { compression: true });
+  }
+  exportDetailCsv(detail: DetailKey): void {
+    const { headers, records } = this.detailExportData(detail);
+    const escape = (value: string) => `"${value.replaceAll('"', '""')}"`;
+    const csv = [headers, ...records].map((record) => record.map((value) => escape(value)).join(';')).join('\r\n');
+    this.downloadVista(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }), 'csv');
+  }
+  exportDetailExcel(detail: DetailKey): void {
+    const { headers, records } = this.detailExportData(detail);
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...records]);
+    worksheet['!cols'] = headers.map((header, index) => ({
+      wch: Math.min(60, Math.max(header.length + 2, ...records.map((record) => record[index].length + 2))),
+    }));
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, this.detailLabel(detail).slice(0, 31));
+    XLSX.writeFile(workbook, `${crypto.randomUUID()}.xlsx`, { compression: true });
+  }
   cutoffs(key: DetailKey): string[] { return this.cutoffsFrom(this.consultation()?.[key] ?? {}); }
   selectCutoff(key: DetailKey, cutoff: string): void { this.activeCutoffs.update((current) => ({ ...current, [key]: cutoff })); }
 
@@ -245,6 +278,36 @@ export class WgSociety implements OnDestroy {
   private selectedSource(key: DetailKey): Record<string, unknown> | undefined {
     const cutoff = this.activeCutoffs()[key];
     return this.consultation()?.[key]?.[cutoff]?.hits?.hits?.[0]?._source;
+  }
+  private vistaExportData(): { headers: string[]; records: string[][] } {
+    const headers = this.vistaFields();
+    return {
+      headers,
+      records: this.vistaRecords().map((record) => headers.map((field) => this.exportValue(record._source[field]))),
+    };
+  }
+  private detailExportData(detail: DetailKey): { headers: string[]; records: string[][] } {
+    const cutoff = this.activeCutoffs()[detail];
+    return {
+      headers: ['Campo', 'Valor'],
+      records: [
+        ['Informe', this.detailLabel(detail)],
+        ['Fecha de corte', cutoff || '—'],
+        ...this.tableRows(detail).map((row) => [row.label, row.value]),
+      ],
+    };
+  }
+  private exportValue(value: unknown): string {
+    if (value === null || value === undefined) return '—';
+    return typeof value === 'object' ? JSON.stringify(value) : String(value);
+  }
+  private downloadVista(blob: Blob, extension: string): void {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${crypto.randomUUID()}.${extension}`;
+    anchor.click();
+    URL.revokeObjectURL(url);
   }
 
   private scheduleDetailChart(): void {
