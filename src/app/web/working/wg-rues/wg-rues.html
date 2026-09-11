@@ -80,11 +80,11 @@
           <div class="card-body"><div id="rues-category-chart" class="rues-chart"></div></div>
         </article></section>
         <section class="col-12 col-lg-6"><article class="card h-100">
-          <div class="card-header d-flex align-items-center justify-content-between gap-2"><span class="fw-semibold">Cámaras de comercio por estado</span><button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshChamberStatusChart()"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button></div>
+          <div class="card-header d-flex align-items-center justify-content-between gap-2"><span class="fw-semibold">Cámaras de comercio por estado</span><div class="d-flex align-items-center gap-2"><select class="form-select form-select-sm rues-chart-filter" aria-label="Filtrar cámaras por estado" [ngModel]="chamberStatusFilter()" (ngModelChange)="setChamberStatusFilter($event)"><option value="ALL">Todos</option><option value="ACTIVA">Activas</option><option value="CANCELADA">Canceladas</option></select><button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshChamberStatusChart()"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button></div></div>
           <div class="card-body"><div id="rues-chamber-status-chart" class="rues-chart"></div></div>
         </article></section>
         <section class="col-12 col-lg-6"><article class="card h-100">
-          <div class="card-header d-flex align-items-center justify-content-between gap-2"><span class="fw-semibold">Ubicación de cámaras de comercio</span><button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshChamberMap()"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button></div>
+          <div class="card-header d-flex align-items-center justify-content-between gap-2"><span class="fw-semibold">Ubicación de cámaras de comercio</span><div class="d-flex align-items-center gap-2"><select class="form-select form-select-sm rues-chart-filter" aria-label="Filtrar mapa por estado" [ngModel]="chamberMapFilter()" (ngModelChange)="setChamberMapFilter($event)"><option value="ALL">Todos</option><option value="ACTIVA">Activas</option><option value="CANCELADA">Canceladas</option></select><button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshChamberMap()"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button></div></div>
           <div class="card-body"><div id="rues-chamber-map" class="rues-chart rues-map" aria-label="Mapa de Colombia con cámaras de comercio"></div></div>
         </article></section>
       </div>

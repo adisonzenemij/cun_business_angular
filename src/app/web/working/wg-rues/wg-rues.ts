@@ -13,6 +13,7 @@ interface RuesResponse { rows?: RuesRow[]; records?: number; codigo_error?: stri
 interface RuesReference { codigo_camara: string; matricula: string; }
 interface ChamberLocation { city: string; lat: number; lon: number; }
 interface ChamberMapPoint extends ChamberLocation { name: string; active: number; cancelled: number; z: number; }
+type ChamberStatusFilter = 'ALL' | 'ACTIVA' | 'CANCELADA';
 
 const DEFAULT_OWNER_FIELDS = [
   'categoria_matricula', 'desc_estado_matricula', 'matricula', 'nombre_camara',
@@ -73,6 +74,8 @@ export class WgRues implements OnDestroy {
   readonly ownersColumnsOpen = signal(false);
   readonly ownersColumnsSearch = signal('');
   readonly visibleOwnerFields = signal<string[]>(DEFAULT_OWNER_FIELDS);
+  readonly chamberStatusFilter = signal<ChamberStatusFilter>('ALL');
+  readonly chamberMapFilter = signal<ChamberStatusFilter>('ALL');
 
   constructor() { this.loadSocieties(); }
 
@@ -85,7 +88,7 @@ export class WgRues implements OnDestroy {
   }
 
   changeSociety(value: string): void {
-    this.selectedId.set(value); this.result.set(null); this.destroyOwnersDataTable(); this.destroyOwnerCharts(); this.owners.set(null); this.selectedOwner.set(null); this.error.set(''); this.ownersError.set('');
+    this.selectedId.set(value); this.result.set(null); this.destroyOwnersDataTable(); this.destroyOwnerCharts(); this.owners.set(null); this.selectedOwner.set(null); this.error.set(''); this.ownersError.set(''); this.chamberStatusFilter.set('ALL'); this.chamberMapFilter.set('ALL');
   }
 
   clear(): void {
@@ -99,6 +102,8 @@ export class WgRues implements OnDestroy {
     this.ownersError.set('');
     this.ownersColumnsOpen.set(false);
     this.ownersColumnsSearch.set('');
+    this.chamberStatusFilter.set('ALL');
+    this.chamberMapFilter.set('ALL');
   }
 
   consult(): void {
@@ -191,6 +196,14 @@ export class WgRues implements OnDestroy {
   refreshCategoryChart(): void { this.renderOwnerPieChart('rues-category-chart', 'Cantidad por categoría', 'categoria_matricula'); }
   refreshChamberStatusChart(): void { this.renderChamberStatusChart(); }
   refreshChamberMap(): void { void this.renderChamberMap(); }
+  setChamberStatusFilter(value: string): void {
+    this.chamberStatusFilter.set(this.statusFilter(value));
+    this.renderChamberStatusChart();
+  }
+  setChamberMapFilter(value: string): void {
+    this.chamberMapFilter.set(this.statusFilter(value));
+    void this.renderChamberMap();
+  }
 
   private ownerReference(row: RuesRow): RuesReference | null {
     const match = /ConsultarDetalleRM\(['"]?(\d+)['"]?\)/i.exec(String(row['enlace'] ?? ''));
@@ -283,9 +296,10 @@ export class WgRues implements OnDestroy {
     const element = document.getElementById(containerId);
     if (!element) return;
     const { dark, style } = this.chartTheme();
+    const filter = this.chamberStatusFilter();
     const data = [
-      { name: 'Activas', y: this.countByChamber('ACTIVA').length, color: '#20c997' },
-      { name: 'Canceladas', y: this.countByChamber('CANCELADA').length, color: '#dc3545' },
+      ...(filter !== 'CANCELADA' ? [{ name: 'Activas', y: this.countByChamber('ACTIVA').length, color: '#20c997' }] : []),
+      ...(filter !== 'ACTIVA' ? [{ name: 'Canceladas', y: this.countByChamber('CANCELADA').length, color: '#dc3545' }] : []),
     ];
     this.destroyOwnerChart(containerId);
     const chart = Highcharts.chart(element, {
@@ -319,6 +333,7 @@ export class WgRues implements OnDestroy {
       const data = this.chamberMapPoints();
       const active = data.filter((point) => point.active > 0).map((point) => ({ ...point, z: point.active }));
       const cancelled = data.filter((point) => point.cancelled > 0).map((point) => ({ ...point, z: point.cancelled }));
+      const filter = this.chamberMapFilter();
       const mapData = Highcharts.geojson(topology as Highcharts.GeoJSON);
       const chart = Highcharts.mapChart({
         chart: { renderTo: containerId, backgroundColor: 'transparent', height: 360 },
@@ -345,8 +360,8 @@ export class WgRues implements OnDestroy {
               inactive: { opacity: 1 },
             },
           },
-          { type: 'mapbubble', name: 'Activas', color: '#20c997', minSize: 9, maxSize: '12%', data: active },
-          { type: 'mapbubble', name: 'Canceladas', color: '#dc3545', minSize: 9, maxSize: '12%', data: cancelled },
+          ...(filter !== 'CANCELADA' ? [{ type: 'mapbubble' as const, name: 'Activas', color: '#20c997', minSize: 9, maxSize: '12%', data: active }] : []),
+          ...(filter !== 'ACTIVA' ? [{ type: 'mapbubble' as const, name: 'Canceladas', color: '#dc3545', minSize: 9, maxSize: '12%', data: cancelled }] : []),
         ],
       });
       this.ownerCharts.set(containerId, chart);
@@ -409,6 +424,10 @@ export class WgRues implements OnDestroy {
 
   private chamberKey(name: string): string {
     return name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLocaleUpperCase();
+  }
+
+  private statusFilter(value: string): ChamberStatusFilter {
+    return value === 'ACTIVA' || value === 'CANCELADA' ? value : 'ALL';
   }
 
   private colombiaMap(): Promise<unknown> {

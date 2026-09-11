@@ -11,6 +11,7 @@
 .rues-charts .card-body { min-height: 0; }
 .rues-chart { height: 22rem; min-height: 22rem; width: 100%; }
 .rues-map { height: 24rem; min-height: 24rem; }
+.rues-chart-filter { min-width: 7.25rem; width: auto; }
 .rues-chart + .highcharts-data-table {
   box-sizing: border-box;
   margin: 1rem 0 0;
