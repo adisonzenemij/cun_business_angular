@@ -46,6 +46,7 @@ interface AssociationDetail {
   resource: string;
   records: number;
 }
+type CrudOperation = 'insert' | 'update' | 'delete';
 
 @Component({
   selector: 'app-entity-crud',
@@ -77,6 +78,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   readonly showAutoFillModal = signal(false);
   readonly showAutoFillConfigurationModal = signal(false);
   readonly autoCompleteAllowed = signal(false);
+  readonly operationPermissions = signal<Record<CrudOperation, boolean>>({ insert: false, update: false, delete: false });
   readonly showAssociationsModal = signal(false);
   readonly associationDetails = signal<AssociationDetail[]>([]);
   readonly associationTableVersion = signal(0);
@@ -145,7 +147,22 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
         error: () => this.autoCompleteAllowed.set(false),
       });
     }
+    const route = this.router.url.split('/').pop() ?? '';
+    this.api.http.get<{ permissions: { client: string; insert: string; update: string; delete: string }[] }>(`${FAST_API_URL}/auth/permissions`).subscribe({
+      next: ({ permissions }) => {
+        const permission = permissions.find((item) => item.client === route);
+        this.operationPermissions.set({
+          insert: permission?.insert === 'Permitido',
+          update: permission?.update === 'Permitido',
+          delete: permission?.delete === 'Permitido',
+        });
+      },
+      error: () => this.operationPermissions.set({ insert: false, update: false, delete: false }),
+    });
     this.load();
+  }
+  canOperate(operation: CrudOperation): boolean {
+    return this.operationPermissions()[operation];
   }
   ngAfterViewInit(): void {
     if (!this.config().operations.select) this.initializeDataTable();
@@ -256,6 +273,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     this.clearSelection();
   }
   saveQuestion(): void {
+    if (!this.canOperate(this.editingManagedQuestion() ? 'update' : 'insert')) return;
     const survey = this.requireSingleSelection('agregar una pregunta a');
     if (!survey || this.questionForm.invalid) {
       this.questionForm.markAllAsTouched();
@@ -272,35 +290,28 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       pm_0d3dc00e: values.pm_0d3dc00e,
       pm_4d802b91: String(survey['id_universal']),
     };
+    const surveyId = String(survey['id_universal']);
     const request = editing
-      ? this.api.update('questions', String(editing['id_universal']), payload)
-      : this.api.create('questions', payload);
+      ? this.api.updateManagedQuestion(surveyId, String(editing['id_universal']), payload)
+      : this.api.createManagedQuestion(surveyId, payload);
     request.subscribe({
       next: () => {
         const totalQuestions = editing ? this.managedQuestions().length : this.managedQuestions().length + 1;
-        this.api.update('surveys', String(survey['id_universal']), { fd_query: totalQuestions }).subscribe({
-          next: () => {
-            this.loading.set(false);
-            this.questionForm.enable();
-            this.editingManagedQuestion.set(null);
-            this.selectedManagedQuestions.set([]);
-            const updatedSurvey = { ...survey, fd_query: totalQuestions };
-            this.selectedRecord.set(updatedSurvey);
-            this.selectedRecords.set([updatedSurvey]);
-            this.rows.update((rows) => rows.map((row) =>
-              row['id_universal'] === survey['id_universal'] ? updatedSurvey : row,
-            ));
-            this.questionForm.reset({
-              fd_ask: '', fd_order: this.nextManagedQuestionOrder(), fd_required: false, pm_0d3dc00e: '',
-            });
-            this.refreshManagedQuestions();
-            void Swal.fire({ icon: 'success', title: editing ? 'Pregunta actualizada' : 'Pregunta agregada', confirmButtonText: 'Aceptar' });
-          },
-          error: () => {
-            this.questionForm.enable();
-            this.failed();
-          },
+        this.loading.set(false);
+        this.questionForm.enable();
+        this.editingManagedQuestion.set(null);
+        this.selectedManagedQuestions.set([]);
+        const updatedSurvey = { ...survey, fd_query: totalQuestions };
+        this.selectedRecord.set(updatedSurvey);
+        this.selectedRecords.set([updatedSurvey]);
+        this.rows.update((rows) => rows.map((row) =>
+          row['id_universal'] === survey['id_universal'] ? updatedSurvey : row,
+        ));
+        this.questionForm.reset({
+          fd_ask: '', fd_order: this.nextManagedQuestionOrder(), fd_required: false, pm_0d3dc00e: '',
         });
+        this.refreshManagedQuestions();
+        void Swal.fire({ icon: 'success', title: editing ? 'Pregunta actualizada' : 'Pregunta agregada', confirmButtonText: 'Aceptar' });
       },
       error: () => {
         this.questionForm.enable();
@@ -326,6 +337,9 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     return String(this.questionTypes().find((type) => type['id_universal'] === typeId)?.['fd_format'] ?? '—');
   }
   moveManagedQuestion(question: Record<string, unknown>, direction: -1 | 1): void {
+    if (!this.canOperate('update')) return;
+    const surveyId = this.managedSurveyId();
+    if (!surveyId) return;
     const ordered = [...this.managedQuestions()]
       .sort((first, second) => Number(first['fd_order']) - Number(second['fd_order']));
     const currentIndex = ordered.findIndex((item) => item['id_universal'] === question['id_universal']);
@@ -333,8 +347,8 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     if (!target) return;
     this.loading.set(true);
     forkJoin([
-      this.api.update('questions', String(question['id_universal']), { fd_order: target['fd_order'] }),
-      this.api.update('questions', String(target['id_universal']), { fd_order: question['fd_order'] }),
+      this.api.updateManagedQuestion(surveyId, String(question['id_universal']), { fd_order: target['fd_order'] }),
+      this.api.updateManagedQuestion(surveyId, String(target['id_universal']), { fd_order: question['fd_order'] }),
     ]).subscribe({
       next: () => {
         this.loading.set(false);
@@ -344,6 +358,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     });
   }
   openManagedQuestionEdit(): void {
+    if (!this.canOperate('update')) return;
     const selected = this.selectedManagedQuestions();
     if (selected.length !== 1) {
       void Swal.fire({
@@ -364,6 +379,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     });
   }
   removeManagedQuestions(): void {
+    if (!this.canOperate('delete')) return;
     const selected = this.selectedManagedQuestions();
     if (!selected.length) return;
     void Swal.fire({
@@ -374,7 +390,9 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     }).then((result) => {
       if (!result.isConfirmed) return;
       this.loading.set(true);
-      forkJoin(selected.map((question) => this.api.delete('questions', String(question['id_universal'])).pipe(
+      const surveyId = this.managedSurveyId();
+      if (!surveyId) return;
+      forkJoin(selected.map((question) => this.api.deleteManagedQuestion(surveyId, String(question['id_universal'])).pipe(
         map(() => ({ error: undefined as unknown })),
         catchError((error) => of({ error: error as unknown })),
       ))).subscribe({
@@ -390,23 +408,18 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
             return;
           }
           const totalQuestions = Math.max(0, this.managedQuestions().length - deleted);
-          this.api.update('surveys', String(survey['id_universal']), { fd_query: totalQuestions }).subscribe({
-            next: () => {
-              this.loading.set(false);
-              const updatedSurvey = { ...survey, fd_query: totalQuestions };
-              this.selectedRecord.set(updatedSurvey);
-              this.selectedRecords.set([updatedSurvey]);
-              this.rows.update((rows) => rows.map((row) =>
-                row['id_universal'] === survey['id_universal'] ? updatedSurvey : row,
-              ));
-              this.selectedManagedQuestions.set([]);
-              this.editingManagedQuestion.set(null);
-              this.refreshManagedQuestions();
-              if (failed.length) this.showBatchDeleteResult(deleted, failed.map(({ error }) => error));
-              else void Swal.fire({ icon: 'success', title: 'Preguntas eliminadas', confirmButtonText: 'Aceptar' });
-            },
-            error: () => this.failed(),
-          });
+          this.loading.set(false);
+          const updatedSurvey = { ...survey, fd_query: totalQuestions };
+          this.selectedRecord.set(updatedSurvey);
+          this.selectedRecords.set([updatedSurvey]);
+          this.rows.update((rows) => rows.map((row) =>
+            row['id_universal'] === survey['id_universal'] ? updatedSurvey : row,
+          ));
+          this.selectedManagedQuestions.set([]);
+          this.editingManagedQuestion.set(null);
+          this.refreshManagedQuestions();
+          if (failed.length) this.showBatchDeleteResult(deleted, failed.map(({ error }) => error));
+          else void Swal.fire({ icon: 'success', title: 'Preguntas eliminadas', confirmButtonText: 'Aceptar' });
         },
       });
     });
@@ -626,6 +639,9 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     return false;
   }
   moveValue(value: Record<string, unknown>, direction: -1 | 1): void {
+    if (!this.canOperate('update')) return;
+    const surveyId = this.managedSurveyId();
+    if (!surveyId) return;
     const questionId = value['pm_0acc84ae'];
     const ordered = this.surveyValues()
       .filter((item) => item['pm_0acc84ae'] === questionId)
@@ -636,8 +652,8 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     const currentOrder = value['fd_order'];
     this.loading.set(true);
     forkJoin([
-      this.api.update('values', String(value['id_universal']), { fd_order: target['fd_order'] }),
-      this.api.update('values', String(target['id_universal']), { fd_order: currentOrder }),
+      this.api.updateManagedValue(surveyId, String(value['id_universal']), { fd_order: target['fd_order'] }),
+      this.api.updateManagedValue(surveyId, String(target['id_universal']), { fd_order: currentOrder }),
     ]).subscribe({
       next: () => {
         const selected = this.selectedRecord();
@@ -654,9 +670,12 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     });
   }
   createValue(): void {
+    if (!this.canOperate('insert')) return;
     if (this.valueForm.invalid) { this.valueForm.markAllAsTouched(); return; }
     this.loading.set(true);
-    this.api.create('values', this.valueForm.getRawValue()).subscribe({
+    const surveyId = this.managedSurveyId();
+    if (!surveyId) return;
+    this.api.createManagedValue(surveyId, this.valueForm.getRawValue()).subscribe({
       next: () => this.finishValueOperation('Valor creado.'),
       error: () => this.failed(),
     });
@@ -667,14 +686,17 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       this.createValue();
       return;
     }
-    if (this.valueForm.invalid) { this.valueForm.markAllAsTouched(); return; }
+    if (!this.canOperate('update') || this.valueForm.invalid) { this.valueForm.markAllAsTouched(); return; }
     this.loading.set(true);
-    this.api.update('values', String(editing['id_universal']), this.valueForm.getRawValue()).subscribe({
+    const surveyId = this.managedSurveyId();
+    if (!surveyId) return;
+    this.api.updateManagedValue(surveyId, String(editing['id_universal']), this.valueForm.getRawValue()).subscribe({
       next: () => this.finishValueOperation('Valor actualizado.'),
       error: () => this.failed(),
     });
   }
   openValueEdit(): void {
+    if (!this.canOperate('update')) return;
     const selected = this.selectedValues();
     if (selected.length !== 1) {
       const message = selected.length
@@ -704,6 +726,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     return this.selectedValues().some((item) => item['id_universal'] === value['id_universal']);
   }
   removeValues(): void {
+    if (!this.canOperate('delete')) return;
     const selected = this.selectedValues();
     if (!selected.length) return;
     void Swal.fire({
@@ -717,9 +740,11 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     }).then((result) => {
       if (!result.isConfirmed) return;
       this.loading.set(true);
+      const surveyId = this.managedSurveyId();
+      if (!surveyId) return;
       forkJoin(selected.map((value) => {
         const id = String(value['id_universal']);
-        return this.api.delete('values', id).pipe(
+        return this.api.deleteManagedValue(surveyId, id).pipe(
           map(() => ({ id, error: undefined as unknown })),
           catchError((error) => of({ id, error: error as unknown })),
         );
@@ -929,6 +954,13 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   }
   managingQuestionValues(): boolean {
     return this.config().resource === 'questions';
+  }
+  private managedSurveyId(): string | undefined {
+    const selected = this.selectedRecord();
+    const surveyId = this.config().resource === 'surveys'
+      ? selected?.['id_universal']
+      : selected?.['pm_4d802b91'];
+    return surveyId ? String(surveyId) : undefined;
   }
   selectedQuestionDescription(): string {
     const selected = this.selectedRecord();

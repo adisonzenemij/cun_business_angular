@@ -19,17 +19,17 @@
         </div>
         }
         <div class="col-12 d-flex flex-wrap gap-2">
-          @if (config().operations.insert) {
+          @if (config().operations.insert && canOperate('insert')) {
           <button class="btn btn-outline-success" type="button" (click)="submit('insert')">
             <i class="bi bi-plus-circle me-1"></i>Crear
           </button>
           }
-          @if (config().operations.update) {
+          @if (config().operations.update && canOperate('update')) {
           <button class="btn btn-outline-warning" type="button" (click)="submit('update')">
             <i class="bi bi-save me-1"></i>Actualizar
           </button>
           }
-          @if (config().operations.delete) {
+          @if (config().operations.delete && canOperate('delete')) {
           <button class="btn btn-outline-danger" type="button" (click)="remove()">
             <i class="bi bi-trash me-1"></i>Eliminar
           </button>
@@ -37,18 +37,18 @@
         </div>
       </form>
       <div class="d-flex flex-wrap gap-2">
-        @if (config().operations.insert) {
+        @if (config().operations.insert && canOperate('insert')) {
         <button class="btn btn-outline-success" type="button" (click)="openCreate()">
           <i class="bi bi-plus-circle me-1"></i>Crear
         </button>
         }
-        @if (config().operations.update) {
+        @if (config().operations.update && canOperate('update')) {
         <button class="btn btn-outline-warning" type="button" (click)="openEdit()"
           [disabled]="!selectedRecords().length">
           <i class="bi bi-pencil-square me-1"></i>Actualizar
         </button>
         }
-        @if (config().operations.delete) {
+        @if (config().operations.delete && canOperate('delete')) {
         <button class="btn btn-outline-danger" type="button" (click)="remove()" [disabled]="!selectedRecords().length">
           <i class="bi bi-trash me-1"></i>Eliminar
         </button>
@@ -257,15 +257,20 @@
       <div class="modal-body">
         <p class="text-body-secondary">Agrega preguntas directamente a la encuesta seleccionada.</p>
         <div class="d-flex flex-wrap gap-2 mb-3">
+          @if (canOperate('update')) {
           <button class="btn btn-outline-warning" type="button" (click)="openManagedQuestionEdit()"
             [disabled]="!selectedManagedQuestions().length">
             <i class="bi bi-pencil-square me-1"></i>Editar pregunta
           </button>
+          }
+          @if (canOperate('delete')) {
           <button class="btn btn-outline-danger" type="button" (click)="removeManagedQuestions()"
             [disabled]="!selectedManagedQuestions().length">
             <i class="bi bi-trash me-1"></i>Eliminar seleccionadas
           </button>
+          }
         </div>
+        @if (canOperate('insert') || canOperate('update')) {
         <div class="border rounded p-3 mb-4">
           <div class="row g-3">
             <div class="col-12">
@@ -298,7 +303,8 @@
                 [disabled]="loading()">Cancelar edición</button>
               }
               <button class="btn" [class.btn-outline-success]="!editingManagedQuestion()"
-                [class.btn-outline-warning]="editingManagedQuestion()" type="submit" [disabled]="loading()">
+                [class.btn-outline-warning]="editingManagedQuestion()" type="submit"
+                [disabled]="loading() || (!editingManagedQuestion() && !canOperate('insert')) || (!!editingManagedQuestion() && !canOperate('update'))">
                 <i class="bi me-1" [class.bi-plus-circle]="!editingManagedQuestion()"
                   [class.bi-save]="editingManagedQuestion()"></i>
                 {{ editingManagedQuestion() ? 'Actualizar pregunta' : 'Agregar pregunta' }}
@@ -306,6 +312,7 @@
             </div>
           </div>
         </div>
+        }
         <h3 class="h6">Preguntas registradas</h3>
         @for (version of [questionsTableVersion()]; track version) {
         <div class="table-responsive">
@@ -324,12 +331,14 @@
                 <td>{{ question['fd_required'] ? 'Sí' : 'No' }}</td>
                 <td>{{ managedQuestionTypeLabel(question['pm_0d3dc00e']) }}</td>
                 <td class="text-end text-nowrap">
+                  @if (canOperate('update')) {
                   <button class="btn btn-outline-secondary btn-sm me-1" type="button"
                     (click)="$event.stopPropagation(); moveManagedQuestion(question, -1)"
                     [disabled]="loading()" title="Subir"><i class="bi bi-arrow-up"></i></button>
                   <button class="btn btn-outline-secondary btn-sm" type="button"
                     (click)="$event.stopPropagation(); moveManagedQuestion(question, 1)"
                     [disabled]="loading()" title="Bajar"><i class="bi bi-arrow-down"></i></button>
+                  }
                 </td>
               </tr>
               }
@@ -364,15 +373,20 @@
         <p class="fw-semibold mb-3">{{ selectedQuestionDescription() }}</p>
         }
         <div class="d-flex flex-wrap align-items-center column-gap-2 row-gap-2 mb-3">
+          @if (canOperate('update')) {
           <button class="btn btn-outline-warning" type="button" (click)="openValueEdit()"
             [disabled]="!selectedValues().length">
             <i class="bi bi-pencil-square me-1"></i>Editar valor
           </button>
+          }
+          @if (canOperate('delete')) {
           <button class="btn btn-outline-danger" type="button" (click)="removeValues()"
             [disabled]="!selectedValues().length">
             <i class="bi bi-trash me-1"></i>Eliminar seleccionados
           </button>
+          }
         </div>
+        @if (canOperate('insert') || canOperate('update')) {
         <form class="border rounded p-3 mb-4" [formGroup]="valueForm" (ngSubmit)="saveValue()">
           <div class="row g-3">
           @if (!managingQuestionValues()) {
@@ -398,13 +412,15 @@
               edición</button>
             }
             <button class="btn" [class.btn-outline-success]="!editingValue()"
-              [class.btn-outline-warning]="editingValue()" type="submit">
+              [class.btn-outline-warning]="editingValue()" type="submit"
+              [disabled]="(!editingValue() && !canOperate('insert')) || (!!editingValue() && !canOperate('update'))">
               <i class="bi me-1" [class.bi-plus-circle]="!editingValue()" [class.bi-save]="editingValue()"></i>{{
               editingValue() ? 'Actualizar valor' : 'Agregar valor' }}
             </button>
           </div>
           </div>
         </form>
+        }
         @for (version of [valuesTableVersion()]; track version) {
         <div class="table-responsive">
           <table #valuesTable class="table table-striped table-hover align-middle w-100">
@@ -422,12 +438,14 @@
                 <td>{{ value['fd_order'] }}</td>
                 <td>{{ value['fd_option'] }}</td>
                 <td class="text-end text-nowrap">
+                  @if (canOperate('update')) {
                   <button class="btn btn-outline-secondary btn-sm me-1" type="button"
                     (click)="$event.stopPropagation(); moveValue(value, -1)" title="Subir"><i
                       class="bi bi-arrow-up"></i></button>
                   <button class="btn btn-outline-secondary btn-sm" type="button"
                     (click)="$event.stopPropagation(); moveValue(value, 1)" title="Bajar"><i
                       class="bi bi-arrow-down"></i></button>
+                  }
                 </td>
               </tr>
               }

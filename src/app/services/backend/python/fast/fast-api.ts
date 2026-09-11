@@ -44,6 +44,24 @@ export class FastApi {
   delete(resource: string, id: string): Observable<void> {
     return this.http.delete<void>(`${FAST_API_URL}/${resource}/${id}`);
   }
+  createManagedQuestion<T, R>(surveyId: string, payload: T): Observable<R> {
+    return this.http.post<R>(`${FAST_API_URL}/surveys/${surveyId}/managed-questions`, payload);
+  }
+  updateManagedQuestion<T, R>(surveyId: string, questionId: string, payload: T): Observable<R> {
+    return this.http.put<R>(`${FAST_API_URL}/surveys/${surveyId}/managed-questions/${questionId}`, payload);
+  }
+  deleteManagedQuestion(surveyId: string, questionId: string): Observable<void> {
+    return this.http.delete<void>(`${FAST_API_URL}/surveys/${surveyId}/managed-questions/${questionId}`);
+  }
+  createManagedValue<T, R>(surveyId: string, payload: T): Observable<R> {
+    return this.http.post<R>(`${FAST_API_URL}/surveys/${surveyId}/managed-values`, payload);
+  }
+  updateManagedValue<T, R>(surveyId: string, valueId: string, payload: T): Observable<R> {
+    return this.http.put<R>(`${FAST_API_URL}/surveys/${surveyId}/managed-values/${valueId}`, payload);
+  }
+  deleteManagedValue(surveyId: string, valueId: string): Observable<void> {
+    return this.http.delete<void>(`${FAST_API_URL}/surveys/${surveyId}/managed-values/${valueId}`);
+  }
   clear(resource: string): Observable<{ deleted: number; preserved: number }> {
     return this.http.delete<{ deleted: number; preserved: number }>(
       `${FAST_API_URL}/${resource}/clear`,
