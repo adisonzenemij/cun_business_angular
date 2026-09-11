@@ -7,8 +7,21 @@
 .rues-company-selector .btn { white-space: nowrap; }
 .rues-company-selector .rues-consult-button { flex: 0 0 9.25rem; min-width: 9.25rem; }
 .rues-company-selector .rues-clear-button { flex: 0 0 auto; }
-.rues-charts .card-body { min-height: 24rem; }
-.rues-chart { height: 100%; min-height: 22rem; width: 100%; }
+.rues-charts .card { height: auto !important; }
+.rues-charts .card-body { min-height: 0; }
+.rues-chart { height: 22rem; min-height: 22rem; width: 100%; }
+.rues-chart + .highcharts-data-table {
+  box-sizing: border-box;
+  margin: 1rem 0 0;
+  max-width: 100%;
+  overflow-x: auto;
+  width: 100%;
+}
+
+.rues-chart + .highcharts-data-table table {
+  margin: 0;
+  min-width: 100%;
+}
 
 /* La tabla y los gráficos se presentan como tarjetas independientes. */
 .rues-page > section.card:has(.rues-charts) {
