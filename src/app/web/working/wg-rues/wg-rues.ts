@@ -203,6 +203,7 @@ export class WgRues implements OnDestroy {
     this.ownerCharts.set(containerId, Highcharts.chart(element, {
       chart: { type: 'bar', backgroundColor: 'transparent', height: 380 },
       title: { text: undefined, style },
+      lang: { chartTitle: '', exportData: { categoryHeader: 'Cámara de Comercio' } },
       credits: { enabled: false },
       exporting: this.chartExporting(dark), navigation: this.chartNavigation(dark),
       xAxis: { categories: data.map(([label]) => label), title: { text: 'Cámara de comercio', style }, labels: { style }, lineColor: gridColor, tickColor: gridColor },
@@ -210,7 +211,7 @@ export class WgRues implements OnDestroy {
       tooltip: { pointFormat: '<b>{point.y}</b> matrícula(s)' },
       legend: { enabled: false },
       plotOptions: { bar: { borderWidth: 0, borderRadius: 4, groupPadding: .1, dataLabels: { enabled: true, style: { ...style, textOutline: 'none' } } } },
-      series: [{ type: 'bar', name: title, color, data: data.map(([, count]) => count) }],
+      series: [{ type: 'bar', name: 'Cantidad', color, data: data.map(([, count]) => count) }],
     }));
   }
 
@@ -219,15 +220,17 @@ export class WgRues implements OnDestroy {
     if (!element) return;
     const data = this.countByField(field);
     const { dark, style } = this.chartTheme();
+    const categoryHeader = field === 'desc_estado_matricula' ? 'Estado' : 'Categoría';
     this.destroyOwnerChart(containerId);
     this.ownerCharts.set(containerId, Highcharts.chart(element, {
       chart: { type: 'pie', backgroundColor: 'transparent', height: 360 },
       title: { text: undefined, style },
+      lang: { chartTitle: '', exportData: { categoryHeader } },
       credits: { enabled: false },
       exporting: this.chartExporting(dark), navigation: this.chartNavigation(dark),
       tooltip: { pointFormat: '<b>{point.y}</b> registro(s) ({point.percentage:.1f}%)' },
       plotOptions: { pie: { innerSize: '55%', borderRadius: 6, borderWidth: 2, allowPointSelect: true, cursor: 'pointer', dataLabels: { enabled: true, format: '{point.name}: {point.y}', style: { ...style, textOutline: 'none' } } } },
-      series: [{ type: 'pie', name: title, data: data.map(([name, y], index) => ({ name, y, color: this.chartColors()[index % this.chartColors().length] })) }],
+      series: [{ type: 'pie', name: 'Cantidad', data: data.map(([name, y], index) => ({ name, y, color: this.chartColors()[index % this.chartColors().length] })) }],
     }));
   }
 
