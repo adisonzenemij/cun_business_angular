@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import Swal from 'sweetalert2';
 import { AuthSession } from '../../../services/core/auth-session';
 import { SidebarState } from '../../../services/core/sidebar-state';
@@ -7,7 +7,7 @@ import { SessionTimer } from '../../../services/core/session-timer';
 import { ThemeToggle } from '../../theme-toggle/theme-toggle';
 
 @Component({
-  imports: [RouterLink, ThemeToggle],
+  imports: [RouterLink, RouterLinkActive, ThemeToggle],
   selector: 'app-wg-navbar',
   styleUrl: './wg-navbar.css',
   templateUrl: './wg-navbar.html',

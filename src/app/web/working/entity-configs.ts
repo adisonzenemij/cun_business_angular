@@ -66,7 +66,6 @@ export const ENTITY_CONFIGS: Record<string, CrudConfig> = {
     passwordChange: true,
     fields: [
       { name: 'fd_login', label: 'Usuario', required: true },
-      { name: 'tg_9a7bbe6f', label: 'Rol', required: true, relation: { resource: 'role-data', displayField: 'fd_name' } },
       {
         name: 'fd_passd',
         label: 'Contraseña',
@@ -74,6 +73,7 @@ export const ENTITY_CONFIGS: Record<string, CrudConfig> = {
         required: true,
         showInTable: false,
       },
+      { name: 'tg_9a7bbe6f', label: 'Rol', required: true, relation: { resource: 'role-data', displayField: 'fd_name' } },
     ],
   },
   e5520e1e: {
