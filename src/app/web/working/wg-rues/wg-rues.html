@@ -44,16 +44,42 @@
   @if (owners(); as ownerResult) {
   <section class="card mt-4 mb-4">
     <div class="card-header d-flex justify-content-between align-items-center gap-2">
+      <div class="d-flex align-items-center gap-2 ms-auto" style="order: 2;">
+        <button class="btn btn-sm btn-outline-primary" type="button" (click)="ownersColumnsOpen.set(true)">Columnas</button>
+        <button class="btn btn-sm btn-outline-success" type="button" (click)="exportOwnersExcel()" [disabled]="!ownerFields().length"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+        <button class="btn btn-sm btn-outline-secondary" type="button" (click)="exportOwnersCsv()" [disabled]="!ownerFields().length"><i class="bi bi-filetype-csv me-1"></i>CSV</button>
+      </div>
       <h2 class="h6 mb-0">Propietarios y establecimientos — {{ ownerTitle() }}</h2><span class="text-body-secondary small">{{ rows(ownerResult).length }} registro(s)</span>
     </div>
     <div class="card-body">
       @if (rows(ownerResult).length) {
       <div class="table-responsive"><table #ownersDataTable class="table table-hover align-middle w-100">
-        <thead><tr>@for (field of fields(ownerResult); track field) { <th scope="col">{{ label(field) }}</th> }</tr></thead>
-        <tbody>@for (row of rows(ownerResult); track $index) { <tr>@for (field of fields(ownerResult); track field) { <td>{{ value(row[field]) }}</td> }</tr> }</tbody>
+        <thead><tr>@for (field of ownerFields(); track field) { <th scope="col">{{ ownerFieldLabel(field) }}</th> }</tr></thead>
+        <tbody>@for (row of rows(ownerResult); track $index) { <tr>@for (field of ownerFields(); track field) { <td>{{ value(row[field]) }}</td> }</tr> }</tbody>
       </table></div>
       } @else { <p class="text-body-secondary mb-0">RUES no encontró propietarios ni establecimientos para esta matrícula.</p> }
     </div>
   </section>
   }
 </main>
+
+@if (ownersColumnsOpen()) {
+<div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="rues-columns-title">
+  <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered" role="document"><div class="modal-content">
+    <div class="modal-header"><h3 class="modal-title fs-6" id="rues-columns-title">Columnas - Propietarios y establecimientos</h3><button type="button" class="btn-close" aria-label="Cerrar" (click)="ownersColumnsOpen.set(false)"></button></div>
+    <div class="modal-body">
+      <p class="small text-body-secondary">Marca las propiedades que deseas visualizar y exportar.</p>
+      <label class="visually-hidden" for="rues-columns-search">Buscar propiedad</label>
+      <input id="rues-columns-search" class="form-control form-control-sm mb-3" type="search" placeholder="Buscar por propiedad o nombre técnico" [ngModel]="ownersColumnsSearch()" (ngModelChange)="ownersColumnsSearch.set($event)">
+      <table class="table table-sm align-middle mb-0"><thead><tr><th scope="col">Visualizar</th><th scope="col">Propiedad</th><th class="d-none" scope="col">Propiedad original</th></tr></thead>
+        <tbody>@for (field of filteredOwnerFields(); track field) { <tr>
+          <td><input class="form-check-input" type="checkbox" [id]="'rues-owner-' + field" [checked]="isOwnerFieldVisible(field)" (change)="toggleOwnerField(field, $any($event.target).checked)"></td>
+          <td><label class="form-check-label" [for]="'rues-owner-' + field">{{ ownerFieldLabel(field) }}</label></td><td class="d-none">{{ field }}</td>
+        </tr> }</tbody>
+      </table>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-primary btn-sm" (click)="ownersColumnsOpen.set(false)">Listo</button></div>
+  </div></div>
+</div>
+<div class="modal-backdrop fade show"></div>
+}

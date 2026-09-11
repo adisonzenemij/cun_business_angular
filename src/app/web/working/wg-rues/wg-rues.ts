@@ -2,11 +2,23 @@ import { Component, ElementRef, OnDestroy, ViewChild, inject, signal } from '@an
 import { FormsModule } from '@angular/forms';
 import { FAST_API_URL, FastApi } from '../../../services/backend/python/fast/fast-api';
 import DataTable from 'datatables.net-bs5';
+import * as XLSX from 'xlsx';
 
 interface Society { id_universal: string; fd_company: string; fd_document: string; }
 type RuesRow = Record<string, unknown>;
 interface RuesResponse { rows?: RuesRow[]; records?: number; codigo_error?: string; mensaje_error?: string; }
 interface RuesReference { codigo_camara: string; matricula: string; }
+
+const DEFAULT_OWNER_FIELDS = [
+  'categoria_matricula', 'desc_estado_matricula', 'matricula', 'nombre_camara',
+  'razon_social', 'fecha_matricula', 'fecha_renovacion', 'ultimo_ano_renovado',
+];
+
+const OWNER_FIELD_LABELS: Record<string, string> = {
+  categoria_matricula: 'Categoria', desc_estado_matricula: 'Estado', matricula: 'Matricula',
+  nombre_camara: 'Camara de Comercio', razon_social: 'Razon Social', fecha_matricula: 'Fecha Matricula',
+  fecha_renovacion: 'Fecha Renovacion', ultimo_ano_renovado: 'Ultimo Año Renovado',
+};
 
 @Component({
   imports: [FormsModule],
@@ -28,6 +40,9 @@ export class WgRues implements OnDestroy {
   readonly result = signal<RuesResponse | null>(null);
   readonly owners = signal<RuesResponse | null>(null);
   readonly selectedOwner = signal<RuesRow | null>(null);
+  readonly ownersColumnsOpen = signal(false);
+  readonly ownersColumnsSearch = signal('');
+  readonly visibleOwnerFields = signal<string[]>(DEFAULT_OWNER_FIELDS);
 
   constructor() { this.loadSocieties(); }
 
@@ -67,8 +82,39 @@ export class WgRues implements OnDestroy {
   fields(response: RuesResponse | null): string[] { return [...new Set(this.rows(response).flatMap((row) => Object.keys(row).filter((field) => !/^enlace/i.test(field))))]; }
   label(field: string): string { return field.replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/\b\w/g, (letter) => letter.toUpperCase()); }
   value(value: unknown): string { return value === null || value === undefined || value === '' ? '—' : String(value); }
+  ownerFields(): string[] {
+    const available = new Set(this.fields(this.owners()));
+    return this.visibleOwnerFields().filter((field) => available.has(field));
+  }
+  ownerFieldLabel(field: string): string { return OWNER_FIELD_LABELS[field] ?? this.label(field); }
+  filteredOwnerFields(): string[] {
+    const search = this.ownersColumnsSearch().trim().toLocaleLowerCase();
+    return this.fields(this.owners()).filter((field) => !search || this.ownerFieldLabel(field).toLocaleLowerCase().includes(search) || field.toLocaleLowerCase().includes(search));
+  }
+  isOwnerFieldVisible(field: string): boolean { return this.visibleOwnerFields().includes(field); }
+  toggleOwnerField(field: string, checked: boolean): void {
+    this.destroyOwnersDataTable();
+    this.visibleOwnerFields.update((fields) => checked ? [...new Set([...fields, field])] : fields.filter((item) => item !== field));
+    setTimeout(() => this.initializeOwnersDataTable());
+  }
   ownerTitle(): string { return this.value(this.selectedOwner()?.['razon_social'] ?? this.selectedOwner()?.['sigla'] ?? this.selectedOwner()?.['identificacion']); }
   canConsultOwners(row: RuesRow): boolean { return this.ownerReference(row) !== null; }
+
+  exportOwnersCsv(): void {
+    const { headers, records } = this.ownerExportData();
+    const escape = (value: string) => `"${value.replaceAll('"', '""')}"`;
+    const csv = [headers, ...records].map((record) => record.map(escape).join(';')).join('\r\n');
+    this.downloadOwners(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }), 'csv');
+  }
+
+  exportOwnersExcel(): void {
+    const { headers, records } = this.ownerExportData();
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...records]);
+    worksheet['!cols'] = headers.map((header, index) => ({ wch: Math.min(60, Math.max(header.length + 2, ...records.map((record) => record[index].length + 2))) }));
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Propietarios');
+    XLSX.writeFile(workbook, 'rues-propietarios.xlsx', { compression: true });
+  }
 
   private ownerReference(row: RuesRow): RuesReference | null {
     const match = /ConsultarDetalleRM\(['"]?(\d+)['"]?\)/i.exec(String(row['enlace'] ?? ''));
@@ -100,5 +146,22 @@ export class WgRues implements OnDestroy {
   private destroyOwnersDataTable(): void {
     this.ownersDataTable?.destroy();
     this.ownersDataTable = undefined;
+  }
+
+  private ownerExportData(): { headers: string[]; records: string[][] } {
+    const fields = this.ownerFields();
+    return {
+      headers: fields.map((field) => this.ownerFieldLabel(field)),
+      records: this.rows(this.owners()).map((row) => fields.map((field) => this.value(row[field]))),
+    };
+  }
+
+  private downloadOwners(blob: Blob, extension: string): void {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `rues-propietarios.${extension}`;
+    anchor.click();
+    URL.revokeObjectURL(url);
   }
 }
