@@ -7,6 +7,7 @@
     <a class="nav-link text-white ms-2 report-link" routerLink="/working/report" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Reportes</a>
     <a class="nav-link text-white ms-2 report-link" routerLink="/working/society" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Informes Financieros</a>
     <div class="ms-auto d-flex gap-2 align-items-center">
+      <button class="btn btn-outline-light" type="button" (click)="openPermissions()"><i class="bi bi-person-badge me-1"></i>{{ roleName() ?? 'Rol' }}</button>
       <span class="navbar-text border border-light rounded px-2">{{ session.userName() }}</span>
       @if (sessionTimer.remainingTime(); as remainingTime) {
         <span class="navbar-text border border-light rounded px-2">
@@ -19,3 +20,6 @@
     </div>
   </div>
 </nav>
+@if (showPermissions()) {
+<div class="modal d-block" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered"><div class="modal-content"><div class="modal-header bg-primary text-white"><h2 class="h5 mb-0">Permisos del rol: {{ roleName() ?? 'Sin rol' }}</h2><button class="btn-close btn-close-white" type="button" (click)="showPermissions.set(false)"></button></div><div class="modal-body"><table class="table table-striped"><thead><tr><th>Módulo</th><th>Recurso</th><th>Acceso</th></tr></thead><tbody>@for (permission of permissions(); track permission.module + permission.resource) {<tr><td>{{ permission.module }}</td><td>{{ permission.resource }}</td><td><span class="badge" [class.text-bg-success]="permission.access === 'Permitido'" [class.text-bg-danger]="permission.access === 'Denegado'">{{ permission.access }}</span></td></tr>}</tbody></table></div><div class="modal-footer"><button class="btn btn-outline-secondary" type="button" (click)="showPermissions.set(false)">Cerrar</button></div></div></div></div><div class="modal-backdrop fade show"></div>
+}
