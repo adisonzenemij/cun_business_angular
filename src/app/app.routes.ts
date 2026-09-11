@@ -23,6 +23,7 @@ import { MdE9cb64fd } from './web/working/md-e9cb64fd/md-e9cb64fd';
 import { MdB602ef28 } from './web/working/md-b602ef28/md-b602ef28';
 import { MdD02ee146 } from './web/working/md-d02ee146/md-d02ee146';
 import { MdA8dc1924 } from './web/working/md-a8dc1924/md-a8dc1924';
+import { MdB52d40d1 } from './web/working/md-b52d40d1/md-b52d40d1';
 import { authGuard } from './guards/auth.guard';
 import { resourcePermissionGuard } from './guards/resource-permission.guard';
 import { loginGuard } from './guards/login.guard';
@@ -73,6 +74,7 @@ export const routes: Routes = [
       { path: 'b602ef28', component: MdB602ef28 },
       { path: 'd02ee146', component: MdD02ee146 },
       { path: 'a8dc1924', component: MdA8dc1924 },
+      { path: 'b52d40d1', component: MdB52d40d1 },
     ],
   },
   { path: '**', redirectTo: 'portal/home' },

@@ -17,6 +17,7 @@ export interface TableResource { id_universal: string; fd_client: string; fd_ent
 export interface RoleData { id_universal: string; fd_name: string; }
 export interface RoleAccess { id_universal: string; fd_name: string; }
 export interface RolePermit { id_universal: string; ms_2e794a8f: string; tg_2f997592: string; tg_9a7bbe6f: string; }
+export interface RoleModule { id_universal: string; ms_8b6bd18a: string; tg_2f997592: string; tg_9a7bbe6f: string; }
 export interface NavigationModule extends TableModule { resources: (TableResource & { route: string; icon: string })[]; }
 interface CurrentPermission { client: string; access: string; }
 export interface Anonymous {
@@ -86,7 +87,7 @@ class Resource<T extends { id_universal: string }> {
 }
 
 const navigation = new Map<string, { route: string; icon: string }>([
-  ['d8d07776', { route: 'd8d07776', icon: 'bi-key' }], ['e144c860', { route: 'e144c860', icon: 'bi-globe' }], ['a7b95fe8', { route: 'a7b95fe8', icon: 'bi-list-ul' }], ['a1fecd50', { route: 'a1fecd50', icon: 'bi-collection' }], ['e9cb64fd', { route: 'e9cb64fd', icon: 'bi-diagram-3' }], ['b602ef28', { route: 'b602ef28', icon: 'bi-person-badge' }], ['d02ee146', { route: 'd02ee146', icon: 'bi-shield-check' }], ['a8dc1924', { route: 'a8dc1924', icon: 'bi-person-lock' }], ['b64883b6', { route: 'b64883b6', icon: 'bi-people' }], ['d35a393b', { route: 'd35a393b', icon: 'bi-hdd-network' }], ['8ebaa791', { route: '8ebaa791', icon: 'bi-diagram-3' }], ['a1cc27fb', { route: 'a1cc27fb', icon: 'bi-buildings' }], ['e5520e1e', { route: 'e5520e1e', icon: 'bi-person' }], ['a6aedeb5', { route: 'a6aedeb5', icon: 'bi-shield-check' }], ['a3b378b4', { route: 'a3b378b4', icon: 'bi-ui-checks' }], ['d5fb87de', { route: 'd5fb87de', icon: 'bi-clipboard-data' }], ['d2e6ded6', { route: 'd2e6ded6', icon: 'bi-question-circle' }], ['d76a0e67', { route: 'd76a0e67', icon: 'bi-list-check' }], ['a5acf579', { route: 'a5acf579', icon: 'bi-chat-left-text' }],
+  ['d8d07776', { route: 'd8d07776', icon: 'bi-key' }], ['e144c860', { route: 'e144c860', icon: 'bi-globe' }], ['a7b95fe8', { route: 'a7b95fe8', icon: 'bi-list-ul' }], ['a1fecd50', { route: 'a1fecd50', icon: 'bi-collection' }], ['e9cb64fd', { route: 'e9cb64fd', icon: 'bi-diagram-3' }], ['b602ef28', { route: 'b602ef28', icon: 'bi-person-badge' }], ['d02ee146', { route: 'd02ee146', icon: 'bi-shield-check' }], ['b52d40d1', { route: 'b52d40d1', icon: 'bi-grid-3x3-gap' }], ['a8dc1924', { route: 'a8dc1924', icon: 'bi-person-lock' }], ['b64883b6', { route: 'b64883b6', icon: 'bi-people' }], ['d35a393b', { route: 'd35a393b', icon: 'bi-hdd-network' }], ['8ebaa791', { route: '8ebaa791', icon: 'bi-diagram-3' }], ['a1cc27fb', { route: 'a1cc27fb', icon: 'bi-buildings' }], ['e5520e1e', { route: 'e5520e1e', icon: 'bi-person' }], ['a6aedeb5', { route: 'a6aedeb5', icon: 'bi-shield-check' }], ['a3b378b4', { route: 'a3b378b4', icon: 'bi-ui-checks' }], ['d5fb87de', { route: 'd5fb87de', icon: 'bi-clipboard-data' }], ['d2e6ded6', { route: 'd2e6ded6', icon: 'bi-question-circle' }], ['d76a0e67', { route: 'd76a0e67', icon: 'bi-list-check' }], ['a5acf579', { route: 'a5acf579', icon: 'bi-chat-left-text' }],
 ]);
 
 @Injectable({ providedIn: 'root' })
@@ -129,6 +130,7 @@ export class FtE144c860 extends Resource<CorsOrigin> {
 @Injectable({ providedIn: 'root' }) export class FtB602ef28 extends Resource<RoleData> { constructor() { super('role-data'); } }
 @Injectable({ providedIn: 'root' }) export class FtD02ee146 extends Resource<RoleAccess> { constructor() { super('role-access'); } }
 @Injectable({ providedIn: 'root' }) export class FtA8dc1924 extends Resource<RolePermit> { constructor() { super('role-permits'); } }
+@Injectable({ providedIn: 'root' }) export class FtB52d40d1 extends Resource<RoleModule> { constructor() { super('role-modules'); } }
 @Injectable({ providedIn: 'root' })
 export class FtB64883b6 extends Resource<User> {
   constructor() {
