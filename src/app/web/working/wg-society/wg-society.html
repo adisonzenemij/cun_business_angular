@@ -97,12 +97,26 @@
     </div>
     <div class="card-body"><div id="financial-results-chart" class="financial-overview-chart"></div></div>
   </section>
-  <section class="card financial-overview-card mt-4">
-    <div class="card-header d-flex align-items-center justify-content-between gap-2">
-      <h3 class="h6 mb-0">Indicadores de Rentabilidad - Fecha de Corte {{ overviewCutoff() }}</h3>
-      <button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshOverviewIndicators()"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button>
+  <section class="financial-summary mt-4" aria-label="Indicadores del corte más reciente">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h2 class="h6 mb-0">Indicadores - Fecha de corte {{ overviewCutoff() }}</h2>
     </div>
-    <div class="card-body"><div id="financial-indicators-chart" class="financial-overview-chart"></div></div>
+    <div class="row g-3">
+      @for (metric of overviewIndicators(); track metric.label) {
+      <div class="col-12 col-sm-6 col-xl-3">
+        <article class="card financial-summary-card h-100">
+          <div class="card-body d-flex align-items-center gap-3">
+            <span [class]="'financial-summary-icon ' + metric.color"><i [class]="'bi ' + metric.icon"></i></span>
+            <div class="min-w-0">
+              <div class="small text-uppercase fw-semibold text-body-secondary">{{ metric.label }}</div>
+              <div class="small text-body-secondary">{{ metric.description }}</div>
+              <div class="fw-semibold fs-5 text-truncate" [class]="metric.color">{{ metric.value }}</div>
+            </div>
+          </div>
+        </article>
+      </div>
+      }
+    </div>
   </section>
   }
   }

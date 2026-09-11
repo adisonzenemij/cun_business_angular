@@ -33,7 +33,6 @@ export class WgSociety implements OnDestroy {
   private chartRenderVersion = 0;
   private overviewStructureChart?: Highcharts.Chart;
   private overviewResultsChart?: Highcharts.Chart;
-  private overviewIndicatorsChart?: Highcharts.Chart;
   private overviewTimer?: ReturnType<typeof setTimeout>;
   private overviewRenderVersion = 0;
 
@@ -137,7 +136,6 @@ export class WgSociety implements OnDestroy {
   refreshDetailChart(): void { this.scheduleDetailChart(); }
   refreshOverviewStructure(): void { this.scheduleOverviewCharts('structure'); }
   refreshOverviewResults(): void { this.scheduleOverviewCharts('results'); }
-  refreshOverviewIndicators(): void { this.scheduleOverviewCharts('indicators'); }
   selectSituationChartType(type: SituationChartType): void { this.situationChartType.set(type); }
   selectChartSeriesTab(key: DetailKey, field: string): void { this.chartSeriesTab.update((tabs) => ({ ...tabs, [key]: field })); }
   activeChartSeriesTab(key: DetailKey): string { return this.chartSeriesTab()[key]; }
@@ -162,6 +160,16 @@ export class WgSociety implements OnDestroy {
       { label: 'Utilidad Neta', description: 'Resultado Integral', value: this.formatCurrency(netIncome), icon: 'bi-cash-coin', color: 'text-success' },
       { label: 'Activos', description: 'Situación Financiera', value: this.formatCurrency(assets), icon: 'bi-bank', color: 'text-warning' },
       { label: 'Margen Bruto', description: 'Indicador financiero', value: this.formatPercent(this.ratio(this.path(source, 'resultadoIntegral.utilidad'), income)), icon: 'bi-pie-chart', color: 'text-info' },
+    ];
+  }
+  overviewIndicators(): OverviewMetric[] {
+    const cutoff = this.cutoffs('financieros')[0];
+    const source = cutoff ? this.consultation()?.financieros[cutoff]?.hits?.hits?.[0]?._source : undefined;
+    return [
+      { label: 'Prueba Ácida', description: 'Último año', value: this.formatTimes(this.path(source, 'indicadores.pruebaAcida') ?? this.path(source, 'indicadores.prueba_acida')), icon: 'bi-droplet-half', color: 'text-success' },
+      { label: 'Endeudamiento', description: 'Último año', value: this.formatPercent(this.path(source, 'indicadores.endeudamiento') ?? this.path(source, 'indicadores.nivelEndeudamiento')), icon: 'bi-bank2', color: 'text-primary' },
+      { label: 'ROA', description: 'Último año', value: this.formatPercent(this.path(source, 'indicadores.roa')), icon: 'bi-graph-up-arrow', color: 'text-success' },
+      { label: 'ROE', description: 'Último año', value: this.formatPercent(this.path(source, 'indicadores.roe')), icon: 'bi-percent', color: 'text-success' },
     ];
   }
   exportVistaCsv(): void {
@@ -347,7 +355,7 @@ export class WgSociety implements OnDestroy {
     })), 0);
   }
 
-  private scheduleOverviewCharts(target: 'all' | 'structure' | 'results' | 'indicators' = 'all'): void {
+  private scheduleOverviewCharts(target: 'all' | 'structure' | 'results' = 'all'): void {
     if (this.overviewTimer) clearTimeout(this.overviewTimer);
     const version = ++this.overviewRenderVersion;
     this.overviewTimer = setTimeout(() => requestAnimationFrame(() => {
@@ -355,27 +363,24 @@ export class WgSociety implements OnDestroy {
       this.renderOverviewCharts(target);
       if (target === 'all' || target === 'structure') this.overviewStructureChart?.reflow();
       if (target === 'all' || target === 'results') this.overviewResultsChart?.reflow();
-      if (target === 'all' || target === 'indicators') this.overviewIndicatorsChart?.reflow();
     }), 0);
   }
 
   private destroyOverviewCharts(): void {
-    for (const chart of [this.overviewStructureChart, this.overviewResultsChart, this.overviewIndicatorsChart]) {
+    for (const chart of [this.overviewStructureChart, this.overviewResultsChart]) {
       if (chart?.container && chart.renderer) chart.destroy();
     }
     this.overviewStructureChart = undefined;
     this.overviewResultsChart = undefined;
-    this.overviewIndicatorsChart = undefined;
   }
 
-  private renderOverviewCharts(target: 'all' | 'structure' | 'results' | 'indicators' = 'all'): void {
+  private renderOverviewCharts(target: 'all' | 'structure' | 'results' = 'all'): void {
     const consultation = this.consultation();
     const cutoff = this.cutoffsFrom(consultation?.financieros ?? {})[0];
     if (!consultation || !cutoff) return;
     const dark = document.documentElement.dataset['bsTheme'] === 'dark';
     const style: Highcharts.CSSObject = { color: dark ? '#f8f9fa' : '#212529', fontWeight: '400' };
     const compact = new Intl.NumberFormat('es-CO', { notation: 'compact', maximumFractionDigits: 1 });
-    const financial = consultation.financieros[cutoff]?.hits?.hits?.[0]?._source;
     const situation = consultation.situacion_financiera[cutoff]?.hits?.hits?.[0]?._source;
     const results = consultation.resultado_integral[cutoff]?.hits?.hits?.[0]?._source;
     const chartOptions = {
@@ -407,33 +412,6 @@ export class WgSociety implements OnDestroy {
           { type: 'column', name: 'Costo de ventas', color: '#ffc107', data: [this.number(this.path(results, 'resultado.registros.costoVentas.corte'))] },
           { type: 'column', name: 'Utilidad Neta', color: '#20c997', data: [this.number(this.path(results, 'resultado.registros.gananciaPerdida.corte'))] },
         ],
-      });
-    }
-    if (target === 'all' || target === 'indicators') {
-      this.overviewIndicatorsChart?.destroy();
-      const container = document.getElementById('financial-indicators-chart');
-      const income = this.path(financial, 'resultadoIntegral.ingreso');
-      if (container?.clientWidth) this.overviewIndicatorsChart = Highcharts.chart(container, {
-        chart: { type: 'column', backgroundColor: 'transparent' }, title: { text: undefined }, credits: { enabled: false },
-        exporting: this.chartExporting(dark), navigation: this.chartNavigation(dark), accessibility: { enabled: false },
-        xAxis: { categories: ['ROA', 'ROE', 'ROS', 'Margen Bruto'], labels: { style } },
-        yAxis: {
-          title: { text: 'Porcentaje', style },
-          labels: {
-            style,
-            formatter(this: Highcharts.AxisLabelsFormatterContextObject): string {
-              return `${Number(this.value).toLocaleString('es-CO', { maximumFractionDigits: 2 })}%`;
-            },
-          },
-        },
-        legend: { enabled: false }, tooltip: { valueSuffix: '%', valueDecimals: 2 },
-        plotOptions: { column: { borderWidth: 0, borderRadius: 3 } },
-        series: [{ type: 'column', name: 'Indicador', color: '#6f42c1', data: [
-          this.number(this.path(financial, 'indicadores.roa')) * 100,
-          this.number(this.path(financial, 'indicadores.roe')) * 100,
-          this.number(this.ratio(this.path(financial, 'resultadoIntegral.gananciaPerdida'), income)) * 100,
-          this.number(this.ratio(this.path(financial, 'resultadoIntegral.utilidad'), income)) * 100,
-        ] }],
       });
     }
   }
@@ -560,6 +538,7 @@ export class WgSociety implements OnDestroy {
   private text(value: unknown): string { return value === null || value === undefined || value === '' ? '—' : String(value); }
   private formatCurrency(value: unknown): string { return value === null || value === undefined ? '—' : new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(this.number(value)); }
   private formatPercent(value: unknown): string { return value === null || value === undefined ? '—' : new Intl.NumberFormat('es-CO', { style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(this.number(value)); }
+  private formatTimes(value: unknown): string { return value === null || value === undefined ? '—' : `${new Intl.NumberFormat('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(this.number(value))} veces`; }
 
   private financialLabel(field: string): string {
     const labels: Record<string, string> = {
