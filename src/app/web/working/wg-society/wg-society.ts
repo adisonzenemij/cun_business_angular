@@ -96,7 +96,7 @@ export class WgSociety implements OnDestroy {
 
   loadSocieties(): void {
     this.loading.set(true);
-    this.api.list<Society>('societies').subscribe({
+    this.api.list<Society>('companies').subscribe({
       next: (societies) => {
         this.societies.set(societies.sort((a, b) => a.fd_company.localeCompare(b.fd_company)));
         this.loading.set(false);
@@ -110,7 +110,7 @@ export class WgSociety implements OnDestroy {
     if (!societyId) return;
     this.consulting.set(true);
     this.error.set('');
-    this.api.http.post<Consultation>(`${FAST_API_URL}/societies/${societyId}/consult`, {}).subscribe({
+    this.api.http.post<Consultation>(`${FAST_API_URL}/companies/${societyId}/consult`, {}).subscribe({
       next: (consultation) => {
         this.consultation.set(consultation);
         this.activeCutoffs.set({

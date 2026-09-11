@@ -11,7 +11,7 @@ export const ENTITY_CONFIGS: Record<string, CrudConfig> = {
   a8dc1924: { title: 'Permisos por rol', resource: 'role-permits', operations: full, fields: [{ name: 'sd_insert', label: 'Insertar', required: true, relation: { resource: 'role-access', displayField: 'fd_name' } }, { name: 'sd_update', label: 'Actualizar', required: true, relation: { resource: 'role-access', displayField: 'fd_name' } }, { name: 'sd_delete', label: 'Eliminar', required: true, relation: { resource: 'role-access', displayField: 'fd_name' } }, { name: 'ms_2e794a8f', label: 'Recurso', required: true, relation: { resource: 'table-resources', displayField: 'fd_name' } }, { name: 'tg_2f997592', label: 'Acceso', required: true, relation: { resource: 'role-access', displayField: 'fd_name' } }, { name: 'tg_9a7bbe6f', label: 'Rol', required: true, relation: { resource: 'role-data', displayField: 'fd_name' } }] },
   a1cc27fb: {
     title: 'Empresas',
-    resource: 'societies',
+    resource: 'companies',
     operations: full,
     fields: [
       { name: 'fd_company', label: 'Empresa', required: true },

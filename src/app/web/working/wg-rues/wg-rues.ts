@@ -30,7 +30,7 @@ export class WgRues {
 
   loadSocieties(): void {
     this.loading.set(true);
-    this.api.list<Society>('societies').subscribe({
+    this.api.list<Society>('companies').subscribe({
       next: (societies) => { this.societies.set(societies.sort((first, second) => first.fd_company.localeCompare(second.fd_company))); this.loading.set(false); },
       error: () => { this.error.set('No fue posible cargar las empresas.'); this.loading.set(false); },
     });
@@ -44,7 +44,7 @@ export class WgRues {
     const societyId = this.selectedId();
     if (!societyId) return;
     this.consulting.set(true); this.error.set(''); this.result.set(null); this.owners.set(null); this.selectedOwner.set(null);
-    this.api.http.post<RuesResponse>(`${FAST_API_URL}/societies/${societyId}/rues`, {}).subscribe({
+    this.api.http.post<RuesResponse>(`${FAST_API_URL}/companies/${societyId}/rues`, {}).subscribe({
       next: (response) => { if (response.codigo_error && response.codigo_error !== '0000') this.error.set(response.mensaje_error || 'RUES no pudo completar la consulta.'); this.result.set(response); this.consulting.set(false); },
       error: (response) => { this.error.set(response.error?.detail ?? 'No fue posible consultar RUES.'); this.consulting.set(false); },
     });
@@ -54,7 +54,7 @@ export class WgRues {
     const societyId = this.selectedId(); const reference = this.ownerReference(row);
     if (!societyId || !reference) return;
     this.ownersLoading.set(true); this.ownersError.set(''); this.owners.set(null); this.selectedOwner.set(row);
-    this.api.http.post<RuesResponse>(`${FAST_API_URL}/societies/${societyId}/rues/owners`, reference).subscribe({
+    this.api.http.post<RuesResponse>(`${FAST_API_URL}/companies/${societyId}/rues/owners`, reference).subscribe({
       next: (response) => { if (response.codigo_error && response.codigo_error !== '0000') this.ownersError.set(response.mensaje_error || 'RUES no pudo consultar los propietarios.'); this.owners.set(response); this.ownersLoading.set(false); },
       error: (response) => { this.ownersError.set(response.error?.detail ?? 'No fue posible consultar propietarios y establecimientos.'); this.ownersLoading.set(false); },
     });
