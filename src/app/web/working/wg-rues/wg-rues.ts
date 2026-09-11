@@ -34,6 +34,7 @@ export class WgRues implements OnDestroy {
   @ViewChild('ownersDataTable') private readonly ownersTable?: ElementRef<HTMLTableElement>;
   private ownersDataTable?: { destroy(remove?: boolean): unknown };
   private readonly ownerCharts = new Map<string, Highcharts.Chart>();
+  private readonly ownerChartDataTables = new Map<string, { destroy(remove?: boolean): unknown }>();
   readonly societies = signal<Society[]>([]);
   readonly selectedId = signal('');
   readonly loading = signal(true);
@@ -210,7 +211,7 @@ export class WgRues implements OnDestroy {
     const data = this.countByChamber(status);
     const { dark, style, gridColor } = this.chartTheme();
     this.destroyOwnerChart(containerId);
-    this.ownerCharts.set(containerId, Highcharts.chart(element, {
+    const chart = Highcharts.chart(element, {
       chart: { type: 'bar', backgroundColor: 'transparent', height: 380 },
       title: { text: undefined, style },
       lang: { chartTitle: '', exportData: { categoryHeader: 'Cámara de Comercio' } },
@@ -222,7 +223,9 @@ export class WgRues implements OnDestroy {
       legend: { enabled: false },
       plotOptions: { bar: { borderWidth: 0, borderRadius: 4, groupPadding: .1, dataLabels: { enabled: true, style: { ...style, textOutline: 'none' } } } },
       series: [{ type: 'bar', name: 'Cantidad', color, data: data.map(([, count]) => count) }],
-    }));
+    });
+    this.ownerCharts.set(containerId, chart);
+    this.bindChartDataTable(containerId, chart);
   }
 
   private renderOwnerPieChart(containerId: string, title: string, field: string): void {
@@ -232,7 +235,7 @@ export class WgRues implements OnDestroy {
     const { dark, style } = this.chartTheme();
     const categoryHeader = field === 'desc_estado_matricula' ? 'Estado' : 'Categoría';
     this.destroyOwnerChart(containerId);
-    this.ownerCharts.set(containerId, Highcharts.chart(element, {
+    const chart = Highcharts.chart(element, {
       chart: { type: 'pie', backgroundColor: 'transparent', height: 360 },
       title: { text: undefined, style },
       lang: { chartTitle: '', exportData: { categoryHeader } },
@@ -241,7 +244,9 @@ export class WgRues implements OnDestroy {
       tooltip: { pointFormat: '<b>{point.y}</b> registro(s) ({point.percentage:.1f}%)' },
       plotOptions: { pie: { innerSize: '55%', borderRadius: 6, borderWidth: 2, allowPointSelect: true, cursor: 'pointer', dataLabels: { enabled: true, format: '{point.name}: {point.y}', style: { ...style, textOutline: 'none' } } } },
       series: [{ type: 'pie', name: 'Cantidad', data: data.map(([name, y], index) => ({ name, y, color: this.chartColors()[index % this.chartColors().length] })) }],
-    }));
+    });
+    this.ownerCharts.set(containerId, chart);
+    this.bindChartDataTable(containerId, chart);
   }
 
   private chartTheme(): { dark: boolean; style: Highcharts.CSSObject; gridColor: string } {
@@ -281,13 +286,43 @@ export class WgRues implements OnDestroy {
   }
 
   private destroyOwnerCharts(): void {
+    this.ownerChartDataTables.forEach((dataTable) => dataTable.destroy());
+    this.ownerChartDataTables.clear();
     this.ownerCharts.forEach((chart) => chart.destroy());
     this.ownerCharts.clear();
   }
 
   private destroyOwnerChart(containerId: string): void {
+    this.destroyOwnerChartDataTable(containerId);
     this.ownerCharts.get(containerId)?.destroy();
     this.ownerCharts.delete(containerId);
+  }
+
+  private bindChartDataTable(containerId: string, chart: Highcharts.Chart): void {
+    Highcharts.addEvent(chart, 'afterViewData', () => setTimeout(() => this.initializeChartDataTable(containerId)));
+    Highcharts.addEvent(chart, 'afterHideData', () => this.destroyOwnerChartDataTable(containerId));
+  }
+
+  private initializeChartDataTable(containerId: string): void {
+    this.destroyOwnerChartDataTable(containerId);
+    const table = document.getElementById(containerId)?.parentElement?.querySelector<HTMLTableElement>('.highcharts-data-table table');
+    if (!table) return;
+    this.ownerChartDataTables.set(containerId, new DataTable(table, {
+      pageLength: 5,
+      lengthMenu: [5, 10, 25, 50],
+      language: {
+        emptyTable: 'No hay datos',
+        search: 'Buscar:',
+        lengthMenu: 'Mostrar _MENU_ registros',
+        info: 'Mostrando _START_ a _END_ de _TOTAL_',
+        paginate: { next: 'Siguiente', previous: 'Anterior' },
+      },
+    }));
+  }
+
+  private destroyOwnerChartDataTable(containerId: string): void {
+    this.ownerChartDataTables.get(containerId)?.destroy();
+    this.ownerChartDataTables.delete(containerId);
   }
 
   private ownerExportData(): { headers: string[]; records: string[][] } {
