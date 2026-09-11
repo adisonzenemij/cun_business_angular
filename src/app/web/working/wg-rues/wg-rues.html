@@ -48,7 +48,7 @@
     </div>
     <div class="card-body">
       @if (rows(ownerResult).length) {
-      <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+      <div class="table-responsive"><table #ownersDataTable class="table table-hover align-middle w-100">
         <thead><tr>@for (field of fields(ownerResult); track field) { <th scope="col">{{ label(field) }}</th> }</tr></thead>
         <tbody>@for (row of rows(ownerResult); track $index) { <tr>@for (field of fields(ownerResult); track field) { <td>{{ value(row[field]) }}</td> }</tr> }</tbody>
       </table></div>

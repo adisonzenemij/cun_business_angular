@@ -1,6 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, ElementRef, OnDestroy, ViewChild, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { FAST_API_URL, FastApi } from '../../../services/backend/python/fast/fast-api';
+import DataTable from 'datatables.net-bs5';
 
 interface Society { id_universal: string; fd_company: string; fd_document: string; }
 type RuesRow = Record<string, unknown>;
@@ -13,8 +14,10 @@ interface RuesReference { codigo_camara: string; matricula: string; }
   styleUrl: './wg-rues.css',
   templateUrl: './wg-rues.html',
 })
-export class WgRues {
+export class WgRues implements OnDestroy {
   private readonly api = inject(FastApi);
+  @ViewChild('ownersDataTable') private readonly ownersTable?: ElementRef<HTMLTableElement>;
+  private ownersDataTable?: { destroy(remove?: boolean): unknown };
   readonly societies = signal<Society[]>([]);
   readonly selectedId = signal('');
   readonly loading = signal(true);
@@ -37,13 +40,13 @@ export class WgRues {
   }
 
   changeSociety(value: string): void {
-    this.selectedId.set(value); this.result.set(null); this.owners.set(null); this.selectedOwner.set(null); this.error.set(''); this.ownersError.set('');
+    this.selectedId.set(value); this.result.set(null); this.destroyOwnersDataTable(); this.owners.set(null); this.selectedOwner.set(null); this.error.set(''); this.ownersError.set('');
   }
 
   consult(): void {
     const societyId = this.selectedId();
     if (!societyId) return;
-    this.consulting.set(true); this.error.set(''); this.result.set(null); this.owners.set(null); this.selectedOwner.set(null);
+    this.consulting.set(true); this.error.set(''); this.result.set(null); this.destroyOwnersDataTable(); this.owners.set(null); this.selectedOwner.set(null);
     this.api.http.post<RuesResponse>(`${FAST_API_URL}/companies/${societyId}/rues`, {}).subscribe({
       next: (response) => { if (response.codigo_error && response.codigo_error !== '0000') this.error.set(response.mensaje_error || 'RUES no pudo completar la consulta.'); this.result.set(response); this.consulting.set(false); },
       error: (response) => { this.error.set(response.error?.detail ?? 'No fue posible consultar RUES.'); this.consulting.set(false); },
@@ -53,15 +56,15 @@ export class WgRues {
   consultOwners(row: RuesRow): void {
     const societyId = this.selectedId(); const reference = this.ownerReference(row);
     if (!societyId || !reference) return;
-    this.ownersLoading.set(true); this.ownersError.set(''); this.owners.set(null); this.selectedOwner.set(row);
+    this.ownersLoading.set(true); this.ownersError.set(''); this.destroyOwnersDataTable(); this.owners.set(null); this.selectedOwner.set(row);
     this.api.http.post<RuesResponse>(`${FAST_API_URL}/companies/${societyId}/rues/owners`, reference).subscribe({
-      next: (response) => { if (response.codigo_error && response.codigo_error !== '0000') this.ownersError.set(response.mensaje_error || 'RUES no pudo consultar los propietarios.'); this.owners.set(response); this.ownersLoading.set(false); },
+      next: (response) => { if (response.codigo_error && response.codigo_error !== '0000') this.ownersError.set(response.mensaje_error || 'RUES no pudo consultar los propietarios.'); this.owners.set(response); this.ownersLoading.set(false); setTimeout(() => this.initializeOwnersDataTable()); },
       error: (response) => { this.ownersError.set(response.error?.detail ?? 'No fue posible consultar propietarios y establecimientos.'); this.ownersLoading.set(false); },
     });
   }
 
   rows(response: RuesResponse | null): RuesRow[] { return response?.rows ?? []; }
-  fields(response: RuesResponse | null): string[] { return [...new Set(this.rows(response).flatMap((row) => Object.keys(row).filter((field) => field !== 'enlace')))]; }
+  fields(response: RuesResponse | null): string[] { return [...new Set(this.rows(response).flatMap((row) => Object.keys(row).filter((field) => !/^enlace/i.test(field))))]; }
   label(field: string): string { return field.replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/\b\w/g, (letter) => letter.toUpperCase()); }
   value(value: unknown): string { return value === null || value === undefined || value === '' ? '—' : String(value); }
   ownerTitle(): string { return this.value(this.selectedOwner()?.['razon_social'] ?? this.selectedOwner()?.['sigla'] ?? this.selectedOwner()?.['identificacion']); }
@@ -69,6 +72,33 @@ export class WgRues {
 
   private ownerReference(row: RuesRow): RuesReference | null {
     const match = /ConsultarDetalleRM\(['"]?(\d+)['"]?\)/i.exec(String(row['enlace'] ?? ''));
-    return match && match[1].length > 2 ? { codigo_camara: match[1].slice(0, 2), matricula: match[1].slice(2) } : null;
+    if (!match || match[1].length < 3) return null;
+
+    // RUES codifica el enlace como cámara invertida + matrícula, compartiendo
+    // el segundo dígito de la cámara como primer dígito de la matrícula.
+    // Ej.: 40000004627 -> cámara 04, matrícula 0000004627.
+    const encoded = match[1];
+    return { codigo_camara: `${encoded[1]}${encoded[0]}`, matricula: encoded.slice(1) };
+  }
+
+  ngOnDestroy(): void { this.destroyOwnersDataTable(); }
+
+  private initializeOwnersDataTable(): void {
+    if (!this.ownersTable || this.ownersDataTable || !this.rows(this.owners()).length) return;
+    this.ownersDataTable = new DataTable(this.ownersTable.nativeElement, {
+      language: {
+        emptyTable: 'No hay propietarios ni establecimientos',
+        search: 'Buscar:',
+        lengthMenu: 'Mostrar _MENU_ registros',
+        info: 'Mostrando _START_ a _END_ de _TOTAL_',
+        paginate: { next: 'Siguiente', previous: 'Anterior' },
+      },
+      pageLength: 10,
+    });
+  }
+
+  private destroyOwnersDataTable(): void {
+    this.ownersDataTable?.destroy();
+    this.ownersDataTable = undefined;
   }
 }
