@@ -94,6 +94,7 @@
               @for (field of tableFields(); track field.name) {
               <th>{{ field.label }}</th>
               }
+              <th class="text-center">Asociados</th>
             </tr>
           </thead>
           <tbody>
@@ -103,6 +104,7 @@
               @for (field of tableFields(); track field.name) {
               <td>{{ displayValue(row, field) }}</td>
               }
+              <td class="text-center">{{ row['fd_associated'] ?? 0 }}</td>
             </tr>
             }
           </tbody>
