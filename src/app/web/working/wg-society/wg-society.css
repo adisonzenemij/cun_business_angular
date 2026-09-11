@@ -80,33 +80,27 @@
 }
 
 .chart-with-series-tabs .financial-chart {
-  flex: 1 1 auto;
+  grid-column: 1 / -1;
   min-width: 0;
 }
 
-/* Highcharts inserta la tabla de "Ver datos" como hermana del contenedor del
-   gráfico. En esta tarjeta debe ocupar su propia fila, debajo del gráfico. */
 .chart-with-series-tabs {
-  flex-wrap: wrap;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr);
   height: auto !important;
 }
 
-.chart-with-series-tabs > .highcharts-data-table {
-  flex: 0 0 100%;
-  order: 2;
-  overflow-x: auto;
-  width: 100%;
+.chart-with-series-tabs:has(.chart-series-tabs) {
+  grid-template-columns: minmax(0, 1fr) 11rem;
 }
 
-.chart-with-series-tabs > .highcharts-data-table table {
-  box-sizing: border-box;
-  max-width: none;
-  min-width: 100%;
-  width: 100%;
+.chart-with-series-tabs:has(.chart-series-tabs) .financial-chart {
+  grid-column: 1;
 }
 
 .chart-series-tabs {
-  flex: 0 0 11rem;
+  grid-column: 2;
+  grid-row: 1;
   max-height: 31rem;
   overflow-y: auto;
 }

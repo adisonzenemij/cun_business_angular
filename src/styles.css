@@ -83,10 +83,10 @@ body {
    el panel de gráficos debe extenderse de borde a borde de la tarjeta. */
 .chart-with-series-tabs > .highcharts-data-table {
   box-sizing: border-box;
-  flex: 0 0 100% !important;
+  grid-column: 1 / -1;
+  grid-row: 2;
   margin: 1rem 0 0 !important;
   max-width: none !important;
-  order: 2;
   overflow-x: auto;
   width: 100% !important;
 }
