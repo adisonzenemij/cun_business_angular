@@ -81,6 +81,12 @@ body {
   font-weight: 400;
 }
 
+/* Las tablas de dos columnas de RUES no requieren desplazamiento horizontal. */
+.rues-page .highcharts-data-table,
+.rues-page .highcharts-data-table .dt-container {
+  overflow-x: hidden;
+}
+
 .highcharts-data-table tbody tr:nth-child(even) {
   background: var(--bs-secondary-bg);
 }
