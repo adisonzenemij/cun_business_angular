@@ -22,6 +22,7 @@ import { MetadataCatalog } from '../../../services/backend/python/fast/fast-reso
 import DataTable from 'datatables.net-bs5';
 import Swal from 'sweetalert2';
 import { catchError, forkJoin, map, of } from 'rxjs';
+import * as XLSX from 'xlsx';
 
 export interface CrudField {
   name: string;
@@ -163,6 +164,24 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   }
   canOperate(operation: CrudOperation): boolean {
     return this.operationPermissions()[operation];
+  }
+  exportCsv(): void {
+    const { headers, records } = this.exportData();
+    const escape = (value: string) => `"${value.replaceAll('"', '""')}"`;
+    const csv = [headers, ...records]
+      .map((record) => record.map((value) => escape(String(value ?? ''))).join(';'))
+      .join('\r\n');
+    this.download(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }), 'csv');
+  }
+  exportExcel(): void {
+    const { headers, records } = this.exportData();
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...records]);
+    worksheet['!cols'] = headers.map((header, index) => ({
+      wch: Math.min(60, Math.max(header.length + 2, ...records.map((record) => String(record[index] ?? '').length + 2))),
+    }));
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, this.title().slice(0, 31));
+    XLSX.writeFile(workbook, `${this.exportFilename()}.xlsx`, { compression: true });
   }
   ngAfterViewInit(): void {
     if (!this.config().operations.select) this.initializeDataTable();
@@ -945,6 +964,27 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   }
   tableFields(): CrudField[] {
     return this.config().fields.filter((field) => field.showInTable !== false);
+  }
+  private exportData(): { headers: string[]; records: string[][] } {
+    const fields = this.tableFields();
+    return {
+      headers: [...fields.map((field) => field.label), 'Asociados'],
+      records: this.rows().map((row) => [
+        ...fields.map((field) => String(this.displayValue(row, field) ?? '')),
+        row['fd_associated'] ? 'Sí' : 'No',
+      ]),
+    };
+  }
+  private exportFilename(): string {
+    return crypto.randomUUID();
+  }
+  private download(blob: Blob, extension: string): void {
+    const anchor = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    anchor.href = url;
+    anchor.download = `${this.exportFilename()}.${extension}`;
+    anchor.click();
+    URL.revokeObjectURL(url);
   }
   questionLabel(questionId: unknown): string {
     const question = this.surveyQuestions().find(
