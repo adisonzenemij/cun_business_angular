@@ -338,6 +338,7 @@ export class WgRues implements OnDestroy {
       const chart = Highcharts.mapChart({
         chart: { renderTo: containerId, backgroundColor: 'transparent', height: 360 },
         title: { text: undefined, style },
+        lang: { chartTitle: '' },
         credits: { enabled: false },
         exporting: this.chartExporting(dark), navigation: this.chartNavigation(dark),
         mapNavigation: { enabled: true, buttonOptions: { verticalAlign: 'bottom' } },
@@ -428,11 +429,12 @@ export class WgRues implements OnDestroy {
     const filter = this.chamberMapFilter();
     const showActive = filter !== 'CANCELADA';
     const showCancelled = filter !== 'ACTIVA';
-    const headers = ['Cámara de comercio', 'Ciudad', ...(showActive ? ['Activas'] : []), ...(showCancelled ? ['Canceladas'] : [])];
+    const showTotal = filter === 'ALL';
+    const headers = ['Cámara de comercio', 'Ciudad', ...(showActive ? ['Activas'] : []), ...(showCancelled ? ['Canceladas'] : []), ...(showTotal ? ['Todos'] : [])];
     const records = this.chamberMapPoints()
       .filter((point) => (showActive && point.active > 0) || (showCancelled && point.cancelled > 0))
       .sort((first, second) => first.name.localeCompare(second.name))
-      .map((point) => [point.name, point.city, ...(showActive ? [point.active] : []), ...(showCancelled ? [point.cancelled] : [])]);
+      .map((point) => [point.name, point.city, ...(showActive ? [point.active] : []), ...(showCancelled ? [point.cancelled] : []), ...(showTotal ? [point.active + point.cancelled] : [])]);
     return [headers, ...records];
   }
 
@@ -474,6 +476,7 @@ export class WgRues implements OnDestroy {
     this.destroyOwnerChartDataTable(containerId);
     const table = document.getElementById(containerId)?.parentElement?.querySelector<HTMLTableElement>('.highcharts-data-table table');
     if (!table) return;
+    if (containerId === 'rues-chamber-map') this.normalizeMapDataTable(table);
     this.ownerChartDataTables.set(containerId, new DataTable(table, {
       pageLength: 5,
       lengthMenu: [5, 10, 25, 50],
@@ -490,6 +493,20 @@ export class WgRues implements OnDestroy {
   private destroyOwnerChartDataTable(containerId: string): void {
     this.ownerChartDataTables.get(containerId)?.destroy();
     this.ownerChartDataTables.delete(containerId);
+  }
+
+  private normalizeMapDataTable(table: HTMLTableElement): void {
+    table.caption?.remove();
+    const headerRows = Array.from(table.tHead?.rows ?? []);
+    if (headerRows.length > 1) {
+      const body = table.tBodies.item(0) ?? table.createTBody();
+      headerRows.slice(1).reverse().forEach((row) => body.insertBefore(row, body.firstChild));
+    }
+    table.querySelectorAll<HTMLTableCellElement>('tbody th').forEach((headerCell) => {
+      const dataCell = document.createElement('td');
+      dataCell.textContent = headerCell.textContent;
+      headerCell.replaceWith(dataCell);
+    });
   }
 
   private ownerExportData(): { headers: string[]; records: string[][] } {
