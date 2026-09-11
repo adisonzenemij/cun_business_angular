@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import Highcharts from 'highcharts/esm/highcharts';
 import 'highcharts/esm/modules/exporting';
 import 'highcharts/esm/modules/export-data';
+import DataTable from 'datatables.net-bs5';
 import * as XLSX from 'xlsx';
 import { FAST_API_URL, FastApi } from '../../../services/backend/python/fast/fast-api';
 import { Theme } from '../../../services/core/theme';
@@ -35,6 +36,7 @@ export class WgSociety implements OnDestroy {
   private overviewResultsChart?: Highcharts.Chart;
   private overviewTimer?: ReturnType<typeof setTimeout>;
   private overviewRenderVersion = 0;
+  private readonly chartDataTables = new Map<string, { destroy(remove?: boolean): unknown }>();
 
   readonly societies = signal<Society[]>([]);
   readonly selectedId = signal('');
@@ -383,6 +385,8 @@ export class WgSociety implements OnDestroy {
   }
 
   private destroyOverviewCharts(): void {
+    this.destroyChartDataTable('financial-structure-chart');
+    this.destroyChartDataTable('financial-results-chart');
     for (const chart of [this.overviewStructureChart, this.overviewResultsChart]) {
       if (chart?.container && chart.renderer) chart.destroy();
     }
@@ -400,42 +404,78 @@ export class WgSociety implements OnDestroy {
     const situation = consultation.situacion_financiera[cutoff]?.hits?.hits?.[0]?._source;
     const results = consultation.resultado_integral[cutoff]?.hits?.hits?.[0]?._source;
     const chartOptions = {
-      chart: { type: 'column' as const, backgroundColor: 'transparent' }, title: { text: undefined }, credits: { enabled: false },
+      chart: { type: 'column' as const, backgroundColor: 'transparent' }, title: { text: undefined, style }, lang: { chartTitle: '', exportData: { categoryHeader: 'Concepto' } }, credits: { enabled: false },
       exporting: this.chartExporting(dark), navigation: this.chartNavigation(dark), accessibility: { enabled: false },
       legend: { itemStyle: style, itemHoverStyle: style }, tooltip: { valuePrefix: '$ ', valueDecimals: 0 },
       yAxis: { title: { text: 'Pesos colombianos', style }, labels: { style, formatter(this: Highcharts.AxisLabelsFormatterContextObject): string { return compact.format(Number(this.value)); } } },
       plotOptions: { column: { borderWidth: 0, borderRadius: 3, groupPadding: .12 } },
     };
     if (target === 'all' || target === 'structure') {
+      this.destroyChartDataTable('financial-structure-chart');
       this.overviewStructureChart?.destroy();
       const container = document.getElementById('financial-structure-chart');
-      if (container?.clientWidth) this.overviewStructureChart = Highcharts.chart(container, {
+      if (container?.clientWidth) {
+        this.overviewStructureChart = Highcharts.chart(container, {
         ...chartOptions, xAxis: { categories: ['Estructura financiera'], labels: { style } },
         series: [
           { type: 'column', name: 'Activos', color: '#0d6efd', data: [this.number(this.path(situation, 'resultado.activos.activoTotal.valorCorte'))] },
           { type: 'column', name: 'Pasivos', color: '#dc3545', data: [this.number(this.path(situation, 'resultado.pasivos.pasivoTotal.valorCorte'))] },
           { type: 'column', name: 'Patrimonio', color: '#20c997', data: [this.number(this.path(situation, 'resultado.patrimonio.patrimonioTotal.valorCorte'))] },
         ],
-      });
+        });
+        this.bindChartDataTable('financial-structure-chart', this.overviewStructureChart);
+      }
     }
     if (target === 'all' || target === 'results') {
+      this.destroyChartDataTable('financial-results-chart');
       this.overviewResultsChart?.destroy();
       const container = document.getElementById('financial-results-chart');
-      if (container?.clientWidth) this.overviewResultsChart = Highcharts.chart(container, {
+      if (container?.clientWidth) {
+        this.overviewResultsChart = Highcharts.chart(container, {
         ...chartOptions, xAxis: { categories: ['Resultado integral'], labels: { style } },
         series: [
           { type: 'column', name: 'Ingresos', color: '#0d6efd', data: [this.number(this.path(results, 'resultado.registros.ingresosActividadesOrdinarias.corte'))] },
           { type: 'column', name: 'Costo de ventas', color: '#ffc107', data: [this.number(this.path(results, 'resultado.registros.costoVentas.corte'))] },
           { type: 'column', name: 'Utilidad Neta', color: '#20c997', data: [this.number(this.path(results, 'resultado.registros.gananciaPerdida.corte'))] },
         ],
-      });
+        });
+        this.bindChartDataTable('financial-results-chart', this.overviewResultsChart);
+      }
     }
   }
 
   private destroyDetailChart(): void {
+    this.destroyChartDataTable('society-detail-chart');
     const chart = this.detailChart;
     this.detailChart = undefined;
     if (chart?.container && chart.renderer) chart.destroy();
+  }
+
+  private bindChartDataTable(containerId: string, chart: Highcharts.Chart): void {
+    Highcharts.addEvent(chart, 'afterViewData', () => setTimeout(() => this.initializeChartDataTable(containerId)));
+    Highcharts.addEvent(chart, 'afterHideData', () => this.destroyChartDataTable(containerId));
+  }
+
+  private initializeChartDataTable(containerId: string): void {
+    this.destroyChartDataTable(containerId);
+    const table = document.getElementById(containerId)?.parentElement?.querySelector<HTMLTableElement>('.highcharts-data-table table');
+    if (!table) return;
+    this.chartDataTables.set(containerId, new DataTable(table, {
+      pageLength: 5,
+      lengthMenu: [5, 10, 25, 50],
+      language: {
+        emptyTable: 'No hay datos',
+        search: 'Buscar:',
+        lengthMenu: 'Mostrar _MENU_ registros',
+        info: 'Mostrando _START_ a _END_ de _TOTAL_',
+        paginate: { next: 'Siguiente', previous: 'Anterior' },
+      },
+    }));
+  }
+
+  private destroyChartDataTable(containerId: string): void {
+    this.chartDataTables.get(containerId)?.destroy();
+    this.chartDataTables.delete(containerId);
   }
 
   private chartExporting(dark: boolean): Highcharts.ExportingOptions {
@@ -493,6 +533,7 @@ export class WgSociety implements OnDestroy {
           }))),
         }],
       });
+      this.bindChartDataTable('society-detail-chart', this.detailChart);
       this.detailChart.exporting.getDataRows = () => [
         ['Comparativo', 'Fecha de corte', 'Valores Financieros'],
         ...metrics.flatMap((metric) => cutoffs.map((cutoff) => [
@@ -527,6 +568,7 @@ export class WgSociety implements OnDestroy {
         data: cutoffs.map((cutoff) => this.number(this.path(consultation[key][cutoff]?.hits?.hits?.[0]?._source, metric.field))),
       })),
     });
+    this.bindChartDataTable('society-detail-chart', this.detailChart);
   }
 
   private chartMetrics(key: DetailKey): ChartMetric[] {

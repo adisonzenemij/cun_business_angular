@@ -86,7 +86,8 @@
       }
     </div>
   </section>
-  <section class="card financial-overview-card mt-4">
+  <div class="row g-4 mt-1">
+  <section class="col-12 col-lg-6"><article class="card financial-overview-card h-100">
     <div class="card-header d-flex align-items-center justify-content-between gap-2">
       <h3 class="h6 mb-0">Estructura Financiera - Fecha de Corte {{ overviewCutoff() }}</h3>
       <button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshOverviewStructure()"><i
@@ -95,8 +96,8 @@
     <div class="card-body">
       <div id="financial-structure-chart" class="financial-overview-chart"></div>
     </div>
-  </section>
-  <section class="card financial-overview-card mt-4">
+  </article></section>
+  <section class="col-12 col-lg-6"><article class="card financial-overview-card h-100">
     <div class="card-header d-flex align-items-center justify-content-between gap-2">
       <h3 class="h6 mb-0">Resultado Integral - Fecha de Corte {{ overviewCutoff() }}</h3>
       <button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshOverviewResults()"><i
@@ -105,7 +106,8 @@
     <div class="card-body">
       <div id="financial-results-chart" class="financial-overview-chart"></div>
     </div>
-  </section>
+  </article></section>
+  </div>
   <section class="financial-summary mt-4" aria-label="Indicadores del corte más reciente">
     <div class="d-flex align-items-center justify-content-between mb-3">
       <h2 class="h6 mb-0">Indicadores - Fecha de corte {{ overviewCutoff() }}</h2>

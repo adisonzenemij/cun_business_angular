@@ -81,6 +81,28 @@ body {
   font-weight: 400;
 }
 
+/* Tablas dinámicas de Highcharts en Informes Financieros. */
+.society-page .highcharts-data-table thead th {
+  font-weight: 600;
+}
+
+.society-page .highcharts-data-table tbody th {
+  font-weight: 400;
+}
+
+.society-page .financial-overview-chart + .highcharts-data-table {
+  box-sizing: border-box;
+  margin: 1rem 0 0;
+  max-width: 100%;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+.society-page .financial-overview-chart + .highcharts-data-table table {
+  margin: 0;
+  min-width: 100%;
+}
+
 /* Las tablas de dos columnas de RUES no requieren desplazamiento horizontal. */
 .rues-page .highcharts-data-table,
 .rues-page .highcharts-data-table .dt-container {
