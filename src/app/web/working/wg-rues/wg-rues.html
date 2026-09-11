@@ -63,19 +63,19 @@
       </table></div>
       <div class="row g-4 mt-1 rues-charts">
         <section class="col-12"><article class="card h-100">
-          <div class="card-header fw-semibold">Matrículas activas por cámara de comercio</div>
+          <div class="card-header d-flex align-items-center justify-content-between gap-2"><span class="fw-semibold">Matrículas activas por cámara de comercio</span><button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshActiveChart()"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button></div>
           <div class="card-body"><div id="rues-active-chart" class="rues-chart"></div></div>
         </article></section>
         <section class="col-12"><article class="card h-100">
-          <div class="card-header fw-semibold">Matrículas canceladas por cámara de comercio</div>
+          <div class="card-header d-flex align-items-center justify-content-between gap-2"><span class="fw-semibold">Matrículas canceladas por cámara de comercio</span><button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshCancelledChart()"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button></div>
           <div class="card-body"><div id="rues-cancelled-chart" class="rues-chart"></div></div>
         </article></section>
         <section class="col-12 col-lg-6"><article class="card h-100">
-          <div class="card-header fw-semibold">Cantidad por estado</div>
+          <div class="card-header d-flex align-items-center justify-content-between gap-2"><span class="fw-semibold">Cantidad por estado</span><button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshStatusChart()"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button></div>
           <div class="card-body"><div id="rues-status-chart" class="rues-chart"></div></div>
         </article></section>
         <section class="col-12 col-lg-6"><article class="card h-100">
-          <div class="card-header fw-semibold">Cantidad por categoría</div>
+          <div class="card-header d-flex align-items-center justify-content-between gap-2"><span class="fw-semibold">Cantidad por categoría</span><button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshCategoryChart()"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button></div>
           <div class="card-body"><div id="rues-category-chart" class="rues-chart"></div></div>
         </article></section>
       </div>

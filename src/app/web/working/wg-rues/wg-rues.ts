@@ -3,6 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { FAST_API_URL, FastApi } from '../../../services/backend/python/fast/fast-api';
 import DataTable from 'datatables.net-bs5';
 import Highcharts from 'highcharts/esm/highcharts';
+import 'highcharts/esm/modules/exporting';
+import 'highcharts/esm/modules/export-data';
 import * as XLSX from 'xlsx';
 
 interface Society { id_universal: string; fd_company: string; fd_document: string; }
@@ -31,7 +33,7 @@ export class WgRues implements OnDestroy {
   private readonly api = inject(FastApi);
   @ViewChild('ownersDataTable') private readonly ownersTable?: ElementRef<HTMLTableElement>;
   private ownersDataTable?: { destroy(remove?: boolean): unknown };
-  private readonly ownerCharts: Highcharts.Chart[] = [];
+  private readonly ownerCharts = new Map<string, Highcharts.Chart>();
   readonly societies = signal<Society[]>([]);
   readonly selectedId = signal('');
   readonly loading = signal(true);
@@ -134,6 +136,11 @@ export class WgRues implements OnDestroy {
     XLSX.writeFile(workbook, `${crypto.randomUUID()}.xlsx`, { compression: true });
   }
 
+  refreshActiveChart(): void { this.renderOwnerBarChart('rues-active-chart', 'Matrículas activas por cámara de comercio', 'ACTIVA', '#20c997'); }
+  refreshCancelledChart(): void { this.renderOwnerBarChart('rues-cancelled-chart', 'Matrículas canceladas por cámara de comercio', 'CANCELADA', '#dc3545'); }
+  refreshStatusChart(): void { this.renderOwnerPieChart('rues-status-chart', 'Cantidad por estado', 'desc_estado_matricula'); }
+  refreshCategoryChart(): void { this.renderOwnerPieChart('rues-category-chart', 'Cantidad por categoría', 'categoria_matricula'); }
+
   private ownerReference(row: RuesRow): RuesReference | null {
     const match = /ConsultarDetalleRM\(['"]?(\d+)['"]?\)/i.exec(String(row['enlace'] ?? ''));
     if (!match || match[1].length < 3) return null;
@@ -168,7 +175,7 @@ export class WgRues implements OnDestroy {
 
   private renderOwnerCharts(): void {
     this.destroyOwnerCharts();
-    this.renderOwnerBarChart('rues-active-chart', 'Matrículas activas por cámara de comercio', 'ACTIVA', '#198754');
+    this.renderOwnerBarChart('rues-active-chart', 'Matrículas activas por cámara de comercio', 'ACTIVA', '#20c997');
     this.renderOwnerBarChart('rues-cancelled-chart', 'Matrículas canceladas por cámara de comercio', 'CANCELADA', '#dc3545');
     this.renderOwnerPieChart('rues-status-chart', 'Cantidad por estado', 'desc_estado_matricula');
     this.renderOwnerPieChart('rues-category-chart', 'Cantidad por categoría', 'categoria_matricula');
@@ -178,15 +185,19 @@ export class WgRues implements OnDestroy {
     const element = document.getElementById(containerId);
     if (!element) return;
     const data = this.countByChamber(status);
-    this.ownerCharts.push(Highcharts.chart(element, {
+    const { dark, style, gridColor } = this.chartTheme();
+    this.destroyOwnerChart(containerId);
+    this.ownerCharts.set(containerId, Highcharts.chart(element, {
       chart: { type: 'bar', backgroundColor: 'transparent', height: 380 },
-      title: { text: title },
+      title: { text: undefined, style },
       credits: { enabled: false },
-      xAxis: { categories: data.map(([label]) => label), title: { text: 'Cámara de comercio' } },
-      yAxis: { allowDecimals: false, title: { text: 'Cantidad de matrículas' } },
+      exporting: this.chartExporting(dark), navigation: this.chartNavigation(dark),
+      xAxis: { categories: data.map(([label]) => label), title: { text: 'Cámara de comercio', style }, labels: { style }, lineColor: gridColor, tickColor: gridColor },
+      yAxis: { allowDecimals: false, title: { text: 'Cantidad de matrículas', style }, labels: { style }, gridLineColor: gridColor },
       tooltip: { pointFormat: '<b>{point.y}</b> matrícula(s)' },
       legend: { enabled: false },
-      series: [{ type: 'bar', name: status, color, data: data.map(([, count]) => count) }],
+      plotOptions: { bar: { borderWidth: 0, borderRadius: 4, groupPadding: .1, dataLabels: { enabled: true, style: { ...style, textOutline: 'none' } } } },
+      series: [{ type: 'bar', name: title, color, data: data.map(([, count]) => count) }],
     }));
   }
 
@@ -194,14 +205,38 @@ export class WgRues implements OnDestroy {
     const element = document.getElementById(containerId);
     if (!element) return;
     const data = this.countByField(field);
-    this.ownerCharts.push(Highcharts.chart(element, {
+    const { dark, style } = this.chartTheme();
+    this.destroyOwnerChart(containerId);
+    this.ownerCharts.set(containerId, Highcharts.chart(element, {
       chart: { type: 'pie', backgroundColor: 'transparent', height: 360 },
-      title: { text: title },
+      title: { text: undefined, style },
       credits: { enabled: false },
+      exporting: this.chartExporting(dark), navigation: this.chartNavigation(dark),
       tooltip: { pointFormat: '<b>{point.y}</b> registro(s) ({point.percentage:.1f}%)' },
-      plotOptions: { pie: { allowPointSelect: true, cursor: 'pointer', dataLabels: { enabled: true, format: '{point.name}: {point.y}' } } },
-      series: [{ type: 'pie', name: 'Registros', data: data.map(([name, y]) => ({ name, y })) }],
+      plotOptions: { pie: { innerSize: '55%', borderRadius: 6, borderWidth: 2, allowPointSelect: true, cursor: 'pointer', dataLabels: { enabled: true, format: '{point.name}: {point.y}', style: { ...style, textOutline: 'none' } } } },
+      series: [{ type: 'pie', name: title, data: data.map(([name, y], index) => ({ name, y, color: this.chartColors()[index % this.chartColors().length] })) }],
     }));
+  }
+
+  private chartTheme(): { dark: boolean; style: Highcharts.CSSObject; gridColor: string } {
+    const dark = document.documentElement.dataset['bsTheme'] === 'dark';
+    return {
+      dark,
+      style: { color: dark ? '#f8f9fa' : '#212529', fontWeight: '400' },
+      gridColor: dark ? '#495057' : '#dee2e6',
+    };
+  }
+
+  private chartColors(): string[] { return ['#0d6efd', '#20c997', '#ffc107', '#dc3545', '#6f42c1', '#0dcaf0']; }
+
+  private chartExporting(dark: boolean): Highcharts.ExportingOptions {
+    const foreground = dark ? '#f8f9fa' : '#212529';
+    return { enabled: true, buttons: { contextButton: { theme: { fill: 'transparent', stroke: dark ? '#6c757d' : '#adb5bd', style: { color: foreground } } } } };
+  }
+
+  private chartNavigation(dark: boolean): Highcharts.NavigationOptions {
+    const foreground = dark ? '#f8f9fa' : '#212529';
+    return { menuStyle: { background: dark ? '#212529' : '#ffffff', border: `1px solid ${dark ? '#495057' : '#ced4da'}`, color: foreground }, menuItemStyle: { color: foreground, fontWeight: '400' }, menuItemHoverStyle: { background: dark ? '#343a40' : '#e9ecef', color: foreground } };
   }
 
   private countByChamber(status: string): [string, number][] {
@@ -220,7 +255,13 @@ export class WgRues implements OnDestroy {
   }
 
   private destroyOwnerCharts(): void {
-    this.ownerCharts.splice(0).forEach((chart) => chart.destroy());
+    this.ownerCharts.forEach((chart) => chart.destroy());
+    this.ownerCharts.clear();
+  }
+
+  private destroyOwnerChart(containerId: string): void {
+    this.ownerCharts.get(containerId)?.destroy();
+    this.ownerCharts.delete(containerId);
   }
 
   private ownerExportData(): { headers: string[]; records: string[][] } {
