@@ -23,6 +23,10 @@
   min-width: 100%;
 }
 
+.rues-chart + .highcharts-data-table tbody th {
+  font-weight: 400;
+}
+
 /* La tabla y los gráficos se presentan como tarjetas independientes. */
 .rues-page > section.card:has(.rues-charts) {
   background: transparent;
