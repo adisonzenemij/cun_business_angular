@@ -84,6 +84,20 @@
   min-width: 0;
 }
 
+/* Highcharts inserta la tabla de "Ver datos" como hermana del contenedor del
+   gráfico. En esta tarjeta debe ocupar su propia fila, debajo del gráfico. */
+.chart-with-series-tabs {
+  flex-wrap: wrap;
+  height: auto !important;
+}
+
+.chart-with-series-tabs > .highcharts-data-table {
+  flex: 0 0 100%;
+  order: 2;
+  overflow-x: auto;
+  width: 100%;
+}
+
 .chart-series-tabs {
   flex: 0 0 11rem;
   max-height: 31rem;
