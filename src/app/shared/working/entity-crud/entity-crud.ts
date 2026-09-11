@@ -17,7 +17,7 @@ import {
   UntypedFormGroup,
   Validators,
 } from '@angular/forms';
-import { FastApi } from '../../../services/backend/python/fast/fast-api';
+import { FAST_API_URL, FastApi } from '../../../services/backend/python/fast/fast-api';
 import { MetadataCatalog } from '../../../services/backend/python/fast/fast-resources';
 import DataTable from 'datatables.net-bs5';
 import Swal from 'sweetalert2';
@@ -76,6 +76,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   readonly showValuesModal = signal(false);
   readonly showAutoFillModal = signal(false);
   readonly showAutoFillConfigurationModal = signal(false);
+  readonly autoCompleteAllowed = signal(false);
   readonly showAssociationsModal = signal(false);
   readonly associationDetails = signal<AssociationDetail[]>([]);
   readonly associationTableVersion = signal(0);
@@ -138,6 +139,12 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
           field.required ? Validators.required : [],
         ),
       );
+    if (this.config().autoComplete) {
+      this.api.http.get<{ role: string | null }>(`${FAST_API_URL}/auth/permissions`).subscribe({
+        next: ({ role }) => this.autoCompleteAllowed.set(role === 'Master'),
+        error: () => this.autoCompleteAllowed.set(false),
+      });
+    }
     this.load();
   }
   ngAfterViewInit(): void {

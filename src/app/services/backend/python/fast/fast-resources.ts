@@ -117,7 +117,7 @@ export class MetadataCatalog {
                 .sort((left, right) => left.fd_name.localeCompare(right.fd_name, 'es'));
               return { ...module, resources: moduleResources };
             })
-            .filter((module) => this.allowedModuleIds().has(module.id_universal) && module.resources.length > 0)
+            .filter((module) => this.allowedModuleIds().has(module.id_universal))
             .sort((left, right) => left.fd_product.localeCompare(right.fd_product, 'es')),
         );
       });

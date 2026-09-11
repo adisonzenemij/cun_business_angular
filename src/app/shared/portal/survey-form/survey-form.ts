@@ -7,8 +7,7 @@ import {
 } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import Swal from 'sweetalert2';
-import { AuthSession } from '../../../services/core/auth-session';
-import { FastApi } from '../../../services/backend/python/fast/fast-api';
+import { FAST_API_URL, FastApi } from '../../../services/backend/python/fast/fast-api';
 import {
   FtA5acf579,
   FtD2e6ded6,
@@ -34,7 +33,6 @@ export class SurveyForm implements OnDestroy {
   private readonly anonymousApi = inject(FtE5520e1e);
   private readonly answersApi = inject(FtA5acf579);
   private readonly api = inject(FastApi);
-  private readonly authSession = inject(AuthSession);
   private readonly formBuilder = inject(UntypedFormBuilder);
   readonly surveys = signal<Survey[]>([]);
   readonly questions = signal<Question[]>([]);
@@ -44,6 +42,7 @@ export class SurveyForm implements OnDestroy {
   readonly loadingDetails = signal(false);
   readonly submitting = signal(false);
   readonly autoFillVisible = signal(false);
+  readonly autoFillAllowed = signal(false);
   readonly autoFillConfigurationVisible = signal(false);
   readonly autoFilling = signal(false);
   readonly autoFillMemoryMaxMb = signal(0);
@@ -60,6 +59,10 @@ export class SurveyForm implements OnDestroy {
   private attemptedReservationRestore = false;
   constructor() {
     this.loadAvailableSurveys();
+    this.api.http.get<{ role: string | null }>(`${FAST_API_URL}/auth/permissions`).subscribe({
+      next: ({ role }) => this.autoFillAllowed.set(role === 'Master'),
+      error: () => this.autoFillAllowed.set(false),
+    });
   }
 
   ngOnDestroy(): void {
@@ -107,7 +110,7 @@ export class SurveyForm implements OnDestroy {
   }
 
   canAutoFill(): boolean {
-    return this.authSession.isAuthenticated();
+    return this.autoFillAllowed();
   }
 
   availableSlots(survey: Survey): number {
