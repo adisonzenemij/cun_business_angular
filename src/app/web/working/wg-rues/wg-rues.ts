@@ -2,6 +2,7 @@ import { Component, ElementRef, OnDestroy, ViewChild, inject, signal } from '@an
 import { FormsModule } from '@angular/forms';
 import { FAST_API_URL, FastApi } from '../../../services/backend/python/fast/fast-api';
 import DataTable from 'datatables.net-bs5';
+import Highcharts from 'highcharts/esm/highcharts';
 import * as XLSX from 'xlsx';
 
 interface Society { id_universal: string; fd_company: string; fd_document: string; }
@@ -30,6 +31,7 @@ export class WgRues implements OnDestroy {
   private readonly api = inject(FastApi);
   @ViewChild('ownersDataTable') private readonly ownersTable?: ElementRef<HTMLTableElement>;
   private ownersDataTable?: { destroy(remove?: boolean): unknown };
+  private readonly ownerCharts: Highcharts.Chart[] = [];
   readonly societies = signal<Society[]>([]);
   readonly selectedId = signal('');
   readonly loading = signal(true);
@@ -55,13 +57,13 @@ export class WgRues implements OnDestroy {
   }
 
   changeSociety(value: string): void {
-    this.selectedId.set(value); this.result.set(null); this.destroyOwnersDataTable(); this.owners.set(null); this.selectedOwner.set(null); this.error.set(''); this.ownersError.set('');
+    this.selectedId.set(value); this.result.set(null); this.destroyOwnersDataTable(); this.destroyOwnerCharts(); this.owners.set(null); this.selectedOwner.set(null); this.error.set(''); this.ownersError.set('');
   }
 
   consult(): void {
     const societyId = this.selectedId();
     if (!societyId) return;
-    this.consulting.set(true); this.error.set(''); this.result.set(null); this.destroyOwnersDataTable(); this.owners.set(null); this.selectedOwner.set(null);
+    this.consulting.set(true); this.error.set(''); this.result.set(null); this.destroyOwnersDataTable(); this.destroyOwnerCharts(); this.owners.set(null); this.selectedOwner.set(null);
     this.api.http.post<RuesResponse>(`${FAST_API_URL}/companies/${societyId}/rues`, {}).subscribe({
       next: (response) => { if (response.codigo_error && response.codigo_error !== '0000') this.error.set(response.mensaje_error || 'RUES no pudo completar la consulta.'); this.result.set(response); this.consulting.set(false); },
       error: (response) => { this.error.set(response.error?.detail ?? 'No fue posible consultar RUES.'); this.consulting.set(false); },
@@ -71,9 +73,9 @@ export class WgRues implements OnDestroy {
   consultOwners(row: RuesRow): void {
     const societyId = this.selectedId(); const reference = this.ownerReference(row);
     if (!societyId || !reference) return;
-    this.ownersLoading.set(true); this.ownersError.set(''); this.destroyOwnersDataTable(); this.owners.set(null); this.selectedOwner.set(row);
+    this.ownersLoading.set(true); this.ownersError.set(''); this.destroyOwnersDataTable(); this.destroyOwnerCharts(); this.owners.set(null); this.selectedOwner.set(row);
     this.api.http.post<RuesResponse>(`${FAST_API_URL}/companies/${societyId}/rues/owners`, reference).subscribe({
-      next: (response) => { if (response.codigo_error && response.codigo_error !== '0000') this.ownersError.set(response.mensaje_error || 'RUES no pudo consultar los propietarios.'); this.owners.set(response); this.ownersLoading.set(false); setTimeout(() => this.initializeOwnersDataTable()); },
+      next: (response) => { if (response.codigo_error && response.codigo_error !== '0000') this.ownersError.set(response.mensaje_error || 'RUES no pudo consultar los propietarios.'); this.owners.set(response); this.ownersLoading.set(false); setTimeout(() => { this.initializeOwnersDataTable(); this.renderOwnerCharts(); }); },
       error: (response) => { this.ownersError.set(response.error?.detail ?? 'No fue posible consultar propietarios y establecimientos.'); this.ownersLoading.set(false); },
     });
   }
@@ -143,7 +145,7 @@ export class WgRues implements OnDestroy {
     return { codigo_camara: `${encoded[1]}${encoded[0]}`, matricula: encoded.slice(1) };
   }
 
-  ngOnDestroy(): void { this.destroyOwnersDataTable(); }
+  ngOnDestroy(): void { this.destroyOwnersDataTable(); this.destroyOwnerCharts(); }
 
   private initializeOwnersDataTable(): void {
     if (!this.ownersTable || this.ownersDataTable || !this.rows(this.owners()).length) return;
@@ -162,6 +164,63 @@ export class WgRues implements OnDestroy {
   private destroyOwnersDataTable(): void {
     this.ownersDataTable?.destroy();
     this.ownersDataTable = undefined;
+  }
+
+  private renderOwnerCharts(): void {
+    this.destroyOwnerCharts();
+    this.renderOwnerBarChart('rues-active-chart', 'Matrículas activas por cámara de comercio', 'ACTIVA', '#198754');
+    this.renderOwnerBarChart('rues-cancelled-chart', 'Matrículas canceladas por cámara de comercio', 'CANCELADA', '#dc3545');
+    this.renderOwnerPieChart('rues-status-chart', 'Cantidad por estado', 'desc_estado_matricula');
+    this.renderOwnerPieChart('rues-category-chart', 'Cantidad por categoría', 'categoria_matricula');
+  }
+
+  private renderOwnerBarChart(containerId: string, title: string, status: string, color: string): void {
+    const element = document.getElementById(containerId);
+    if (!element) return;
+    const data = this.countByChamber(status);
+    this.ownerCharts.push(Highcharts.chart(element, {
+      chart: { type: 'bar', backgroundColor: 'transparent', height: 380 },
+      title: { text: title },
+      credits: { enabled: false },
+      xAxis: { categories: data.map(([label]) => label), title: { text: 'Cámara de comercio' } },
+      yAxis: { allowDecimals: false, title: { text: 'Cantidad de matrículas' } },
+      tooltip: { pointFormat: '<b>{point.y}</b> matrícula(s)' },
+      legend: { enabled: false },
+      series: [{ type: 'bar', name: status, color, data: data.map(([, count]) => count) }],
+    }));
+  }
+
+  private renderOwnerPieChart(containerId: string, title: string, field: string): void {
+    const element = document.getElementById(containerId);
+    if (!element) return;
+    const data = this.countByField(field);
+    this.ownerCharts.push(Highcharts.chart(element, {
+      chart: { type: 'pie', backgroundColor: 'transparent', height: 360 },
+      title: { text: title },
+      credits: { enabled: false },
+      tooltip: { pointFormat: '<b>{point.y}</b> registro(s) ({point.percentage:.1f}%)' },
+      plotOptions: { pie: { allowPointSelect: true, cursor: 'pointer', dataLabels: { enabled: true, format: '{point.name}: {point.y}' } } },
+      series: [{ type: 'pie', name: 'Registros', data: data.map(([name, y]) => ({ name, y })) }],
+    }));
+  }
+
+  private countByChamber(status: string): [string, number][] {
+    return this.countRows(this.rows(this.owners()).filter((row) => String(row['desc_estado_matricula'] ?? '').trim().toLocaleUpperCase() === status), 'nombre_camara');
+  }
+
+  private countByField(field: string): [string, number][] { return this.countRows(this.rows(this.owners()), field); }
+
+  private countRows(rows: RuesRow[], field: string): [string, number][] {
+    const counts = new Map<string, number>();
+    rows.forEach((row) => {
+      const value = this.value(row[field]);
+      counts.set(value, (counts.get(value) ?? 0) + 1);
+    });
+    return [...counts.entries()].sort((first, second) => second[1] - first[1] || first[0].localeCompare(second[0]));
+  }
+
+  private destroyOwnerCharts(): void {
+    this.ownerCharts.splice(0).forEach((chart) => chart.destroy());
   }
 
   private ownerExportData(): { headers: string[]; records: string[][] } {

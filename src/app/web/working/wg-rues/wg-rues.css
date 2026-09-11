@@ -2,6 +2,8 @@
 .rues-page h1 { margin-bottom: .25rem; }
 .rues-page .form-select { min-width: 0; }
 .rues-page .card-header { background: var(--bs-tertiary-bg); }
+.rues-charts .card-body { min-height: 24rem; }
+.rues-chart { height: 100%; min-height: 22rem; width: 100%; }
 
 @media (max-width: 576px) {
   .rues-page { padding: 1rem; }

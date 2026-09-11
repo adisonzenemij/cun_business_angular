@@ -61,6 +61,24 @@
         <thead><tr>@for (field of ownerFields(); track field) { <th scope="col">{{ ownerFieldLabel(field) }}</th> }</tr></thead>
         <tbody>@for (row of rows(ownerResult); track $index) { <tr>@for (field of ownerFields(); track field) { <td>{{ value(row[field]) }}</td> }</tr> }</tbody>
       </table></div>
+      <div class="row g-4 mt-1 rues-charts">
+        <section class="col-12"><article class="card h-100">
+          <div class="card-header fw-semibold">Matrículas activas por cámara de comercio</div>
+          <div class="card-body"><div id="rues-active-chart" class="rues-chart"></div></div>
+        </article></section>
+        <section class="col-12"><article class="card h-100">
+          <div class="card-header fw-semibold">Matrículas canceladas por cámara de comercio</div>
+          <div class="card-body"><div id="rues-cancelled-chart" class="rues-chart"></div></div>
+        </article></section>
+        <section class="col-12 col-lg-6"><article class="card h-100">
+          <div class="card-header fw-semibold">Cantidad por estado</div>
+          <div class="card-body"><div id="rues-status-chart" class="rues-chart"></div></div>
+        </article></section>
+        <section class="col-12 col-lg-6"><article class="card h-100">
+          <div class="card-header fw-semibold">Cantidad por categoría</div>
+          <div class="card-body"><div id="rues-category-chart" class="rues-chart"></div></div>
+        </article></section>
+      </div>
       } @else { <p class="text-body-secondary mb-0">RUES no encontró propietarios ni establecimientos para esta matrícula.</p> }
     </div>
   </section>
