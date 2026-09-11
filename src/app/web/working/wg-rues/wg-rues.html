@@ -22,7 +22,11 @@
   @if (result(); as rues) {
   <section class="card mt-4">
     <div class="card-header d-flex justify-content-between align-items-center gap-2">
-      <h2 class="h6 mb-0">Consulta NIT</h2><span class="text-body-secondary small">{{ rows(rues).length }} registro(s)</span>
+      <h2 class="h6 mb-0">Consulta NIT</h2>
+      <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-sm btn-outline-success" type="button" (click)="exportResultExcel()" [disabled]="!rows(rues).length"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+        <button class="btn btn-sm btn-outline-secondary" type="button" (click)="exportResultCsv()" [disabled]="!rows(rues).length"><i class="bi bi-filetype-csv me-1"></i>CSV</button>
+      </div>
     </div>
     <div class="card-body">
       @if (rows(rues).length) {

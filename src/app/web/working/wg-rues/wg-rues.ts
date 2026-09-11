@@ -113,7 +113,23 @@ export class WgRues implements OnDestroy {
     worksheet['!cols'] = headers.map((header, index) => ({ wch: Math.min(60, Math.max(header.length + 2, ...records.map((record) => record[index].length + 2))) }));
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Propietarios');
-    XLSX.writeFile(workbook, 'rues-propietarios.xlsx', { compression: true });
+    XLSX.writeFile(workbook, `${crypto.randomUUID()}.xlsx`, { compression: true });
+  }
+
+  exportResultCsv(): void {
+    const { headers, records } = this.resultExportData();
+    const escape = (value: string) => `"${value.replaceAll('"', '""')}"`;
+    const csv = [headers, ...records].map((record) => record.map(escape).join(';')).join('\r\n');
+    this.downloadOwners(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }), 'csv');
+  }
+
+  exportResultExcel(): void {
+    const { headers, records } = this.resultExportData();
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...records]);
+    worksheet['!cols'] = headers.map((header, index) => ({ wch: Math.min(60, Math.max(header.length + 2, ...records.map((record) => record[index].length + 2))) }));
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Consulta NIT');
+    XLSX.writeFile(workbook, `${crypto.randomUUID()}.xlsx`, { compression: true });
   }
 
   private ownerReference(row: RuesRow): RuesReference | null {
@@ -156,11 +172,19 @@ export class WgRues implements OnDestroy {
     };
   }
 
+  private resultExportData(): { headers: string[]; records: string[][] } {
+    const fields = this.fields(this.result());
+    return {
+      headers: fields.map((field) => this.label(field)),
+      records: this.rows(this.result()).map((row) => fields.map((field) => this.value(row[field]))),
+    };
+  }
+
   private downloadOwners(blob: Blob, extension: string): void {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `rues-propietarios.${extension}`;
+    anchor.download = `${crypto.randomUUID()}.${extension}`;
     anchor.click();
     URL.revokeObjectURL(url);
   }
