@@ -17,6 +17,7 @@ type Consultation = { vista_360: SearchResult } & Record<DetailKey, Record<strin
 interface ValueRow { field: string; value: string; }
 interface FinancialRow { key: string; label: string; value: string; }
 interface ChartMetric { name: string; field: string; }
+interface OverviewMetric { label: string; description: string; value: string; icon: string; color: string; }
 
 @Component({
   imports: [FormsModule],
@@ -30,6 +31,10 @@ export class WgSociety implements OnDestroy {
   private detailChart?: Highcharts.Chart;
   private chartTimer?: ReturnType<typeof setTimeout>;
   private chartRenderVersion = 0;
+  private overviewBarsChart?: Highcharts.Chart;
+  private overviewPieChart?: Highcharts.Chart;
+  private overviewTimer?: ReturnType<typeof setTimeout>;
+  private overviewRenderVersion = 0;
 
   readonly societies = signal<Society[]>([]);
   readonly selectedId = signal('');
@@ -75,6 +80,7 @@ export class WgSociety implements OnDestroy {
       this.visibleChartFields();
       this.chartSeriesTab();
       this.scheduleDetailChart();
+      this.scheduleOverviewCharts();
     });
     this.loadSocieties();
   }
@@ -83,6 +89,9 @@ export class WgSociety implements OnDestroy {
     if (this.chartTimer) clearTimeout(this.chartTimer);
     this.chartRenderVersion++;
     this.destroyDetailChart();
+    if (this.overviewTimer) clearTimeout(this.overviewTimer);
+    this.overviewRenderVersion++;
+    this.destroyOverviewCharts();
   }
 
   loadSocieties(): void {
@@ -125,6 +134,8 @@ export class WgSociety implements OnDestroy {
   openDetail(key: DetailKey): void { this.situationChartType.set('lineas'); this.chartSeriesTab.update((tabs) => ({ ...tabs, [key]: 'unificado' })); this.activeDetail.set(key); }
   closeDetail(): void { this.columnsDetail.set(null); this.chartFieldsDetail.set(null); this.layoutOpen.set(false); this.activeDetail.set(null); this.chartRenderVersion++; this.destroyDetailChart(); }
   refreshDetailChart(): void { this.scheduleDetailChart(); }
+  refreshOverviewBars(): void { this.scheduleOverviewCharts('bars'); }
+  refreshOverviewPie(): void { this.scheduleOverviewCharts('pie'); }
   selectSituationChartType(type: SituationChartType): void { this.situationChartType.set(type); }
   selectChartSeriesTab(key: DetailKey, field: string): void { this.chartSeriesTab.update((tabs) => ({ ...tabs, [key]: field })); }
   activeChartSeriesTab(key: DetailKey): string { return this.chartSeriesTab()[key]; }
@@ -137,6 +148,20 @@ export class WgSociety implements OnDestroy {
 
   vistaRecords(): SearchHit[] { return this.consultation()?.vista_360.hits?.hits ?? []; }
   vistaFields(): string[] { return [...new Set(this.vistaRecords().flatMap((record) => Object.keys(record._source)))]; }
+  overviewCutoff(): string { return this.cutoffs('financieros')[0] ?? '—'; }
+  overviewMetrics(): OverviewMetric[] {
+    const cutoff = this.cutoffs('financieros')[0];
+    const source = cutoff ? this.consultation()?.financieros[cutoff]?.hits?.hits?.[0]?._source : undefined;
+    const income = this.path(source, 'resultadoIntegral.ingreso');
+    const netIncome = this.path(source, 'resultadoIntegral.gananciaPerdida');
+    const assets = this.path(source, 'situacionFinanciera.activo');
+    return [
+      { label: 'Ingresos', description: 'Resultado Integral', value: this.formatCurrency(income), icon: 'bi-graph-up-arrow', color: 'text-primary' },
+      { label: 'Utilidad Neta', description: 'Resultado Integral', value: this.formatCurrency(netIncome), icon: 'bi-cash-coin', color: 'text-success' },
+      { label: 'Activos', description: 'Situación Financiera', value: this.formatCurrency(assets), icon: 'bi-bank', color: 'text-warning' },
+      { label: 'Margen Bruto', description: 'Indicador financiero', value: this.formatPercent(this.ratio(this.path(source, 'resultadoIntegral.utilidad'), income)), icon: 'bi-pie-chart', color: 'text-info' },
+    ];
+  }
   exportVistaCsv(): void {
     const { headers, records } = this.vistaExportData();
     const escape = (value: string) => `"${value.replaceAll('"', '""')}"`;
@@ -318,6 +343,92 @@ export class WgSociety implements OnDestroy {
       this.renderDetailChart();
       this.detailChart?.reflow();
     })), 0);
+  }
+
+  private scheduleOverviewCharts(target: 'all' | 'bars' | 'pie' = 'all'): void {
+    if (this.overviewTimer) clearTimeout(this.overviewTimer);
+    const version = ++this.overviewRenderVersion;
+    this.overviewTimer = setTimeout(() => requestAnimationFrame(() => {
+      if (version !== this.overviewRenderVersion) return;
+      this.renderOverviewCharts(target);
+      if (target !== 'pie') this.overviewBarsChart?.reflow();
+      if (target !== 'bars') this.overviewPieChart?.reflow();
+    }), 0);
+  }
+
+  private destroyOverviewCharts(): void {
+    for (const chart of [this.overviewBarsChart, this.overviewPieChart]) {
+      if (chart?.container && chart.renderer) chart.destroy();
+    }
+    this.overviewBarsChart = undefined;
+    this.overviewPieChart = undefined;
+  }
+
+  private renderOverviewCharts(target: 'all' | 'bars' | 'pie' = 'all'): void {
+    if (target !== 'pie') {
+      this.overviewBarsChart?.destroy();
+      this.overviewBarsChart = undefined;
+    }
+    if (target !== 'bars') {
+      this.overviewPieChart?.destroy();
+      this.overviewPieChart = undefined;
+    }
+    const consultation = this.consultation();
+    const barsContainer = document.getElementById('financial-overview-bars');
+    const pieContainer = document.getElementById('financial-overview-pie');
+    if (!consultation
+      || (target !== 'pie' && (!barsContainer || !barsContainer.clientWidth))
+      || (target !== 'bars' && (!pieContainer || !pieContainer.clientWidth))) return;
+    const latestCutoff = this.cutoffsFrom(consultation.financieros)[0];
+    if (!latestCutoff) return;
+    const dark = document.documentElement.dataset['bsTheme'] === 'dark';
+    const style: Highcharts.CSSObject = { color: dark ? '#f8f9fa' : '#212529', fontWeight: '400' };
+    const compact = new Intl.NumberFormat('es-CO', { notation: 'compact', maximumFractionDigits: 1 });
+    const metrics = [
+      { name: 'Ingresos', field: 'resultadoIntegral.ingreso', color: '#0d6efd' },
+      { name: 'Utilidad Neta', field: 'resultadoIntegral.gananciaPerdida', color: '#20c997' },
+      { name: 'Activos', field: 'situacionFinanciera.activo', color: '#ffc107' },
+    ];
+    const source = consultation.financieros[latestCutoff]?.hits?.hits?.[0]?._source;
+    if (target !== 'pie' && barsContainer) this.overviewBarsChart = Highcharts.chart(barsContainer, {
+      chart: { type: 'column', backgroundColor: 'transparent' },
+      title: { text: undefined },
+      credits: { enabled: false },
+      exporting: this.chartExporting(dark), navigation: this.chartNavigation(dark), accessibility: { enabled: false },
+      xAxis: { categories: [latestCutoff], labels: { style } },
+      yAxis: { title: { text: 'Pesos colombianos', style }, labels: { style, formatter() { return compact.format(this.value as number); } } },
+      legend: { itemStyle: style, itemHoverStyle: style },
+      tooltip: { valuePrefix: '$ ', valueDecimals: 0 },
+      plotOptions: { column: { borderWidth: 0, borderRadius: 3, groupPadding: .12 } },
+      series: metrics.map((metric) => ({
+        type: 'column', name: metric.name, color: metric.color,
+        data: [this.number(this.path(source, metric.field))],
+      })),
+    });
+    if (target !== 'bars' && pieContainer) this.overviewPieChart = Highcharts.chart(pieContainer, {
+      chart: { type: 'pie', backgroundColor: 'transparent' },
+      title: { text: undefined },
+      credits: { enabled: false },
+      exporting: this.chartExporting(dark), navigation: this.chartNavigation(dark), accessibility: { enabled: false },
+      legend: { itemStyle: style, itemHoverStyle: style },
+      tooltip: { pointFormat: '<b>{point.y:.2f}%</b>' },
+      plotOptions: { pie: { innerSize: '45%', borderWidth: 2, dataLabels: { enabled: true, format: '{point.name}: {point.y:.2f}%', style: { ...style, textOutline: 'none' } } } },
+      series: [{
+        type: 'pie', name: 'Margen Bruto',
+        data: this.cutoffsFrom(consultation.financieros).map((cutoff, index) => {
+          const cutoffSource = consultation.financieros[cutoff]?.hits?.hits?.[0]?._source;
+          const margin = this.ratio(
+            this.path(cutoffSource, 'resultadoIntegral.utilidad'),
+            this.path(cutoffSource, 'resultadoIntegral.ingreso'),
+          );
+          return {
+            name: cutoff,
+            y: Math.max(0, (margin ?? 0) * 100),
+            color: ['#0d6efd', '#20c997', '#ffc107', '#6f42c1'][index % 4],
+          };
+        }),
+      }],
+    });
   }
 
   private destroyDetailChart(): void {

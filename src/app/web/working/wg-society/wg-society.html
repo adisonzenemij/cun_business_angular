@@ -7,7 +7,7 @@
   </header>
   <section class="card selector-card">
     <div class="card-body row g-3 align-items-end">
-      <div class="col-12 col-md-8 col-lg-6"><label class="form-label" for="society">Sociedad</label>
+      <div class="col-12 col-md-8 col-lg-10"><label class="form-label" for="society">Sociedad</label>
         <select id="society" class="form-select" [ngModel]="selectedId()" (ngModelChange)="changeSociety($event)"
           [disabled]="loading()">
           <option value="">Ninguno</option>
@@ -27,8 +27,8 @@
     <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
       <h2>Vista 360</h2>
       <div class="d-flex flex-wrap gap-2">
-        <button class="btn btn-sm btn-outline-primary" type="button"
-          (click)="openDetail('financieros')">Financieros</button>
+        <button class="btn btn-sm btn-outline-primary" type="button" (click)="openDetail('financieros')">Datos
+          Financieros</button>
         <button class="btn btn-sm btn-outline-primary" type="button"
           (click)="openDetail('situacion_financiera')">Situación Financiera</button>
         <button class="btn btn-sm btn-outline-primary" type="button"
@@ -53,9 +53,80 @@
             </tr> }</tbody>
         </table>
       </div>
+      <!-- Overview charts are rendered below the Vista 360 card. -->
+      <!--
+      <div class="row g-4 mt-1">
+        <section class="col-12 col-lg-6">
+          <article class="card financial-overview-card h-100">
+            <div class="card-header"><h3 class="h6 mb-0">Comparativo financiero por fecha de corte</h3></div>
+            <div class="card-body"><div id="financial-overview-bars" class="financial-overview-chart"></div></div>
+          </article>
+        </section>
+        <section class="col-12 col-lg-6">
+          <article class="card financial-overview-card h-100">
+            <div class="card-header"><h3 class="h6 mb-0">Distribución Financiera - Fecha de Corte {{ overviewCutoff() }}</h3></div>
+            <div class="card-body"><div id="financial-overview-pie" class="financial-overview-chart"></div></div>
+          </article>
+        </section>
+      </div>
+      -->
       } @else { <p class="text-body-secondary mb-0">No se encontraron registros de Vista 360.</p> }
     </div>
   </section>
+  @if (vistaRecords().length) {
+  <div class="alert alert-info mt-4 mb-0" role="alert">
+    <i class="bi bi-info-circle me-2"></i>Los gráficos muestran el corte más reciente. Para visualizar los demás cortes,
+    revise <button class="btn btn-link p-0 fw-semibold align-baseline" type="button"
+      (click)="openDetail('financieros')">Datos Financieros</button>.
+  </div>
+  <section class="financial-summary mt-4" aria-label="Resumen financiero del corte más reciente">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h2 class="h6 mb-0">Resumen Financiero - Fecha de corte {{ overviewCutoff() }}</h2>
+    </div>
+    <div class="row g-3">
+      @for (metric of overviewMetrics(); track metric.label) {
+      <div class="col-12 col-sm-6 col-xl-3">
+        <article class="card financial-summary-card h-100">
+          <div class="card-body d-flex align-items-center gap-3">
+            <span [class]="'financial-summary-icon ' + metric.color"><i [class]="'bi ' + metric.icon"></i></span>
+            <div class="min-w-0">
+              <div class="small text-uppercase fw-semibold text-body-secondary">{{ metric.label }}</div>
+              <div class="small text-body-secondary">{{ metric.description }}</div>
+              <div class="fw-semibold fs-5 text-truncate" [class]="metric.color">{{ metric.value }}</div>
+            </div>
+          </div>
+        </article>
+      </div>
+      }
+    </div>
+  </section>
+  <div class="row g-4 mt-4">
+    <section class="col-12 col-lg-6">
+      <article class="card financial-overview-card h-100">
+        <div class="card-header d-flex align-items-center justify-content-between gap-2">
+          <h3 class="h6 mb-0">Reporte Financiero - Fecha de Corte {{ overviewCutoff() }}</h3>
+          <button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshOverviewBars()"><i
+              class="bi bi-arrow-clockwise me-1"></i>Refrescar</button>
+        </div>
+        <div class="card-body">
+          <div id="financial-overview-bars" class="financial-overview-chart"></div>
+        </div>
+      </article>
+    </section>
+    <section class="col-12 col-lg-6">
+      <article class="card financial-overview-card h-100">
+        <div class="card-header d-flex align-items-center justify-content-between gap-2">
+          <h3 class="h6 mb-0">Margen Bruto por Fecha de Corte</h3>
+          <button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshOverviewPie()"><i
+              class="bi bi-arrow-clockwise me-1"></i>Refrescar</button>
+        </div>
+        <div class="card-body">
+          <div id="financial-overview-pie" class="financial-overview-chart"></div>
+        </div>
+      </article>
+    </section>
+  </div>
+  }
   }
 </section>
 
@@ -65,9 +136,11 @@
   <div class="modal-dialog modal-fullscreen" role="document">
     <div class="modal-content">
       <div class="modal-header bg-primary text-white" data-bs-theme="dark">
-        <h2 class="modal-title fs-5" id="detail-title">{{ detailLabel(detail) }}</h2>
+        <h2 class="modal-title fs-5" id="detail-title">{{ detail === 'financieros' ? 'Datos Financieros' :
+          detailLabel(detail) }}</h2>
         <div class="d-flex align-items-center gap-2 ms-auto">
-          <button type="button" class="btn btn-sm btn-outline-light" (click)="layoutOpen.set(true)">Distribución</button>
+          <button type="button" class="btn btn-sm btn-outline-light"
+            (click)="layoutOpen.set(true)">Distribución</button>
           <button type="button" class="btn-close btn-close-white" aria-label="Cerrar" (click)="closeDetail()"></button>
         </div>
       </div>
@@ -78,11 +151,11 @@
               <div class="card-header">
                 <div class="d-flex align-items-center justify-content-between gap-2">
                   @if (cutoffs(detail).length) {
-                    <ul class="nav nav-underline flex-grow-1">
-                      @for (cutoff of cutoffs(detail); track cutoff) { <li class="nav-item"><button class="nav-link"
-                          type="button" [class.active]="activeCutoffs()[detail] === cutoff"
-                          (click)="selectCutoff(detail, cutoff)">{{ cutoff }}</button></li> }
-                    </ul>
+                  <ul class="nav nav-underline flex-grow-1">
+                    @for (cutoff of cutoffs(detail); track cutoff) { <li class="nav-item"><button class="nav-link"
+                        type="button" [class.active]="activeCutoffs()[detail] === cutoff"
+                        (click)="selectCutoff(detail, cutoff)">{{ cutoff }}</button></li> }
+                  </ul>
                   }
                   <button class="btn btn-sm btn-outline-primary" type="button"
                     (click)="columnsDetail.set(detail)">Columnas</button>
@@ -94,12 +167,14 @@
               </div>
               <div class="card-body">
                 @if (tableRows(detail).length) {
-                <label class="visually-hidden" [for]="'detail-search-' + detail + '-' + activeCutoffs()[detail]">Buscar en la tabla</label>
+                <label class="visually-hidden" [for]="'detail-search-' + detail + '-' + activeCutoffs()[detail]">Buscar
+                  en la tabla</label>
                 <input class="form-control form-control-sm mb-3" type="search"
                   [id]="'detail-search-' + detail + '-' + activeCutoffs()[detail]"
                   placeholder="Buscar por campo o valor" [ngModel]="tableSearch(detail)"
                   (ngModelChange)="setTableSearch(detail, $event)">
-                <div class="table-responsive" [class.financial-table]="detail === 'financieros'" [class.detail-table]="detail !== 'financieros'">
+                <div class="table-responsive" [class.financial-table]="detail === 'financieros'"
+                  [class.detail-table]="detail !== 'financieros'">
                   <table class="table table-hover align-middle mb-0">
                     <thead>
                       <tr>
@@ -110,7 +185,9 @@
                     <tbody>@for (row of filteredTableRows(detail); track row.key) { <tr>
                         <td>{{ row.label }}</td>
                         <td>{{ row.value }}</td>
-                      </tr> } @empty { <tr><td colspan="2" class="text-body-secondary">No se encontraron coincidencias.</td></tr> }</tbody>
+                      </tr> } @empty { <tr>
+                        <td colspan="2" class="text-body-secondary">No se encontraron coincidencias.</td>
+                      </tr> }</tbody>
                   </table>
                 </div>
                 } @else { <p class="text-body-secondary mb-0">No se encontró información para esta fecha de corte.</p> }
@@ -122,13 +199,16 @@
               <div class="card-header d-flex align-items-center justify-content-between gap-2">
                 <ul class="nav nav-underline flex-grow-1">
                   @for (type of ['lineas', 'columnas', 'barras', 'donas']; track type) {
-                    <li class="nav-item"><button class="nav-link" type="button" [class.active]="situationChartType() === type" (click)="selectSituationChartType($any(type))">{{ situationChartTypeLabel($any(type)) }}</button></li>
+                  <li class="nav-item"><button class="nav-link" type="button"
+                      [class.active]="situationChartType() === type" (click)="selectSituationChartType($any(type))">{{
+                      situationChartTypeLabel($any(type)) }}</button></li>
                   }
                 </ul>
                 <div class="d-flex align-items-center gap-2 ms-auto">
                   <button class="btn btn-sm btn-outline-primary" type="button"
                     (click)="chartFieldsDetail.set(detail)">Series</button>
-                  <button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshDetailChart()">Refrescar</button>
+                  <button class="btn btn-sm btn-outline-primary" type="button"
+                    (click)="refreshDetailChart()">Refrescar</button>
                 </div>
               </div>
               <div class="card-body chart-card-body">
@@ -136,14 +216,15 @@
                   <div id="society-detail-chart" class="financial-chart flex-grow-1"
                     [class.donut-chart]="situationChartType() === 'donas'"></div>
                   @if (showChartSeriesTabs(detail)) {
-                    <div class="nav flex-column nav-pills chart-series-tabs" role="tablist" aria-orientation="vertical">
-                      <button class="nav-link" type="button" [class.active]="activeChartSeriesTab(detail) === 'unificado'"
-                        (click)="selectChartSeriesTab(detail, 'unificado')">Unificado</button>
-                      @for (series of chartSeriesTabs(detail); track series.field) {
-                        <button class="nav-link" type="button" [class.active]="activeChartSeriesTab(detail) === series.field"
-                          (click)="selectChartSeriesTab(detail, series.field)">{{ series.name }}</button>
-                      }
-                    </div>
+                  <div class="nav flex-column nav-pills chart-series-tabs" role="tablist" aria-orientation="vertical">
+                    <button class="nav-link" type="button" [class.active]="activeChartSeriesTab(detail) === 'unificado'"
+                      (click)="selectChartSeriesTab(detail, 'unificado')">Unificado</button>
+                    @for (series of chartSeriesTabs(detail); track series.field) {
+                    <button class="nav-link" type="button"
+                      [class.active]="activeChartSeriesTab(detail) === series.field"
+                      (click)="selectChartSeriesTab(detail, series.field)">{{ series.name }}</button>
+                    }
+                  </div>
                   }
                 </div>
               </div>
@@ -184,7 +265,8 @@
         <input id="left-card-range" class="form-range" type="range" min="2" max="10" step="1"
           [value]="leftColumnWidth()" (input)="setLeftColumnWidth($any($event.target).value)">
       </div>
-      <div class="modal-footer"><button class="btn btn-primary btn-sm" type="button" (click)="layoutOpen.set(false)">Listo</button></div>
+      <div class="modal-footer"><button class="btn btn-primary btn-sm" type="button"
+          (click)="layoutOpen.set(false)">Listo</button></div>
     </div>
   </div>
 </div>
@@ -197,8 +279,8 @@
   <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title fs-6" id="chart-fields-title">Series - {{ detailLabel(selectedChartFieldsDetail) }}</h3><button type="button" class="btn-close"
-          aria-label="Cerrar" (click)="chartFieldsDetail.set(null)"></button>
+        <h3 class="modal-title fs-6" id="chart-fields-title">Series - {{ detailLabel(selectedChartFieldsDetail) }}</h3>
+        <button type="button" class="btn-close" aria-label="Cerrar" (click)="chartFieldsDetail.set(null)"></button>
       </div>
       <div class="modal-body">
         <p class="small text-body-secondary">Marca los valores financieros que deseas incluir en el gráfico.</p>
@@ -207,20 +289,29 @@
           placeholder="Buscar por propiedad o nombre técnico" [ngModel]="chartFieldsSearch()"
           (ngModelChange)="chartFieldsSearch.set($event)">
         <table class="table table-sm align-middle mb-0">
-          <thead><tr><th scope="col">Visualizar</th><th scope="col">Propiedad</th><th class="d-none" scope="col">Propiedad original</th></tr></thead>
+          <thead>
+            <tr>
+              <th scope="col">Visualizar</th>
+              <th scope="col">Propiedad</th>
+              <th class="d-none" scope="col">Propiedad original</th>
+            </tr>
+          </thead>
           <tbody>@for (field of filteredChartFieldsAvailable(selectedChartFieldsDetail); track field.key) {
             <tr>
-              <td class="check-column"><input class="form-check-input" type="checkbox" [id]="selectedChartFieldsDetail + '-chart-' + field.key"
-                [checked]="isChartFieldVisible(selectedChartFieldsDetail, field.key)"
-                (change)="toggleChartField(selectedChartFieldsDetail, field.key, $any($event.target).checked)"></td>
-              <td><label class="form-check-label" [for]="selectedChartFieldsDetail + '-chart-' + field.key">{{ field.label }}</label></td>
+              <td class="check-column"><input class="form-check-input" type="checkbox"
+                  [id]="selectedChartFieldsDetail + '-chart-' + field.key"
+                  [checked]="isChartFieldVisible(selectedChartFieldsDetail, field.key)"
+                  (change)="toggleChartField(selectedChartFieldsDetail, field.key, $any($event.target).checked)"></td>
+              <td><label class="form-check-label" [for]="selectedChartFieldsDetail + '-chart-' + field.key">{{
+                  field.label }}</label></td>
               <td class="d-none original-value">{{ field.key }}</td>
             </tr>
-          }</tbody>
+            }
+          </tbody>
         </table>
       </div>
       <div class="modal-footer"><button class="btn btn-primary btn-sm" type="button"
-        (click)="chartFieldsDetail.set(null)">Listo</button></div>
+          (click)="chartFieldsDetail.set(null)">Listo</button></div>
     </div>
   </div>
 </div>
@@ -233,8 +324,8 @@
   <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title fs-6" id="columns-fields-title">Columnas - {{ detailLabel(selectedColumnsDetail) }}</h3><button type="button" class="btn-close"
-          aria-label="Cerrar" (click)="columnsDetail.set(null)"></button>
+        <h3 class="modal-title fs-6" id="columns-fields-title">Columnas - {{ detailLabel(selectedColumnsDetail) }}</h3>
+        <button type="button" class="btn-close" aria-label="Cerrar" (click)="columnsDetail.set(null)"></button>
       </div>
       <div class="modal-body">
         <p class="small text-body-secondary">Marca las propiedades que deseas visualizar para cada fecha de corte.</p>
@@ -252,10 +343,12 @@
           </thead>
           <tbody>@for (field of filteredFieldsAvailable(selectedColumnsDetail); track field.key) {
             <tr>
-              <td class="check-column"><input class="form-check-input" type="checkbox" [id]="selectedColumnsDetail + '-' + field.key"
+              <td class="check-column"><input class="form-check-input" type="checkbox"
+                  [id]="selectedColumnsDetail + '-' + field.key"
                   [checked]="isFieldVisible(selectedColumnsDetail, field.key)"
                   (change)="toggleField(selectedColumnsDetail, field.key, $any($event.target).checked)"></td>
-              <td><label class="form-check-label" [for]="selectedColumnsDetail + '-' + field.key">{{ field.label }}</label></td>
+              <td><label class="form-check-label" [for]="selectedColumnsDetail + '-' + field.key">{{ field.label
+                  }}</label></td>
               <td class="d-none original-value">{{ field.key }}</td>
             </tr>
             }

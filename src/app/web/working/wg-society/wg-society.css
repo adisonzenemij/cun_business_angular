@@ -3,7 +3,7 @@
 }
 
 .society-page {
-  max-width: 1280px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 1.5rem;
 }
@@ -29,6 +29,35 @@
 .data-card h2 {
   font-size: 1.1rem;
   margin: 0;
+}
+
+.financial-overview-card {
+  border-color: var(--bs-border-color);
+}
+
+.financial-summary-card {
+  border-color: var(--bs-border-color);
+}
+
+.financial-summary-icon {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 3rem;
+  width: 3rem;
+  height: 3rem;
+  border-radius: .75rem;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  font-size: 1.5rem;
+}
+
+.financial-summary-card .min-w-0 {
+  min-width: 0;
+}
+
+.financial-overview-chart {
+  height: 24rem;
+  min-height: 24rem;
+  width: 100%;
 }
 
 .detail-table,
