@@ -25,6 +25,7 @@
     <div class="card-header d-flex justify-content-between align-items-center gap-2">
       <h2 class="h6 mb-0">Consulta NIT</h2>
       <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-sm btn-outline-primary" type="button" (click)="consultFirstOwner()" [disabled]="!canConsultFirstOwner() || ownersLoading()"><i class="bi bi-people me-1"></i>Propietarios</button>
         <button class="btn btn-sm btn-outline-success" type="button" (click)="exportResultExcel()" [disabled]="!rows(rues).length"><i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
         <button class="btn btn-sm btn-outline-secondary" type="button" (click)="exportResultCsv()" [disabled]="!rows(rues).length"><i class="bi bi-filetype-csv me-1"></i>CSV</button>
       </div>
@@ -32,10 +33,9 @@
     <div class="card-body">
       @if (rows(rues).length) {
       <div class="table-responsive"><table class="table table-hover align-middle mb-0">
-        <thead><tr>@for (field of fields(rues); track field) { <th scope="col">{{ label(field) }}</th> }<th scope="col" class="text-end">Propietarios</th></tr></thead>
+        <thead><tr>@for (field of fields(rues); track field) { <th scope="col">{{ label(field) }}</th> }</tr></thead>
         <tbody>@for (row of rows(rues); track $index) { <tr>
           @for (field of fields(rues); track field) { <td>{{ value(row[field]) }}</td> }
-          <td class="text-end"><button class="btn btn-sm btn-outline-primary" type="button" (click)="consultOwners(row)" [disabled]="!canConsultOwners(row) || ownersLoading()"><i class="bi bi-people me-1"></i>Consultar</button></td>
         </tr> }</tbody>
       </table></div>
       } @else { <p class="text-body-secondary mb-0">RUES no encontró registros para el NIT seleccionado.</p> }
@@ -63,11 +63,11 @@
         <tbody>@for (row of rows(ownerResult); track $index) { <tr>@for (field of ownerFields(); track field) { <td>{{ value(row[field]) }}</td> }</tr> }</tbody>
       </table></div>
       <div class="row g-4 mt-1 rues-charts">
-        <section class="col-12"><article class="card h-100">
+    <section class="col-12 col-lg-6"><article class="card h-100">
           <div class="card-header d-flex align-items-center justify-content-between gap-2"><span class="fw-semibold">Matrículas activas por cámara de comercio</span><button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshActiveChart()"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button></div>
           <div class="card-body"><div id="rues-active-chart" class="rues-chart"></div></div>
         </article></section>
-        <section class="col-12"><article class="card h-100">
+    <section class="col-12 col-lg-6"><article class="card h-100">
           <div class="card-header d-flex align-items-center justify-content-between gap-2"><span class="fw-semibold">Matrículas canceladas por cámara de comercio</span><button class="btn btn-sm btn-outline-primary" type="button" (click)="refreshCancelledChart()"><i class="bi bi-arrow-clockwise me-1"></i>Refrescar</button></div>
           <div class="card-body"><div id="rues-cancelled-chart" class="rues-chart"></div></div>
         </article></section>

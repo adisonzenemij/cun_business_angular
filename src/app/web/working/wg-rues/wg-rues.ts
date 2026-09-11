@@ -95,6 +95,16 @@ export class WgRues implements OnDestroy {
     });
   }
 
+  consultFirstOwner(): void {
+    const row = this.rows(this.result())[0];
+    if (row) this.consultOwners(row);
+  }
+
+  canConsultFirstOwner(): boolean {
+    const row = this.rows(this.result())[0];
+    return !!row && this.canConsultOwners(row);
+  }
+
   rows(response: RuesResponse | null): RuesRow[] { return response?.rows ?? []; }
   fields(response: RuesResponse | null): string[] { return [...new Set(this.rows(response).flatMap((row) => Object.keys(row).filter((field) => !/^enlace/i.test(field))))]; }
   label(field: string): string { return field.replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/\b\w/g, (letter) => letter.toUpperCase()); }
