@@ -365,6 +365,8 @@ export class WgRues implements OnDestroy {
         ],
       });
       this.ownerCharts.set(containerId, chart);
+      chart.exporting.getDataRows = () => this.chamberMapDataRows();
+      this.bindChartDataTable(containerId, chart);
     } catch {
       // No se bloquea la consulta de RUES si el activo local no puede cargarse.
     }
@@ -420,6 +422,18 @@ export class WgRues implements OnDestroy {
       const location = CHAMBER_LOCATIONS[key];
       return location ? [{ ...location, ...count, z: count.active + count.cancelled }] : [];
     });
+  }
+
+  private chamberMapDataRows(): (string | number)[][] {
+    const filter = this.chamberMapFilter();
+    const showActive = filter !== 'CANCELADA';
+    const showCancelled = filter !== 'ACTIVA';
+    const headers = ['Cámara de comercio', 'Ciudad', ...(showActive ? ['Activas'] : []), ...(showCancelled ? ['Canceladas'] : [])];
+    const records = this.chamberMapPoints()
+      .filter((point) => (showActive && point.active > 0) || (showCancelled && point.cancelled > 0))
+      .sort((first, second) => first.name.localeCompare(second.name))
+      .map((point) => [point.name, point.city, ...(showActive ? [point.active] : []), ...(showCancelled ? [point.cancelled] : [])]);
+    return [headers, ...records];
   }
 
   private chamberKey(name: string): string {
