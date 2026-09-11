@@ -42,6 +42,11 @@ export interface CrudConfig {
   autoComplete?: boolean;
 }
 
+interface AssociationDetail {
+  resource: string;
+  records: number;
+}
+
 @Component({
   selector: 'app-entity-crud',
   imports: [ReactiveFormsModule],
@@ -71,6 +76,9 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   readonly showValuesModal = signal(false);
   readonly showAutoFillModal = signal(false);
   readonly showAutoFillConfigurationModal = signal(false);
+  readonly showAssociationsModal = signal(false);
+  readonly associationDetails = signal<AssociationDetail[]>([]);
+  readonly associationTableVersion = signal(0);
   readonly autoFillAvailableSlots = signal(0);
   readonly autoFillMemoryMaxMb = signal(0);
   readonly autoFillQuestions = signal<Record<string, unknown>[]>([]);
@@ -111,9 +119,11 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('dataTable') private readonly table?: ElementRef<HTMLTableElement>;
   @ViewChild('valuesTable') private readonly valuesTable?: ElementRef<HTMLTableElement>;
   @ViewChild('questionsTable') private readonly questionsTable?: ElementRef<HTMLTableElement>;
+  @ViewChild('associationsTable') private readonly associationsTable?: ElementRef<HTMLTableElement>;
   private dataTable?: { destroy(remove?: boolean): unknown };
   private valuesDataTable?: { destroy(remove?: boolean): unknown };
   private questionsDataTable?: { destroy(remove?: boolean): unknown };
+  private associationsDataTable?: { destroy(remove?: boolean): unknown };
   private requestVersion = 0;
   constructor(
     private readonly api: FastApi,
@@ -860,6 +870,32 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
       (item) => item['id_universal'] === row['id_universal'],
     );
   }
+  hasAssociations(row: Record<string, unknown>): boolean {
+    return row['fd_associated'] === true;
+  }
+  openAssociations(row: Record<string, unknown>): void {
+    const details = row['fd_association_details'];
+    this.destroyAssociationsDataTable();
+    this.associationDetails.set(
+      Array.isArray(details)
+        ? details
+          .filter((detail): detail is Record<string, unknown> => typeof detail === 'object' && detail !== null)
+          .map((detail) => ({
+            resource: String(detail['resource'] ?? detail['module'] ?? ''),
+            records: Number(detail['records'] ?? 0),
+          }))
+        : [],
+    );
+    this.showAssociationsModal.set(true);
+    this.associationTableVersion.update((version) => version + 1);
+    this.changeDetectorRef.detectChanges();
+    setTimeout(() => this.initializeAssociationsDataTable());
+  }
+  closeAssociationsModal(): void {
+    this.destroyAssociationsDataTable();
+    this.showAssociationsModal.set(false);
+    this.associationDetails.set([]);
+  }
   private clearSelection(): void {
     this.selectedRecord.set(null);
     this.selectedRecords.set([]);
@@ -900,6 +936,7 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
     this.destroyDataTable();
     this.destroyValuesDataTable();
     this.destroyQuestionsDataTable();
+    this.destroyAssociationsDataTable();
   }
   private initializeDataTable(): void {
     if (!this.table || this.dataTable) return;
@@ -960,6 +997,16 @@ export class EntityCrud implements OnInit, AfterViewInit, OnDestroy {
   private destroyQuestionsDataTable(): void {
     this.questionsDataTable?.destroy();
     this.questionsDataTable = undefined;
+  }
+  private initializeAssociationsDataTable(): void {
+    if (!this.associationsTable || this.associationsDataTable) return;
+    this.associationsDataTable = new DataTable(this.associationsTable.nativeElement, {
+      language: { emptyTable: 'No hay recursos asociados', search: 'Buscar:', lengthMenu: 'Mostrar _MENU_ registros', info: 'Mostrando _START_ a _END_ de _TOTAL_', paginate: { next: 'Siguiente', previous: 'Anterior' } },
+    });
+  }
+  private destroyAssociationsDataTable(): void {
+    this.associationsDataTable?.destroy();
+    this.associationsDataTable = undefined;
   }
   private refreshValues(): void {
     const selected = this.selectedRecord();

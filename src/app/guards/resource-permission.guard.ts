@@ -9,7 +9,17 @@ const routeClients: Record<string, string> = {
 
 export const resourcePermissionGuard: CanActivateChildFn = (_route, state: RouterStateSnapshot) => {
   const router = inject(Router);
-  const segment = state.url.split('?')[0].split('/').pop() ?? '';
+  const segments = state.url.split('?')[0].split('/').filter(Boolean);
+  const modulePosition = segments.indexOf('module');
+  if (modulePosition >= 0 && segments[modulePosition + 1]) {
+    const moduleId = segments[modulePosition + 1];
+    return inject(FastApi).http.get<{ module_permissions: { module_id: string; access: string }[] }>(`${FAST_API_URL}/auth/permissions`).pipe(
+      map((result) => result.module_permissions.some((permission) =>
+        permission.module_id === moduleId && permission.access === 'Permitido',
+      ) || router.createUrlTree(['/working/dashboard'])),
+    );
+  }
+  const segment = segments.at(-1) ?? '';
   const client = routeClients[segment];
   if (!client) return true;
   return inject(FastApi).http.get<{ permissions: { client: string; access: string }[] }>(`${FAST_API_URL}/auth/permissions`).pipe(

@@ -104,7 +104,12 @@
               @for (field of tableFields(); track field.name) {
               <td>{{ displayValue(row, field) }}</td>
               }
-              <td class="text-center">{{ row['fd_associated'] ?? 0 }}</td>
+              <td class="text-center">
+                <button class="btn btn-link p-0 text-decoration-none" type="button"
+                  (click)="$event.stopPropagation(); openAssociations(row)">
+                  Consultar
+                </button>
+              </td>
             </tr>
             }
           </tbody>
@@ -114,6 +119,35 @@
     </div>
   </div>
 </section>
+
+@if (showAssociationsModal()) {
+<div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h2 class="modal-title h5 mb-0"><i class="bi bi-diagram-3 me-2"></i>Recursos asociados</h2>
+        <button class="btn-close btn-close-white" type="button" aria-label="Cerrar" (click)="closeAssociationsModal()"></button>
+      </div>
+      <div class="modal-body">
+        @for (version of [associationTableVersion()]; track version) {
+        <div class="table-responsive">
+          <table #associationsTable class="table table-striped table-hover align-middle w-100">
+            <thead><tr><th>Recurso</th><th class="text-center">Registros</th></tr></thead>
+            <tbody>
+              @for (detail of associationDetails(); track $index) {
+              <tr><td>{{ detail.resource }}</td><td class="text-center">{{ detail.records }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        }
+      </div>
+      <div class="modal-footer"><button class="btn btn-outline-secondary" type="button" (click)="closeAssociationsModal()">Cerrar</button></div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade show"></div>
+}
 
 @if (showFormModal()) {
 <div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true">

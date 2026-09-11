@@ -4,7 +4,9 @@
   <nav class="nav nav-pills flex-column gap-1 p-2">
     <a class="nav-link" routerLink="/working/dashboard" routerLinkActive="active"><i class="bi bi-speedometer2 me-2"></i>Panel de Control</a>
     @for (module of catalog.modules(); track module.id_universal) {
-      <span class="text-uppercase text-body-secondary small fw-semibold mt-3 px-2">{{ module.fd_product }}</span>
+      @if (!$first) { <hr class="module-separator my-2"> }
+      <a class="nav-link text-uppercase text-body-secondary small fw-semibold mt-3 px-2"
+        [routerLink]="['/working/module', module.id_universal]" routerLinkActive="active">{{ module.fd_product }}</a>
       @for (resource of module.resources; track resource.id_universal) {
         <a class="nav-link" [routerLink]="'/working/' + resource.route" routerLinkActive="active"><i class="bi me-2" [class]="'bi me-2 ' + resource.icon"></i>{{ resource.fd_name }}</a>
       }

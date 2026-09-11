@@ -12,5 +12,9 @@
 }
 .working-sidebar .nav-link.active {
   background: var(--bs-primary);
-  color: #fff;
+  color: #fff !important;
+}
+.module-separator {
+  border-color: var(--bs-border-color);
+  opacity: 1;
 }

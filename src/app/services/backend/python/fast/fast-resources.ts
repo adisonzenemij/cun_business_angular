@@ -20,6 +20,7 @@ export interface RolePermit { id_universal: string; ms_2e794a8f: string; tg_2f99
 export interface RoleModule { id_universal: string; ms_8b6bd18a: string; tg_2f997592: string; tg_9a7bbe6f: string; }
 export interface NavigationModule extends TableModule { resources: (TableResource & { route: string; icon: string })[]; }
 interface CurrentPermission { client: string; access: string; }
+interface CurrentModulePermission { module_id: string; access: string; }
 export interface Anonymous {
   id_universal: string;
   fd_random: string;
@@ -95,21 +96,28 @@ export class MetadataCatalog {
   private readonly api = inject(FastApi);
   readonly modules = signal<NavigationModule[]>([]);
   readonly allowedClients = signal<Set<string>>(new Set());
+  readonly allowedModuleIds = signal<Set<string>>(new Set());
   load(): void {
-    this.api.http.get<{ permissions: CurrentPermission[] }>(`${FAST_API_URL}/auth/permissions`).subscribe((permissionResult) => {
+    this.api.http.get<{ permissions: CurrentPermission[]; module_permissions: CurrentModulePermission[] }>(`${FAST_API_URL}/auth/permissions`).subscribe((permissionResult) => {
       this.allowedClients.set(new Set(permissionResult.permissions.filter((item) => item.access === 'Permitido').map((item) => item.client)));
+      this.allowedModuleIds.set(new Set(
+        (permissionResult.module_permissions ?? [])
+          .filter((item) => item.access === 'Permitido')
+          .map((item) => item.module_id),
+      ));
       this.api.http.get<TableModule[]>(`${FAST_API_URL}/table-modules/`).subscribe((modules) => {
       this.api.http.get<TableResource[]>(`${FAST_API_URL}/table-resources/`).subscribe((resources) => {
         this.modules.set(
           modules
-            .map((module) => ({
-              ...module,
-              resources: resources
+            .map((module) => {
+              const moduleResources = resources
                 .filter((resource) => resource.ms_8b6bd18a === module.id_universal)
                 .map((resource) => ({ ...resource, ...(navigation.get(resource.fd_client) ?? { route: '', icon: 'bi-circle' }) }))
                 .filter((resource) => !!resource.route && this.allowedClients().has(resource.fd_client))
-                .sort((left, right) => left.fd_name.localeCompare(right.fd_name, 'es')),
-            }))
+                .sort((left, right) => left.fd_name.localeCompare(right.fd_name, 'es'));
+              return { ...module, resources: moduleResources };
+            })
+            .filter((module) => this.allowedModuleIds().has(module.id_universal) && module.resources.length > 0)
             .sort((left, right) => left.fd_product.localeCompare(right.fd_product, 'es')),
         );
       });

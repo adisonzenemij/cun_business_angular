@@ -1,16 +1,16 @@
 <section class="dashboard container-fluid">
   <h1 class="h2 mb-2">Panel de Control</h1>
-  <p class="text-body-secondary mb-4">Resumen de registros por módulo.</p>
+  <p class="text-body-secondary mb-4">Resumen de recursos por módulo.</p>
   <div class="row g-3">
-    @for (module of modules(); track module.resource) {
+    @for (module of modules(); track module.id_universal) {
     <div class="col-12 col-sm-6 col-xl-3">
-      <a class="card dashboard-card h-100 text-decoration-none" [routerLink]="module.path">
+      <a class="card dashboard-card h-100 text-decoration-none" [routerLink]="['/working/module', module.id_universal]">
         <div class="card-body d-flex align-items-center gap-3">
-          <span class="dashboard-icon"><i class="bi {{ module.icon }}"></i></span>
+          <span class="dashboard-icon"><i class="bi bi-grid-3x3-gap"></i></span>
           <span>
-            <span class="d-block fw-semibold">{{ module.title }}</span>
+            <span class="d-block fw-semibold">{{ module.fd_product }}</span>
             <span class="text-body-secondary small">
-              {{ module.count === null ? (loading() ? 'Cargando...' : 'No disponible') : module.count }} registros
+              {{ module.resources.length }} recursos
             </span>
           </span>
         </div>
