@@ -297,9 +297,12 @@ export class WgRues implements OnDestroy {
     if (!element) return;
     const { dark, style } = this.chartTheme();
     const filter = this.chamberStatusFilter();
+    const chambers = this.chamberMapPoints();
+    const activeTotal = chambers.reduce((total, chamber) => total + chamber.active, 0);
+    const cancelledTotal = chambers.reduce((total, chamber) => total + chamber.cancelled, 0);
     const data = [
-      ...(filter !== 'CANCELADA' ? [{ name: 'Activas', y: this.countByChamber('ACTIVA').length, color: '#20c997' }] : []),
-      ...(filter !== 'ACTIVA' ? [{ name: 'Canceladas', y: this.countByChamber('CANCELADA').length, color: '#dc3545' }] : []),
+      ...(filter !== 'CANCELADA' ? [{ name: 'Activas', y: activeTotal, color: '#20c997' }] : []),
+      ...(filter !== 'ACTIVA' ? [{ name: 'Canceladas', y: cancelledTotal, color: '#dc3545' }] : []),
     ];
     this.destroyOwnerChart(containerId);
     const chart = Highcharts.chart(element, {
