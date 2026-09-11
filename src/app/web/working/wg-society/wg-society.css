@@ -98,6 +98,13 @@
   width: 100%;
 }
 
+.chart-with-series-tabs > .highcharts-data-table table {
+  box-sizing: border-box;
+  max-width: none;
+  min-width: 100%;
+  width: 100%;
+}
+
 .chart-series-tabs {
   flex: 0 0 11rem;
   max-height: 31rem;

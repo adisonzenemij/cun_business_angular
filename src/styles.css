@@ -79,6 +79,26 @@ body {
   background: var(--bs-tertiary-bg);
 }
 
+/* Highcharts crea esta tabla fuera de la plantilla Angular. Al mostrarse en
+   el panel de gráficos debe extenderse de borde a borde de la tarjeta. */
+.chart-with-series-tabs > .highcharts-data-table {
+  box-sizing: border-box;
+  flex: 0 0 100% !important;
+  margin: 1rem 0 0 !important;
+  max-width: none !important;
+  order: 2;
+  overflow-x: auto;
+  width: 100% !important;
+}
+
+.chart-with-series-tabs > .highcharts-data-table table {
+  box-sizing: border-box;
+  margin: 0 !important;
+  max-width: none !important;
+  min-width: 100% !important;
+  width: 100% !important;
+}
+
 /* La tabla comparativa de las donas conserva una lectura contable, sin bandas. */
 .financial-chart.donut-chart .highcharts-data-table tbody th {
   font-weight: 400;
