@@ -31,7 +31,9 @@
         <h2 class="h5 mb-0">Permisos del Rol: {{ roleName() ?? 'Sin rol' }}</h2><button
           class="btn-close btn-close-white" type="button" (click)="showPermissions.set(false)"></button>
       </div>
-      <div class="modal-body">@for (module of permissionModules(); track module.name) {<section class="card mb-3">
+      <div class="modal-body">
+        <ul class="nav permission-tabs mb-3"><li class="nav-item"><button class="nav-link" [class.active]="permissionTab() === 'modules'" type="button" (click)="permissionTab.set('modules')">Módulos</button></li><li class="nav-item"><button class="nav-link" [class.active]="permissionTab() === 'resources'" type="button" (click)="permissionTab.set('resources')">Recursos</button></li></ul>
+        @if (permissionTab() === 'modules') {<table class="table table-striped role-permission-table"><thead><tr><th>Módulo</th><th>Acceso</th></tr></thead><tbody>@for (permission of modulePermissions(); track permission.module) {<tr><td>{{ permission.module }}</td><td><span class="badge" [class.text-bg-success]="permission.access === 'Permitido'" [class.text-bg-danger]="permission.access === 'Denegado'">{{ permission.access }}</span></td></tr>} @empty {<tr><td colspan="2">No hay permisos configurados.</td></tr>}</tbody></table>} @else { @for (module of permissionModules(); track module.name) {<section class="card mb-3">
           <header class="card-header fw-semibold">{{ module.name }}</header>
           <div class="card-body p-0">
           <table class="table table-striped mb-0 role-permission-table">
@@ -48,7 +50,7 @@
                 </tr>}</tbody>
             </table>
           </div>
-        </section>} @empty {<p class="text-center text-body-secondary mb-0">No hay permisos configurados.</p>}</div>
+        </section>} @empty {<p class="text-center text-body-secondary mb-0">No hay permisos configurados.</p>} }</div>
       <div class="modal-footer"><button class="btn btn-outline-secondary" type="button"
           (click)="showPermissions.set(false)">Cerrar</button></div>
     </div>
